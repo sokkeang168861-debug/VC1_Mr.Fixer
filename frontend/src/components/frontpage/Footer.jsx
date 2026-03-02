@@ -16,17 +16,6 @@ export default function Footer() {
             <p className="text-slate-500 text-sm leading-relaxed max-w-xs">
               The leading on-demand service marketplace for repair experts in Cambodia. Quality guaranteed for every fix.
             </p>
-            <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all">
-                <Facebook size={18} />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all">
-                <Twitter size={18} />
-              </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-600 hover:bg-primary hover:text-white transition-all">
-                <Instagram size={18} />
-              </a>
-            </div>
           </div>
 
           <div>
@@ -54,22 +43,12 @@ export default function Footer() {
           <div>
             <h4 className="font-display font-bold text-slate-900 mb-6 uppercase tracking-wider text-xs">Support</h4>
             <ul className="space-y-4">
-              {['Help Center', 'Safety Guidelines', 'Become a Pro', 'Terms of Service'].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-slate-600 hover:text-primary text-sm transition-colors">{item}</a>
-                </li>
-              ))}
+              <li>
+                <Link to="/contact" className="text-slate-600 hover:text-primary text-sm transition-colors">
+                  Help Center
+                </Link>
+              </li>
             </ul>
-          </div>
-        </div>
-
-        <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-slate-400 text-xs">
-            © {new Date().getFullYear()} Mr. Fixer Cambodia. All rights reserved.
-          </p>
-          <div className="flex gap-6">
-            <a href="#" className="text-slate-400 hover:text-primary text-xs transition-colors">Privacy Policy</a>
-            <a href="#" className="text-slate-400 hover:text-primary text-xs transition-colors">Service Agreement</a>
           </div>
         </div>
       </div>

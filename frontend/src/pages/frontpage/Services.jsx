@@ -104,10 +104,6 @@ export default function Services() {
                 </div>
                 <h3 className="text-xl font-display font-bold text-slate-900 mb-3">{cat.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed mb-8">{cat.desc}</p>
-                <div className="flex items-center justify-between">
-                  <button className="text-primary text-sm font-bold hover:underline">View Fixers</button>
-                  <button className="bg-primary text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-primary-hover transition-colors">Book Service</button>
-                </div>
               </motion.div>
             ))}
           </div>
