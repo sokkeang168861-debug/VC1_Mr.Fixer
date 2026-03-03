@@ -1,4 +1,4 @@
-import { Wrench, Facebook, Twitter, Instagram } from 'lucide-react';
+import { Wrench} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Footer() {

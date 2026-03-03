@@ -1,8 +1,48 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { User, Phone, Mail, Lock, CheckCircle2 } from 'lucide-react';
+import { User, Phone, Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import httpClient from "../../api/httpClient";
 
 export default function Signup() {
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (password !== confirm) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    try {
+      await httpClient.post("/auth/register", {
+        full_name: fullName,
+        phone,
+        email,
+        password,
+      });
+      setSuccess("Registration successful! Redirecting to login...");
+      setTimeout(() => navigate("/login"), 1500);
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Registration failed");
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-80px)] flex flex-col lg:flex-row">
       {/* Left Column: Image & Branding */}
@@ -15,7 +55,7 @@ export default function Signup() {
         />
         
         <div className="relative z-10 w-full h-full flex flex-col justify-center px-20 text-white">
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -37,13 +77,13 @@ export default function Signup() {
                 <p className="font-medium">Trusted by 50k+ Happy Customers</p>
               </div>
             </div>
-          </motion.div>
+          </Motion.div>
         </div>
       </div>
 
       {/* Right Column: Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
-        <motion.div 
+        <Motion.div 
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           className="w-full max-w-md space-y-10"
@@ -53,13 +93,18 @@ export default function Signup() {
             <p className="text-slate-500">Please enter your details to register with Mr. Fixer.</p>
           </div>
 
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            {success && <p className="text-sm text-green-500">{success}</p>}
+
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700 ml-1">Username</label>
               <div className="relative group">
                 <input 
                   type="text" 
                   placeholder="johndoe_fix"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                 />
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
@@ -74,6 +119,8 @@ export default function Signup() {
                 <input 
                   type="tel" 
                   placeholder="+1 (555) 000-0000"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                 />
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
@@ -88,6 +135,8 @@ export default function Signup() {
                 <input 
                   type="email" 
                   placeholder="email@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                 />
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
@@ -100,10 +149,19 @@ export default function Signup() {
               <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
               <div className="relative group">
                 <input 
-                  type="password" 
-                  placeholder="••••••••"
-                  className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="********"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-14 pr-12 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
                   <Lock size={20} />
                 </div>
@@ -114,10 +172,19 @@ export default function Signup() {
               <label className="text-sm font-bold text-slate-700 ml-1">Confirm Password</label>
               <div className="relative group">
                 <input 
-                  type="password" 
-                  placeholder="••••••••"
-                  className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  type={showConfirm ? "text" : "password"} 
+                  placeholder="********"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  className="w-full pl-14 pr-12 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((s) => !s)}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                >
+                  {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
                   <Lock size={20} />
                 </div>
@@ -137,8 +204,10 @@ export default function Signup() {
           <p className="text-center text-slate-500">
             Already have an account? <Link to="/login" className="font-bold text-primary hover:underline">Log In</Link>
           </p>
-        </motion.div>
+        </Motion.div>
       </div>
     </div>
   );
 }
+
+

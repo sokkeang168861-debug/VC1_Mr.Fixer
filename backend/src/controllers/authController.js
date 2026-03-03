@@ -30,8 +30,12 @@ const login = async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "1h" });
-    res.json({ message: "Logged in", token });
+    // include role in the token so frontend can easily inspect it
+    const payload = { id: user.id, email: user.email, role: user.role };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+
+    // send role separately as well for convenience
+    res.json({ message: "Logged in", token, role: user.role });
   } catch (err) {
     res.status(500).json({ message: "Login failed", error: err.message });
   }
