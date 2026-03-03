@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, Eye, CheckCircle2 } from 'lucide-react';
 
@@ -15,7 +15,7 @@ export default function Login() {
         />
         
         <div className="relative z-10 w-full h-full flex flex-col justify-center px-20 text-white">
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -37,13 +37,13 @@ export default function Login() {
                 <p className="font-medium">Trusted by 50k+ Happy Customers</p>
               </div>
             </div>
-          </motion.div>
+          </Motion.div>
         </div>
       </div>
 
       {/* Right Column: Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
-        <motion.div 
+        <Motion.div 
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           className="w-full max-w-md space-y-10"
@@ -109,8 +109,9 @@ export default function Login() {
           <p className="text-center text-slate-500">
             Don't have an account? <Link to="/signup" className="font-bold text-primary hover:underline">Sign Up for free</Link>
           </p>
-        </motion.div>
+        </Motion.div>
       </div>
     </div>
   );
 }
+

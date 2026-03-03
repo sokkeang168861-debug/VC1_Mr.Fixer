@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { User, Phone, Mail, Lock, CheckCircle2 } from 'lucide-react';
 
@@ -15,7 +15,7 @@ export default function Signup() {
         />
         
         <div className="relative z-10 w-full h-full flex flex-col justify-center px-20 text-white">
-          <motion.div
+          <Motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
@@ -37,13 +37,13 @@ export default function Signup() {
                 <p className="font-medium">Trusted by 50k+ Happy Customers</p>
               </div>
             </div>
-          </motion.div>
+          </Motion.div>
         </div>
       </div>
 
       {/* Right Column: Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
-        <motion.div 
+        <Motion.div 
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           className="w-full max-w-md space-y-10"
@@ -101,7 +101,7 @@ export default function Signup() {
               <div className="relative group">
                 <input 
                   type="password" 
-                  placeholder="••••••••"
+                  placeholder="********"
                   className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                 />
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
@@ -115,7 +115,7 @@ export default function Signup() {
               <div className="relative group">
                 <input 
                   type="password" 
-                  placeholder="••••••••"
+                  placeholder="********"
                   className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                 />
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
@@ -137,8 +137,10 @@ export default function Signup() {
           <p className="text-center text-slate-500">
             Already have an account? <Link to="/login" className="font-bold text-primary hover:underline">Log In</Link>
           </p>
-        </motion.div>
+        </Motion.div>
       </div>
     </div>
   );
 }
+
+
