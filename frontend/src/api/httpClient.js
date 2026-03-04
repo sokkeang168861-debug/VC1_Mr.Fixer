@@ -7,4 +7,10 @@ const httpClient = axios.create({
   },
 });
 
+// if there's already a stored token, set the header so requests are authenticated by default
+const storedToken = localStorage.getItem("token");
+if (storedToken) {
+  httpClient.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+}
+
 export default httpClient;

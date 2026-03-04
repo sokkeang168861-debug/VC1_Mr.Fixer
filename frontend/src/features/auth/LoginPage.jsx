@@ -1,8 +1,47 @@
 import { motion as Motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { Mail, Lock, Eye, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import httpClient from "../../api/httpClient";
 
 export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      const res = await httpClient.post("/auth/login", { email, password });
+      const { token, role } = res.data;
+
+      // store token for later use (localStorage is simplest)
+      localStorage.setItem("token", token);
+      httpClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // redirect based on role
+      if (role === "admin") {
+        navigate("/dashboard/admin");
+      } else if (role === "customer") {
+        navigate("/dashboard/customer");
+      } else if (role === "fixer") {
+        navigate("/dashboard/fixer");
+      } else {
+        // fallback to home
+        navigate("/");
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || "Login failed");
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-80px)] flex flex-col lg:flex-row">
       {/* Left Column: Image & Branding */}
@@ -53,13 +92,17 @@ export default function Login() {
             <p className="text-slate-500">Enter your details information to login into the app</p>
           </div>
 
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+
             <div className="space-y-2">
               <label className="text-sm font-bold text-slate-700 ml-1">Username or Email</label>
               <div className="relative group">
                 <input 
                   type="text" 
                   placeholder="e.g. alex@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-6 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                 />
               </div>
@@ -69,12 +112,18 @@ export default function Login() {
               <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
               <div className="relative group">
                 <input 
-                  type="password" 
+                  type={showPassword ? "text" : "password"} 
                   placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-6 pr-14 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                 />
-                <button type="button" className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors">
-                  <Eye size={20} />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
@@ -87,7 +136,7 @@ export default function Login() {
               <a href="#" className="font-bold text-primary hover:underline">Forgot Password?</a>
             </div>
 
-            <button className="w-full bg-primary text-white py-5 rounded-2xl font-bold hover:bg-primary-hover transition-all shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]">
+            <button type="submit" className="w-full bg-primary text-white py-5 rounded-2xl font-bold hover:bg-primary-hover transition-all shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]">
               Log In
             </button>
 

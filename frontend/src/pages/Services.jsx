@@ -1,4 +1,4 @@
-import { motion as Motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { Car, Bike, Zap, Droplets, Home, Star, MapPin, CheckCircle2, Clock } from 'lucide-react';
 
 export default function Services() {
@@ -53,15 +53,15 @@ export default function Services() {
       <section className="relative py-24 bg-slate-50 overflow-hidden">
         <div className="absolute inset-0 bg-primary/5 opacity-50" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <Motion.div
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm border border-slate-100 mb-8"
           >
             <CheckCircle2 size={16} className="text-primary" />
             <span className="text-xs font-semibold text-primary uppercase tracking-wider">The #1 Maintenance Marketplace in Cambodia</span>
-          </Motion.div>
-          <Motion.h1 
+          </motion.div>
+          <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -69,15 +69,15 @@ export default function Services() {
           >
             Trusted Home Services in <br />
             <span className="text-primary">Cambodia</span>
-          </Motion.h1>
-          <Motion.p 
+          </motion.h1>
+          <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed"
           >
             Find professional fixers for your home, car, and bikes. High-quality services delivered right to your doorstep in Phnom Penh and Siem Reap.
-          </Motion.p>
+          </motion.p>
         </div>
       </section>
 
@@ -91,7 +91,7 @@ export default function Services() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {categories.map((cat, idx) => (
-              <Motion.div
+              <motion.div
                 key={cat.title}
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -104,7 +104,7 @@ export default function Services() {
                 </div>
                 <h3 className="text-xl font-display font-bold text-slate-900 mb-3">{cat.title}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed mb-8">{cat.desc}</p>
-              </Motion.div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -120,7 +120,7 @@ export default function Services() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {fixers.map((fixer, idx) => (
-              <Motion.div
+              <motion.div
                 key={fixer.name}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -145,7 +145,7 @@ export default function Services() {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <h3 className="text-xl font-display font-bold text-slate-900">{fixer.name}</h3>
-                      <p className="text-slate-500 text-sm">{fixer.role} - {fixer.exp}</p>
+                      <p className="text-slate-500 text-sm">{fixer.role} • {fixer.exp}</p>
                     </div>
                     <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg">
                       <Star size={14} className="text-amber-500 fill-amber-500" />
@@ -164,7 +164,7 @@ export default function Services() {
                     </div>
                   </div>
                 </div>
-              </Motion.div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -172,5 +172,3 @@ export default function Services() {
     </div>
   );
 }
-
-
