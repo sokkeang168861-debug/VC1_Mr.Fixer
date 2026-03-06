@@ -50,4 +50,28 @@ const getAllCategories = (req, res) => {
   });
 };
 
-module.exports = { getUsers, getCurrentUser, getAllCategories };
+
+const providersEachCategory = (req, res) => {
+  const db = req.app.get("db");
+  const { categoryId } = req.params; // get category id from URL
+
+  User.providersEachCategory(db, categoryId, (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Failed to fetch providers",
+        error: err.message
+      });
+    }
+
+    const formatted = results.map((row) => {
+      if (row.profile_img && Buffer.isBuffer(row.profile_img)) {
+        row.profile_img = `data:image/jpeg;base64,${row.profile_img.toString("base64")}`;
+      }
+      return row;
+    });
+
+    res.json(formatted);
+  });
+};
+
+module.exports = { getUsers, getCurrentUser, getAllCategories, providersEachCategory };

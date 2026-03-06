@@ -30,6 +30,26 @@ class User {
   static getAllCategories(db, callback) {
     db.query("SELECT * FROM service_categories", callback);
   }
+
+static providersEachCategory(db, serviceCategory, callback) {
+  const sql = `
+    SELECT 
+      u.full_name,
+      u.profile_img,
+      u.email,
+      u.phone,
+      sp.company_name,
+      sp.location
+    FROM users u
+    INNER JOIN service_providers sp ON sp.user_id = u.id
+    INNER JOIN services s ON s.provider_id = sp.id
+    INNER JOIN service_categories sc ON sc.id = s.category_id
+    WHERE sc.id = ?
+  `;
+
+  db.query(sql, [serviceCategory], callback);
+}
+
 }
 
 module.exports = User;
