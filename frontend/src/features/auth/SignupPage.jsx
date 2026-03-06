@@ -35,8 +35,8 @@ export default function Signup() {
         email,
         password,
       });
-      setSuccess("Registration successful! Redirecting to login...");
-      setTimeout(() => navigate("/login"), 1500);
+      setSuccess("Registration successful! Redirecting to dashboard...");
+      setTimeout(() => navigate("/dashboard/customer"), 1500);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Registration failed");
