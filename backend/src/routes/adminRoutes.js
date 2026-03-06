@@ -5,6 +5,7 @@ const ServiceCategoryController = require("../controllers/serviceCategoryControl
 const protect = require("../middleware/authMiddleware");
 
 router.post("/createCategory", protect, ServiceCategoryController.createCategory);
+router.put("/updateCategory/:id", protect, ServiceCategoryController.updateCategory);
 
 
 module.exports = router;

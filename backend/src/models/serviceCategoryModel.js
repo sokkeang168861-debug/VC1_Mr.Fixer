@@ -26,6 +26,19 @@ class ServiceCategoryModel {
     });
   }
 
+  static updateCategory(db, id, { name, description }) {
+    return new Promise((resolve, reject) => {
+      db.query(
+        "UPDATE service_categories SET name = ?, description = ? WHERE id = ?",
+        [name, description, id],
+        (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }
+      );
+    });
+  }
+
 }
 
 module.exports = ServiceCategoryModel;
