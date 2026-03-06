@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { getUsers } = require("../controllers/serviceCategoryController");
+
+const ServiceCategoryController = require("../controllers/serviceCategoryController");
 const protect = require("../middleware/authMiddleware");
 
-router.get("/category", protect, getUsers); // only logged-in users can access
+router.post("/createCategory", protect, ServiceCategoryController.createCategory);
+
 
 module.exports = router;

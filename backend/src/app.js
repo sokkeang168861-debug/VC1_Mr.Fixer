@@ -4,6 +4,7 @@ const db = require("./config/db");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 
 const app = express();
 
@@ -27,5 +28,6 @@ app.get("/api", (req, res) => {
 // mount route
 app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
+app.use("/admin", adminRoutes);
 
 module.exports = app;
