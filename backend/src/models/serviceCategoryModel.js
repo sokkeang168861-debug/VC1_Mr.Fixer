@@ -1,0 +1,23 @@
+class ServiceCategoryModel {
+
+    static async createCategory(db, { name, description }) {
+        return new Promise((resolve, reject) => {
+            db.query(
+                "INSERT INTO service_categories (name, description) VALUES (?, ?)",
+                [name, description],
+                (err, result) => {
+                    if (err) reject(err);
+                    else resolve(result);
+                }
+            );
+        });
+    }
+    static findCategory(db, name) {
+      return new Promise((resolve, reject) => {
+          db.query("SELECT * FROM service_categories WHERE name = ?", [name], (err, results) => {
+              if (err) reject(err);
+              else resolve(results[0]);
+          });
+      });
+}
+}

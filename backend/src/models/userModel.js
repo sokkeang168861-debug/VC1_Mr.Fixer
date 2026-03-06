@@ -1,12 +1,3 @@
-// class User {
-//   static getAllUsers(db, callback) {
-//     db.query("SELECT * FROM users", callback);
-//   }
-// }
-
-// module.exports = User;
-
-
 const bcrypt = require("bcrypt");
 
 class User {
