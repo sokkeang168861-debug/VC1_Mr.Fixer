@@ -1,10 +1,10 @@
 class ServiceCategoryModel {
 
-  static async createCategory(db, { name, description }) {
+  static async createCategory(db, { name, description, image }) {
     return new Promise((resolve, reject) => {
       db.query(
-        "INSERT INTO service_categories (name, description) VALUES (?, ?)",
-        [name, description],
+        "INSERT INTO service_categories (name, description, image) VALUES (?, ?, ?)",
+        [name, description, image],
         (err, result) => {
           if (err) reject(err);
           else resolve(result);

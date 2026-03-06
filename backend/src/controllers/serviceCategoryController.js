@@ -6,11 +6,17 @@ class ServiceCategoryController {
         const db = req.app.get("db");
         const { name, description } = req.body;
 
+        const image = req.file ? req.file.buffer : null;
+
         try {
             const existing = await ServiceCategoryModel.findCategory(db, name);
             if (existing) return res.status(400).json({ message: "This category already exists" });
 
-            const result = await ServiceCategoryModel.createCategory(db, { name, description });
+            const result = await ServiceCategoryModel.createCategory(db, {
+                name,
+                description,
+                image
+            });
 
             res.status(201).json({
                 message: "Category created",
@@ -18,11 +24,14 @@ class ServiceCategoryController {
             });
 
         } catch (err) {
+
             res.status(500).json({
                 message: "Create category failed",
                 error: err.message
             });
+
         }
+
     }
 
     static async updateCategory(req, res) {
