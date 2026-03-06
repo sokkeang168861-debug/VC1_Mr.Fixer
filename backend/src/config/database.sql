@@ -1,6 +1,7 @@
 -- Create database
 CREATE DATABASE IF NOT EXISTS mr_fixer_db;
 USE mr_fixer_db;
+SET GLOBAL max_allowed_packet = 67108864;
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
@@ -17,3 +18,4 @@ CREATE TABLE IF NOT EXISTS users (
 INSERT INTO users (name, email, password, role) VALUES 
 ('Admin User', 'admin@example.com', '$2b$10$YourHashedPasswordHere', 'admin') 
 ON DUPLICATE KEY UPDATE id=id;
+
