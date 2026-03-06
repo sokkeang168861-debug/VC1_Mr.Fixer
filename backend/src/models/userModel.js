@@ -1,12 +1,3 @@
-// class User {
-//   static getAllUsers(db, callback) {
-//     db.query("SELECT * FROM users", callback);
-//   }
-// }
-
-// module.exports = User;
-
-
 const bcrypt = require("bcrypt");
 
 class User {
@@ -35,6 +26,9 @@ class User {
         else resolve(results[0]);
       });
     });
+  }
+  static getAllCategories(db, callback) {
+    db.query("SELECT * FROM service_categories", callback);
   }
 }
 

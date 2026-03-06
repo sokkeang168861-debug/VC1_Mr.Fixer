@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { getUsers } = require("../controllers/userController");
+const { getUsers, getCurrentUser, getAllCategories } = require("../controllers/userController");
 const protect = require("../middleware/authMiddleware");
 
 router.get("/", protect, getUsers); // only logged-in users can access
+router.get("/currentUser", protect, getCurrentUser); // only logged-in users can access
+router.get("/allCategories", getAllCategories);
 
 module.exports = router;
