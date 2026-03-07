@@ -94,6 +94,11 @@ class ServiceCategoryController {
         const image = req.file ? req.file.buffer : null;
 
         try {
+            if (!name || !description) {
+                return res.status(400).json({
+                    message: "Name and description are required"
+                });
+            }
 
             const existing = await ServiceCategoryModel.findCategory(db, name);
 
@@ -102,6 +107,17 @@ class ServiceCategoryController {
                 return res.status(400).json({
                     message: "Category name already exists"
                 });
+            }
+
+            if (req.file) {
+                const uploadDir = path.join(__dirname, "../../uploads/service-categories");
+                fs.mkdirSync(uploadDir, { recursive: true });
+
+                const ext = path.extname(req.file.originalname || "");
+                const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+                const filePath = path.join(uploadDir, fileName);
+
+                fs.writeFileSync(filePath, req.file.buffer);
             }
 
             const result = await ServiceCategoryModel.updateCategory(db, id, {
