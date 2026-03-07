@@ -1,16 +1,38 @@
 const ServiceCategoryModel = require("../models/serviceCategoryModel");
+const fs = require("fs");
+const path = require("path");
 
 class ServiceCategoryController {
 
     static async createCategory(req, res) {
-        const db = req.app.get("db");
-        const { name, description } = req.body;
-
-        const image = req.file ? req.file.buffer : null;
-
         try {
+            const db = req.app.get("db");
+            const { name, description } = req.body;
+            const image = req.file ? req.file.buffer : null;
+
+            if (!name || !description) {
+                return res.status(400).json({
+                    message: "Name and description are required"
+                });
+            }
+
             const existing = await ServiceCategoryModel.findCategory(db, name);
-            if (existing) return res.status(400).json({ message: "This category already exists" });
+            if (existing) {
+                return res.status(400).json({
+                    message: "Category name already exists"
+                });
+            }
+
+            if (req.file) {
+                const uploadDir = path.join(__dirname, "../../uploads/service-categories");
+                fs.mkdirSync(uploadDir, { recursive: true });
+
+                const ext = path.extname(req.file.originalname || "");
+                const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+                const filePath = path.join(uploadDir, fileName);
+
+                fs.writeFileSync(filePath, req.file.buffer);
+            }
 
             const result = await ServiceCategoryModel.createCategory(db, {
                 name,
@@ -19,25 +41,57 @@ class ServiceCategoryController {
             });
 
             res.status(201).json({
-                message: "Category created",
-                categoryId: result.insertId
+                message: "Category created successfully",
+                id: result.insertId
             });
 
-        } catch (err) {
-
+        } catch (error) {
             res.status(500).json({
                 message: "Create category failed",
-                error: err.message
+                error: error.message
             });
+        }
+    }
 
+    static async findCategory(req, res) {
+        const db = req.app.get("db");
+        const { name } = req.query;
+
+        if (!name) {
+            return res.status(400).json({
+                message: "Query parameter 'name' is required"
+            });
         }
 
+        try {
+            const category = await ServiceCategoryModel.findCategory(db, name);
+
+            if (!category) {
+                return res.status(404).json({
+                    message: "Category not found"
+                });
+            }
+
+            res.status(200).json({
+                id: category.id,
+                name: category.name,
+                description: category.description,
+                hasImage: !!category.image
+            });
+        } catch (err) {
+            res.status(500).json({
+                message: "Find category failed",
+                error: err.message
+            });
+        }
     }
 
     static async updateCategory(req, res) {
         const db = req.app.get("db");
         const { id } = req.params;
         const { name, description } = req.body;
+
+        const image = req.file ? req.file.buffer : null;
 
         try {
 
@@ -50,7 +104,11 @@ class ServiceCategoryController {
                 });
             }
 
-            const result = await ServiceCategoryModel.updateCategory(db, id, { name, description });
+            const result = await ServiceCategoryModel.updateCategory(db, id, {
+                name,
+                description,
+                image
+            });
 
             if (result.affectedRows === 0) {
                 return res.status(404).json({
