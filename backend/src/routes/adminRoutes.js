@@ -10,6 +10,7 @@ router.post("/createCategory", protect, upload.single("image"), ServiceCategoryC
 router.get("/findCategory", protect, ServiceCategoryController.findCategory);
 // router.put("/updateCategory/:id", protect, ServiceCategoryController.updateCategory);
 router.put("/updateCategory/:id", protect, upload.single("image"), ServiceCategoryController.updateCategory);
+router.delete("/deleteCategory/:id", protect, ServiceCategoryController.deleteCategory);
 
 
 module.exports = router;

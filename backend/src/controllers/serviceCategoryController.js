@@ -143,6 +143,30 @@ class ServiceCategoryController {
             });
         }
     }
+
+    static async deleteCategory(req, res) {
+        const db = req.app.get("db");
+        const { id } = req.params;
+
+        try {
+            const result = await ServiceCategoryModel.deleteCategory(db, id);
+
+            if (result.affectedRows === 0) {
+                return res.status(404).json({
+                    message: "Category not found"
+                });
+            }
+
+            res.status(200).json({
+                message: "Category deleted successfully"
+            });
+        } catch (err) {
+            res.status(500).json({
+                message: "Delete category failed",
+                error: err.message
+            });
+        }
+    }
 }
 
 module.exports = ServiceCategoryController;

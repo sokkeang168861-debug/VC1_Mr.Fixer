@@ -69,6 +69,19 @@ class ServiceCategoryModel {
     });
   }
 
+  static async deleteCategory(db, id) {
+    return new Promise((resolve, reject) => {
+      db.query(
+        "DELETE FROM service_categories WHERE id = ?",
+        [id],
+        (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }
+      );
+    });
+  }
+
 }
 
 module.exports = ServiceCategoryModel;
