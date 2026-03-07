@@ -16,10 +16,10 @@ export default function CustomerDashboard() {
     <div className="flex flex-col min-h-screen">
       <CustomerNavbar onLogout={handleLogout} />
 
-      <div style={{ textAlign: "center", marginTop: "100px" }}>
-        <h1>Hello Customer 👋</h1>
-        <p>Welcome to our website</p>
-      </div>
+      <main className="flex-grow p-8">
+        <h1 className="mb-4 text-2xl font-bold">Customer Dashboard</h1>
+        {/* dashboard content here */}
+      </main>
 
       <CustomerFooter />
     </div>

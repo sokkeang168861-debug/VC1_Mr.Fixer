@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 export default function ProtectedRoute({ children, requiredRole }) {
   const token = localStorage.getItem("token");
   if (!token) {
-    return <Navigate to="/features/dashboard/customer/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   try {
