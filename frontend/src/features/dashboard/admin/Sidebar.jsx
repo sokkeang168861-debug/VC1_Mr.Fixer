@@ -1,5 +1,8 @@
 import React from 'react';
 import { LogOut } from 'lucide-react';
+import { LuLayoutDashboard } from "react-icons/lu";
+import { GiHammerNails, GiBoxUnpacking  ,GiTakeMyMoney } from "react-icons/gi";
+import { FaUsersCog } from "react-icons/fa";
 
 // NavItem Component
 const NavItem = ({ icon, children, active }) => (
@@ -37,11 +40,11 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-2 flex-1">
-        <NavItem icon="▣" active>Dashboard</NavItem>
-        <NavItem icon="🛠️">Fixer Management</NavItem>
-        <NavItem icon="👥">User Management</NavItem>
-        <NavItem icon="📂">Service Categories</NavItem>
-        <NavItem icon="💳">Transactions</NavItem>
+        <NavItem icon={<LuLayoutDashboard />} active>Dashboard</NavItem>
+        <NavItem icon={<GiHammerNails />}>Fixer Management</NavItem>
+        <NavItem icon={<FaUsersCog />}>User Management</NavItem>
+        <NavItem icon={<GiBoxUnpacking />}>Service Categories</NavItem>
+        <NavItem icon={<GiTakeMyMoney />}>Transactions</NavItem>
       </nav>
 
       {/* Logout Button */}
