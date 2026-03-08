@@ -29,14 +29,20 @@ export default function Signup() {
     }
 
     try {
-      await httpClient.post("/auth/register", {
+      const { data } = await httpClient.post("/auth/register", {
         full_name: fullName,
         phone,
         email,
         password,
       });
-      setSuccess("Registration successful! Redirecting to login...");
-      setTimeout(() => navigate("/login"), 1500);
+
+      // store the auth token returned by the backend
+      if (data?.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      setSuccess("Registration successful! Redirecting to dashboard...");
+      setTimeout(() => navigate("/dashboard/customer"), 1500);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Registration failed");

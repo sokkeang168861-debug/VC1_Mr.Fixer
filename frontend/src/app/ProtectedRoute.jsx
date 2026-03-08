@@ -10,7 +10,7 @@ export default function ProtectedRoute({ children, requiredRole }) {
     const payload = JSON.parse(atob(token.split(".")[1]));
     if (requiredRole && payload.role !== requiredRole) {
       // user logged in but doesn't have the right role
-      return <Navigate to="/" replace />;
+      return <Navigate to="/features/dashboard/customer/" replace />;
     }
   } catch (e) {
     // token not parseable or invalid
