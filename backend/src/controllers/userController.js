@@ -12,4 +12,66 @@ const getUsers = (req, res) => {
   });
 };
 
-module.exports = { getUsers };
+const currentUser = (req, res) => {
+  const db = req.app.get("db");
+
+  User.findByEmail(db, (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Failed to fetch users" });
+    }
+
+    res.json(results);
+  });
+};
+
+const getCurrentUser = (req, res) => {
+  // req.user is set by authMiddleware (decoded JWT payload)
+  res.json(req.user);
+};
+
+const getAllCategories = (req, res) => {
+  const db = req.app.get("db");
+
+  User.getAllCategories(db, (err, results) => {
+    if (err) {
+      return res.status(500).json({ message: "Failed to fetch service categories" });
+    }
+
+    const formatted = results.map((row) => {
+      if (row.image && Buffer.isBuffer(row.image)) {
+        // Convert binary image blob into a base64 string so it can be embedded in an <img />
+        // If you store the mime type separately, you can replace 'image/jpeg' accordingly.
+        row.image = `data:image/jpeg;base64,${row.image.toString("base64")}`;
+      }
+      return row;
+    });
+
+    res.json(formatted);
+  });
+};
+
+
+const providersEachCategory = (req, res) => {
+  const db = req.app.get("db");
+  const { categoryId } = req.params; // get category id from URL
+
+  User.providersEachCategory(db, categoryId, (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        message: "Failed to fetch providers",
+        error: err.message
+      });
+    }
+
+    const formatted = results.map((row) => {
+      if (row.profile_img && Buffer.isBuffer(row.profile_img)) {
+        row.profile_img = `data:image/jpeg;base64,${row.profile_img.toString("base64")}`;
+      }
+      return row;
+    });
+
+    res.json(formatted);
+  });
+};
+
+module.exports = { getUsers, getCurrentUser, getAllCategories, providersEachCategory };
