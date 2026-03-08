@@ -1,26 +1,33 @@
 import React from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { LuLayoutDashboard } from "react-icons/lu";
-import { GiHammerNails, GiBoxUnpacking  ,GiTakeMyMoney } from "react-icons/gi";
+import { GiHammerNails, GiBoxUnpacking, GiTakeMyMoney } from "react-icons/gi";
 import { FaUsersCog } from "react-icons/fa";
 
 // NavItem Component
-const NavItem = ({ icon, children, active }) => (
-  <div className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all cursor-pointer ${
-    active 
-      ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-slate-900 font-semibold shadow-sm' 
-      : 'text-gray-600 hover:bg-gray-100'
-  }`}>
+const NavItem = ({ icon, children, to, end = false }) => (
+  <NavLink 
+    to={to}
+    end={end}
+    className={({ isActive }) => `flex items-center gap-3 px-3 py-3 rounded-lg transition-all cursor-pointer ${
+      isActive 
+        ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-slate-900 font-semibold shadow-sm' 
+        : 'text-gray-600 hover:bg-gray-100'
+    }`}
+  >
     <span className="text-xl w-6 text-center">{icon}</span>
     <span className="text-sm font-medium">{children}</span>
-  </div>
+  </NavLink>
 );
 
 // Sidebar Component
 export default function Sidebar() {
+  const navigate = useNavigate();
+
   const handleLogout = () => {
     localStorage.removeItem('token');
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   return (
@@ -40,11 +47,11 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-2 flex-1">
-        <NavItem icon={<LuLayoutDashboard />} active>Dashboard</NavItem>
-        {/* <NavItem icon={<GiHammerNails />}>Fixer Management</NavItem>
-        <NavItem icon={<FaUsersCog />}>User Management</NavItem>
-        <NavItem icon={<GiBoxUnpacking />}>Service Categories</NavItem>
-        <NavItem icon={<GiTakeMyMoney />}>Transactions</NavItem> */}
+        <NavItem icon={<LuLayoutDashboard />} to="/dashboard/admin" end>Dashboard</NavItem>
+        <NavItem icon={<GiBoxUnpacking />} to="/dashboard/admin/service-categories">Service Categories</NavItem>
+        {/* <NavItem icon={<GiHammerNails />} to="/dashboard/admin/fixers">Fixer Management</NavItem>
+        <NavItem icon={<FaUsersCog />} to="/dashboard/admin/users">User Management</NavItem>
+        <NavItem icon={<GiTakeMyMoney />} to="/dashboard/admin/transactions">Transactions</NavItem> */}
       </nav>
 
       {/* Logout Button */}

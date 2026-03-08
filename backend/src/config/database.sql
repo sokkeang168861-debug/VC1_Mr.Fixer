@@ -1,6 +1,7 @@
 -- Create database
 CREATE DATABASE IF NOT EXISTS mr_fixer_db;
 USE mr_fixer_db;
+SET GLOBAL max_allowed_packet = 67108864;
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
@@ -18,3 +19,13 @@ CREATE TABLE IF NOT EXISTS users (
 INSERT INTO users (full_name, phone, email, password, role) VALUES 
 ('Admin User', '1234567890', 'admin@example.com', '$2b$10$rQz8xHqKjXZvXJmXQqXqXOZGZxZxZxZxZxZxZxZxZxZxZxZxZxZxZ', 'admin') 
 ON DUPLICATE KEY UPDATE id=id;
+
+-- Create service_categories table
+CREATE TABLE IF NOT EXISTS service_categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  image MEDIUMBLOB,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+

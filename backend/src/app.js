@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const db = require("./config/db");
 
 const authRoutes = require("./routes/authRoutes");
@@ -14,6 +15,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.set("db", db);
 
 app.get("/api", (req, res) => {
@@ -28,6 +30,7 @@ app.get("/api", (req, res) => {
 // mount route
 app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
+app.use("/admin", adminRoutes);
 app.use("/api/admin", adminRoutes);
 
 module.exports = app;

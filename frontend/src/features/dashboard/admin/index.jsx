@@ -1,9 +1,10 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import Sidebar from './Sidebar.jsx';
 import httpClient from '../../../api/httpClient';
 import { FaPeopleLine, FaArrowsDownToPeople, FaUsers, FaPeopleCarryBox  } from "react-icons/fa6";
+import { Outlet } from 'react-router-dom';
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip);
 
@@ -145,15 +146,17 @@ function Dashboard() {
   );
 }
 
-export default function App() {
+export default function AdminLayout() {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Sidebar />
-      <div className="flex-1 ml-64 overflow-y-auto">
+      <div className="flex-1 ml-64 overflow-y-auto text-slate-900">
         <main className="p-8 md:p-12">
-          <Dashboard />
+          <Outlet />
         </main>
       </div>
     </div>
   );
 }
+
+AdminLayout.Dashboard = Dashboard;

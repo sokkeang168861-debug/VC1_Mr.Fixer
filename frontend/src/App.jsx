@@ -1,21 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { useEffect } from 'react'
 import axios from 'axios'
 
 function App() {
   const [count, setCount] = useState(0)
   const [array, setArray] = useState([]);
 
-  const fetchAPI = async () => {
-    const response = await axios.get("http://localhost:5000/api");
-    setArray(response.data.fruits);
-    console.log(response.data.fruits);
-  };
-
   useEffect(() => {
+    const fetchAPI = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/api");
+        setArray(response.data.fruits);
+        console.log(response.data.fruits);
+      } catch (error) {
+        console.error("Error fetching API:", error);
+      }
+    };
     fetchAPI();
   }, []);
 
@@ -53,4 +55,3 @@ function App() {
 }
 
 export default App
-
