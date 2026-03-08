@@ -6,11 +6,11 @@ export default function Sidebar() {
 
   const menuItems = [
     { name: "Home", icon: Home, path: "/dashboard/fixer" },
-    { name: "Profile", icon: User, path: "/dashboard/fixer/profile" },
-    { name: "Bookings", icon: Calendar, path: "/dashboard/fixer/bookings" },
-    { name: "Payments", icon: CreditCard, path: "/dashboard/fixer/payments" },
-    { name: "Reviews", icon: MessageSquare, path: "/dashboard/fixer/reviews" },
-    { name: "Customers", icon: Users, path: "/dashboard/fixer/customers" },
+    // { name: "Profile", icon: User, path: "/dashboard/fixer/profile" },
+    // { name: "Bookings", icon: Calendar, path: "/dashboard/fixer/bookings" },
+    // { name: "Payments", icon: CreditCard, path: "/dashboard/fixer/payments" },
+    // { name: "Reviews", icon: MessageSquare, path: "/dashboard/fixer/reviews" },
+    // { name: "Customers", icon: Users, path: "/dashboard/fixer/customers" },
   ];
 
   return (
