@@ -41,10 +41,10 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex flex-col gap-2 flex-1">
         <NavItem icon={<LuLayoutDashboard />} active>Dashboard</NavItem>
-        <NavItem icon={<GiHammerNails />}>Fixer Management</NavItem>
+        {/* <NavItem icon={<GiHammerNails />}>Fixer Management</NavItem>
         <NavItem icon={<FaUsersCog />}>User Management</NavItem>
         <NavItem icon={<GiBoxUnpacking />}>Service Categories</NavItem>
-        <NavItem icon={<GiTakeMyMoney />}>Transactions</NavItem>
+        <NavItem icon={<GiTakeMyMoney />}>Transactions</NavItem> */}
       </nav>
 
       {/* Logout Button */}
