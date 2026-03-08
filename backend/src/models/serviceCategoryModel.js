@@ -13,6 +13,18 @@ class ServiceCategoryModel {
     });
   }
 
+  static async getAllCategories(db) {
+    return new Promise((resolve, reject) => {
+      db.query(
+        "SELECT id, name, description, image FROM service_categories",
+        (err, results) => {
+          if (err) reject(err);
+          else resolve(results);
+        }
+      );
+    });
+  }
+
   static findCategory(db, name) {
     return new Promise((resolve, reject) => {
       db.query(

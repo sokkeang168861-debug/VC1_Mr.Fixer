@@ -12,6 +12,7 @@ import SignupPage from "../features/auth/SignupPage";
 import AdminDashboard from "../features/dashboard/admin";
 import CustomerDashboard from "../features/dashboard/customer";
 import FixerDashboard from "../features/dashboard/fixer";
+import ServiceCategories from "../features/dashboard/admin/service_categories";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -57,7 +58,11 @@ function InnerRoutes() {
                   <AdminDashboard />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<AdminDashboard.Dashboard />} />
+              <Route path="service-categories" element={<ServiceCategories />} />
+            </Route>
+            
             <Route
               path="/dashboard/customer"
               element={

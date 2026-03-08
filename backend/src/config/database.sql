@@ -19,3 +19,12 @@ INSERT INTO users (name, email, password, role) VALUES
 ('Admin User', 'admin@example.com', '$2b$10$YourHashedPasswordHere', 'admin') 
 ON DUPLICATE KEY UPDATE id=id;
 
+-- Create service_categories table
+CREATE TABLE IF NOT EXISTS service_categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  image MEDIUMBLOB,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+

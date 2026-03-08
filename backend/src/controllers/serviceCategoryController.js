@@ -4,6 +4,25 @@ const path = require("path");
 
 class ServiceCategoryController {
 
+    static async getAllCategories(req, res) {
+        const db = req.app.get("db");
+        try {
+            const categories = await ServiceCategoryModel.getAllCategories(db);
+            const data = categories.map(cat => ({
+                id: cat.id,
+                name: cat.name,
+                description: cat.description,
+                imageUrl: cat.image ? `data:image/jpeg;base64,${cat.image.toString('base64')}` : null
+            }));
+            res.status(200).json({ data });
+        } catch (err) {
+            res.status(500).json({
+                message: "Get all categories failed",
+                error: err.message
+            });
+        }
+    }
+
     static async createCategory(req, res) {
         try {
             const db = req.app.get("db");
@@ -21,17 +40,6 @@ class ServiceCategoryController {
                 return res.status(400).json({
                     message: "Category name already exists"
                 });
-            }
-
-            if (req.file) {
-                const uploadDir = path.join(__dirname, "../../uploads/service-categories");
-                fs.mkdirSync(uploadDir, { recursive: true });
-
-                const ext = path.extname(req.file.originalname || "");
-                const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-                const filePath = path.join(uploadDir, fileName);
-
-                fs.writeFileSync(filePath, req.file.buffer);
             }
 
             const result = await ServiceCategoryModel.createCategory(db, {
@@ -107,17 +115,6 @@ class ServiceCategoryController {
                 return res.status(400).json({
                     message: "Category name already exists"
                 });
-            }
-
-            if (req.file) {
-                const uploadDir = path.join(__dirname, "../../uploads/service-categories");
-                fs.mkdirSync(uploadDir, { recursive: true });
-
-                const ext = path.extname(req.file.originalname || "");
-                const fileName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-                const filePath = path.join(uploadDir, fileName);
-
-                fs.writeFileSync(filePath, req.file.buffer);
             }
 
             const result = await ServiceCategoryModel.updateCategory(db, id, {
