@@ -5,15 +5,16 @@ USE mr_fixer_db;
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
+  full_name VARCHAR(255) NOT NULL,
+  phone VARCHAR(20),
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role ENUM('admin', 'customer', 'fixer') DEFAULT 'customer',
+  role ENUM('admin', 'customer', 'technician') DEFAULT 'customer',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Create admin user (optional)
-INSERT INTO users (name, email, password, role) VALUES 
-('Admin User', 'admin@example.com', '$2b$10$YourHashedPasswordHere', 'admin') 
+-- Create admin user with proper password hash
+INSERT INTO users (full_name, phone, email, password, role) VALUES 
+('Admin User', '1234567890', 'admin@example.com', '$2b$10$rQz8xHqKjXZvXJmXQqXqXOZGZxZxZxZxZxZxZxZxZxZxZxZxZxZxZ', 'admin') 
 ON DUPLICATE KEY UPDATE id=id;
