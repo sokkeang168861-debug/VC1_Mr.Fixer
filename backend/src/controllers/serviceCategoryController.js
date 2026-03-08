@@ -1,6 +1,4 @@
 const ServiceCategoryModel = require("../models/serviceCategoryModel");
-const fs = require("fs");
-const path = require("path");
 
 class ServiceCategoryController {
 
@@ -12,10 +10,13 @@ class ServiceCategoryController {
                 id: cat.id,
                 name: cat.name,
                 description: cat.description,
-                imageUrl: cat.image ? `data:image/jpeg;base64,${cat.image.toString('base64')}` : null
+                imageUrl: (cat.image && Buffer.isBuffer(cat.image)) 
+                  ? `data:image/jpeg;base64,${cat.image.toString('base64')}` 
+                  : null
             }));
             res.status(200).json({ data });
         } catch (err) {
+            console.error("Get All Categories Error:", err);
             res.status(500).json({
                 message: "Get all categories failed",
                 error: err.message
@@ -54,6 +55,7 @@ class ServiceCategoryController {
             });
 
         } catch (error) {
+            console.error("Create Category Error:", error);
             res.status(500).json({
                 message: "Create category failed",
                 error: error.message
@@ -87,6 +89,7 @@ class ServiceCategoryController {
                 hasImage: !!category.image
             });
         } catch (err) {
+            console.error("Find Category Error:", err);
             res.status(500).json({
                 message: "Find category failed",
                 error: err.message
@@ -134,6 +137,7 @@ class ServiceCategoryController {
             });
 
         } catch (err) {
+            console.error("Update Category Error:", err);
             res.status(500).json({
                 message: "Update category failed",
                 error: err.message
@@ -158,6 +162,7 @@ class ServiceCategoryController {
                 message: "Category deleted successfully"
             });
         } catch (err) {
+            console.error("Delete Category Error:", err);
             res.status(500).json({
                 message: "Delete category failed",
                 error: err.message
@@ -167,4 +172,3 @@ class ServiceCategoryController {
 }
 
 module.exports = ServiceCategoryController;
-

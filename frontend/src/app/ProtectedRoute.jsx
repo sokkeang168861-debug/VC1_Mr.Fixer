@@ -6,16 +6,21 @@ export default function ProtectedRoute({ children, requiredRole }) {
     return <Navigate to="/login" replace />;
   }
 
+  let payload;
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    if (requiredRole && payload.role !== requiredRole) {
-      // user logged in but doesn't have the right role
-      return <Navigate to="/" replace />;
-    }
+    payload = JSON.parse(atob(token.split(".")[1]));
   } catch (e) {
-    // token not parseable or invalid
     console.error("Invalid token", e);
     return <Navigate to="/login" replace />;
+  }
+
+  if (requiredRole && payload.role !== requiredRole) {
+    // user logged in but doesn't have the right role
+    // Redirect to their appropriate dashboard or home
+    if (payload.role === 'admin') return <Navigate to="/dashboard/admin" replace />;
+    if (payload.role === 'customer') return <Navigate to="/dashboard/customer" replace />;
+    if (payload.role === 'fixer') return <Navigate to="/dashboard/fixer" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;
