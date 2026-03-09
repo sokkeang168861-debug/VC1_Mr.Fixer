@@ -43,11 +43,11 @@ export default function StatsCards() {
         return (
           <div
             key={index}
-            className="bg-white rounded-lg p-6 shadow-lg border border-gray-200"
+            className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-full ${stat.iconBg}`}>
-                <Icon className={`w-6 h-6 ${stat.iconColor}`} />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.iconBg}`}>
+                <Icon className={`w-5 h-5 ${stat.iconColor}`} />
               </div>
               {stat.tag && (
                 <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
@@ -60,8 +60,8 @@ export default function StatsCards() {
                 </span>
               )}
             </div>
-            <h3 className="text-sm font-medium text-gray-600 mb-1">{stat.title}</h3>
-            <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+            <h3 className="text-lg font-medium text-gray-500 mb-1">{stat.title}</h3>
+            <p className="text-4xl font-bold text-gray-900">{stat.value}</p>
           </div>
         );
       })}

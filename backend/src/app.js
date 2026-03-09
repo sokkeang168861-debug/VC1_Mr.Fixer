@@ -4,6 +4,7 @@ const db = require("./config/db");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const fixerDashboardRoutes = require("./routes/fixerDashboardRoutes");
 
 const app = express();
 
@@ -20,12 +21,11 @@ app.get("/api", (req, res) => {
 });
 
 
-
-
-
-
 // mount route
 app.use("/api/users", userRoutes);
 app.use("/auth", authRoutes);
+app.use("/api/fixer", fixerDashboardRoutes);
+app.use("/api/fixer/dashboard", fixerDashboardRoutes);
+app.use("/fixer", fixerDashboardRoutes);
 
 module.exports = app;
