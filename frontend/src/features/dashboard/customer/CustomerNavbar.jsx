@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Wrench, Calendar, History, Settings, LogOut } from 'lucide-react';
-import httpClient from '../../../api/httpClient';
+import React, { useState, useEffect } from "react";
+import { Wrench, CalendarDays, History, Settings, LogOut, Menu } from "lucide-react";
+import httpClient from "../../../api/httpClient";
 
 export const Sidebar = ({ activeTab, onChange, onLogout }) => {
   const menuItems = [
-    { id: 'services', label: 'Services', icon: Wrench },
-    // { id: 'bookings', label: 'Bookings', icon: Calendar },
-    // { id: 'history', label: 'History', icon: History },
-    // { id: 'settings', label: 'Settings', icon: Settings },
+    { id: "services", label: "Services", icon: Wrench },
+    { id: "bookings", label: "Bookings", icon: CalendarDays },
+    { id: "history", label: "History", icon: History },
+    { id: "settings", label: "Settings", icon: Settings },
   ];
 
   return (
-    <div className="w-64 bg-white border-r border-slate-200 h-screen sticky top-0 flex flex-col p-4">
+    <aside className="w-64 bg-white border-r border-slate-200 min-h-screen sticky top-0 flex flex-col p-4">
       <div className="flex items-center gap-2 px-2 mb-8">
         <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
           <Wrench size={24} />
@@ -26,8 +26,8 @@ export const Sidebar = ({ activeTab, onChange, onLogout }) => {
             onClick={() => onChange && onChange(item.id)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
               activeTab === item.id
-                ? 'bg-primary-light text-primary font-semibold'
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                ? "bg-primary-light text-primary font-semibold"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
             }`}
           >
             <item.icon size={20} />
@@ -45,7 +45,7 @@ export const Sidebar = ({ activeTab, onChange, onLogout }) => {
           <span className="font-medium">Logout</span>
         </button>
       </div>
-    </div>
+    </aside>
   );
 };
 
@@ -81,9 +81,11 @@ export const Header = () => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10">
-      <div className="flex-1" />
-      <div className="flex items-center gap-4 ml-8">
+    <header className="h-16 bg-white border-b border-slate-200 px-6 md:px-8 flex items-center justify-between sticky top-0 z-10">
+      <button className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500">
+        <Menu size={18} />
+      </button>
+      <div className="flex items-center gap-4">
         <div className="text-right">{renderUserInfo()}</div>
         <div className="w-12 h-12 rounded-2xl bg-orange-100 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden">
           <img

@@ -74,4 +74,89 @@ const providersEachCategory = (req, res) => {
   });
 };
 
-module.exports = { getUsers, getCurrentUser, getAllCategories, providersEachCategory };
+const getBookingCategories = async (req, res) => {
+  const db = req.app.get("db");
+
+  try {
+    const results = await User.getBookingCategories(db);
+    const formatted = results.map((row) => {
+      if (row.image && Buffer.isBuffer(row.image)) {
+        row.image = `data:image/jpeg;base64,${row.image.toString("base64")}`;
+      }
+      return row;
+    });
+
+    res.json(formatted);
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch booking categories",
+      error: err.message,
+    });
+  }
+};
+
+const createBooking = async (req, res) => {
+  const db = req.app.get("db");
+  const customerId = req.user?.id;
+  const { service_id, issue_description, service_address, scheduled_at } = req.body;
+
+  if (!customerId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  if (!service_id || !issue_description?.trim()) {
+    return res.status(400).json({
+      message: "service_id and issue_description are required",
+    });
+  }
+
+  try {
+    const result = await User.createBooking(db, {
+      customer_id: customerId,
+      service_id: Number(service_id),
+      service_address: service_address?.trim() || null,
+      issue_description: issue_description.trim(),
+      status: "pending",
+      scheduled_at: scheduled_at || null,
+    });
+
+    res.status(201).json({
+      message: "Booking created successfully",
+      bookingId: result.insertId,
+    });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to create booking",
+      error: err.message,
+    });
+  }
+};
+
+const getMyBookings = async (req, res) => {
+  const db = req.app.get("db");
+  const customerId = req.user?.id;
+
+  if (!customerId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const bookings = await User.getBookingsByCustomer(db, customerId);
+    res.json(bookings);
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch bookings",
+      error: err.message,
+    });
+  }
+};
+
+module.exports = {
+  getUsers,
+  getCurrentUser,
+  getAllCategories,
+  providersEachCategory,
+  getBookingCategories,
+  createBooking,
+  getMyBookings,
+};

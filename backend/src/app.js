@@ -31,5 +31,8 @@ app.get("/api", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/users", userRoutes);
+app.use("/auth", authRoutes);
+app.use("/admin", adminRoutes);
 
 module.exports = app;
