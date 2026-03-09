@@ -133,25 +133,10 @@ export default function Login() {
                 <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
                 <span className="text-slate-600 group-hover:text-primary transition-colors">Remember me</span>
               </label>
-              <a href="#" className="font-bold text-primary hover:underline">Forgot Password?</a>
             </div>
 
             <button type="submit" className="w-full bg-primary text-white py-5 rounded-2xl font-bold hover:bg-primary-hover transition-all shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]">
               Log In
-            </button>
-
-            <div className="relative py-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-4 text-slate-400 font-bold tracking-widest">OR</span>
-              </div>
-            </div>
-
-            <button type="button" className="w-full bg-white border border-slate-200 text-slate-700 py-4 rounded-2xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-3">
-              <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
-              Continue with Google
             </button>
           </form>
 

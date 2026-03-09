@@ -203,7 +203,7 @@ export default function Signup() {
               <span className="text-slate-500">By signing up, you agree to sign up into our app</span>
             </div>
 
-            <button className="w-full bg-primary text-white py-5 rounded-2xl font-bold hover:bg-primary-hover transition-all shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]">
+            <button type="submit" className="w-full bg-primary text-white py-5 rounded-2xl font-bold hover:bg-primary-hover transition-all shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]">
               Sign Up
             </button>
           </form>

@@ -29,8 +29,7 @@ app.get("/api", (req, res) => {
 
 // mount route
 app.use("/api/users", userRoutes);
-app.use("/auth", authRoutes);
-app.use("/admin", adminRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 
 module.exports = app;

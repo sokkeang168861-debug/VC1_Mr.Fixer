@@ -7,6 +7,8 @@ import Services from "../pages/Services";
 import Contact from "../pages/Contact";
 import LoginPage from "../features/auth/LoginPage";
 import SignupPage from "../features/auth/SignupPage";
+import NotFoundPage from "./NotFoundPage";
+import ComingSoon from "./ComingSoon";
 
 // dashboard pages
 import AdminDashboard from "../features/dashboard/admin";
@@ -61,6 +63,9 @@ function InnerRoutes() {
             >
               <Route index element={<AdminDashboard.Dashboard />} />
               <Route path="service-categories" element={<ServiceCategories />} />
+              <Route path="users" element={<ComingSoon title="User Management" />} />
+              <Route path="fixers" element={<ComingSoon title="Fixer Management" />} />
+              <Route path="transactions" element={<ComingSoon title="Transactions" />} />
             </Route>
             
             <Route
@@ -70,7 +75,11 @@ function InnerRoutes() {
                   <CustomerDashboard />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<CustomerDashboard.Dashboard />} />
+              <Route path="orders" element={<ComingSoon title="My Orders" />} />
+            </Route>
+
             <Route
               path="/dashboard/fixer"
               element={
@@ -78,7 +87,12 @@ function InnerRoutes() {
                   <FixerDashboard />
                 </ProtectedRoute>
               }
-            />
+            >
+              <Route index element={<FixerDashboard.Dashboard />} />
+              <Route path="jobs" element={<ComingSoon title="My Jobs" />} />
+            </Route>
+
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
         {!isDashboard && <Footer />}
