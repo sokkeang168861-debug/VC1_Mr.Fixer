@@ -14,6 +14,6 @@ router.get("/findCategory", protect, ServiceCategoryController.findCategory);
 router.put("/updateCategory/:id", protect, upload.single("image"), ServiceCategoryController.updateCategory);
 router.delete("/deleteCategory/:id", protect, ServiceCategoryController.deleteCategory);
 
-router.get("/stats", getUserStats);
+router.get("/stats", protect, getUserStats);
 
 module.exports = router;

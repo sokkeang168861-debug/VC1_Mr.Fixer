@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Wrench, Calendar, History, Settings, LogOut } from 'lucide-react';
-import axios from 'axios';
+import httpClient from '../../../api/httpClient';
 
 export const Sidebar = ({ activeTab, onChange, onLogout }) => {
   const menuItems = [
@@ -54,14 +54,8 @@ export const Header = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    axios
-      .get("http://localhost:5000/api/users/currentUser", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+    httpClient
+      .get("/users/currentUser")
       .then((res) => {
         setUser(res.data);
       })
