@@ -6,10 +6,10 @@ export default function Sidebar() {
 
   const menuItems = [
     { name: "Home", icon: Home, path: "/dashboard/fixer" },
-    { name: "Job", icon: BriefcaseBusiness, path: "/dashboard/fixer" },
-    { name: "Profit", icon: TrendingUp, path: "/dashboard/fixer" },
-    { name: "Notification", icon: Bell, path: "/dashboard/fixer" },
-    { name: "Settings", icon: Settings, path: "/dashboard/fixer" },
+    { name: "Job", icon: BriefcaseBusiness, path: "/dashboard/fixer/job" },
+    // { name: "Profit", icon: TrendingUp, path: "/dashboard/fixer/profit" },
+    // { name: "Notification", icon: Bell, path: "/dashboard/fixer/notifications" },
+    // { name: "Settings", icon: Settings, path: "/dashboard/fixer/settings" },
   ];
 
   return (
@@ -23,7 +23,7 @@ export default function Sidebar() {
       <nav className="mt-4">
         {menuItems.map((item, index) => {
           const Icon = item.icon;
-          const isActive = index === 0 && location.pathname === item.path;
+          const isActive = location.pathname === item.path;
           
           return (
             <Link

@@ -12,6 +12,7 @@ import SignupPage from "../features/auth/SignupPage";
 import AdminDashboard from "../features/dashboard/admin";
 import CustomerDashboard from "../features/dashboard/customer";
 import FixerDashboard from "../features/dashboard/fixer";
+import Job from "../features/dashboard/fixer/Job";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -71,6 +72,14 @@ function InnerRoutes() {
               element={
                 <ProtectedRoute requiredRole="fixer">
                   <FixerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/fixer/job"
+              element={
+                <ProtectedRoute requiredRole="fixer">
+                  <Job />
                 </ProtectedRoute>
               }
             />
