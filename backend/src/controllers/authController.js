@@ -8,14 +8,40 @@ const register = async (req, res) => {
   const db = req.app.get("db");
   const { full_name, phone, email, password } = req.body;
 
+  // Validate required fields
+  if (
+    !full_name || full_name.trim() === "" ||
+    !phone || phone.trim() === "" ||
+    !email || email.trim() === "" ||
+    !password || password.trim() === ""
+  ) {
+    return res.status(400).json({
+      message: "Full name, phone, email, and password are required"
+    });
+  }
+
   try {
+    // Check if email already exists
     const existing = await User.findByEmail(db, email);
-    if (existing) return res.status(400).json({ message: "Email already exists" });
+    if (existing) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
 
-    const result = await User.createUser(db, { full_name, phone, email, password });
+    // Create user
+    const result = await User.createUser(db, {
+      full_name,
+      phone,
+      email,
+      password
+    });
 
-    // sign a JWT for the newly created user (include full name so the frontend can show it immediately)
-    const payload = { id: result.insertId, email, role: "customer", full_name };
+    const payload = {
+      id: result.insertId,
+      email,
+      role: "customer",
+      full_name
+    };
+
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
 
     res.status(201).json({
@@ -23,10 +49,14 @@ const register = async (req, res) => {
       token,
       role: "customer",
       full_name,
-      userId: result.insertId,
+      userId: result.insertId
     });
+
   } catch (err) {
-    res.status(500).json({ message: "Registration failed", error: err.message });
+    res.status(500).json({
+      message: "Registration failed",
+      error: err.message
+    });
   }
 };
 
