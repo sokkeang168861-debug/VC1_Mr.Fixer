@@ -15,6 +15,7 @@ import AdminDashboard from "../features/dashboard/admin";
 import CustomerDashboard from "../features/dashboard/customer";
 import FixerDashboard from "../features/dashboard/fixer";
 import ServiceCategories from "../features/dashboard/admin/service_categories";
+import FixerManagement from "../features/dashboard/admin/fixers";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -64,7 +65,7 @@ function InnerRoutes() {
               <Route index element={<AdminDashboard.Dashboard />} />
               <Route path="service-categories" element={<ServiceCategories />} />
               <Route path="users" element={<ComingSoon title="User Management" />} />
-              <Route path="fixers" element={<ComingSoon title="Fixer Management" />} />
+              <Route path="fixers" element={<FixerManagement />} />
               <Route path="transactions" element={<ComingSoon title="Transactions" />} />
             </Route>
             
