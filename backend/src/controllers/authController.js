@@ -2,7 +2,7 @@ const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
-const JWT_SECRET = "your_secret_key"; // change this in production!!!
+const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_not_safe"; // change this in .env!!!
 
 const register = async (req, res) => {
   const db = req.app.get("db");
@@ -107,4 +107,12 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login, JWT_SECRET };
+const logout = async (req, res) => {
+  // Since JWT is stateless, the server doesn't "delete" the token.
+  // This route is a placeholder for any server-side logout logic 
+  // like blacklisting tokens (e.g. in Redis or a DB table).
+  // For now, we return success to confirm the intent.
+  res.json({ message: "Logged out successfully" });
+};
+
+module.exports = { register, login, logout, JWT_SECRET };

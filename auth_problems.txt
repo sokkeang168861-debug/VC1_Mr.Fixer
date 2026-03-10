@@ -32,3 +32,14 @@ Authentication Logic Problems Report
 -----------------
 - 'JWT_SECRET' is hardcoded as "your_secret_key" in 'authController.js', which is insecure for production.
 - Passwords, even if hashed, should not be allowed to be empty.
+
+   1. Inconsistent Logout Logic:
+       * Admin and Customer Dashboards: Currently, logout only clears the localStorage token. To maintain consistency and ensure the server
+         is notified, you should update these to call the httpClient.post("/auth/logout") endpoint, just as you did for the Fixer dashboard.
+       * Header Token Deletion: Ensure that delete httpClient.defaults.headers.common["Authorization"] is consistently called in all logout
+         handlers to prevent subsequent requests from using an old token.
+
+   3. Security Best Practices:
+       * JWT Secret: The JWT_SECRET remains hardcoded. For a production environment, this should be moved to an environment variable (.env).
+       * Token Expiration: The 1-hour expiration is good, but you may want to consider implementing refresh tokens for a better user
+         experience in the future.

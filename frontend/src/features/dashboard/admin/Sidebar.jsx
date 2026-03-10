@@ -4,6 +4,7 @@ import { LogOut } from 'lucide-react';
 import { LuLayoutDashboard } from "react-icons/lu";
 import { GiHammerNails, GiBoxUnpacking, GiTakeMyMoney } from "react-icons/gi";
 import { FaUsersCog } from "react-icons/fa";
+import httpClient from '../../../api/httpClient';
 
 // NavItem Component
 const NavItem = ({ icon, children, to, end = false }) => (
@@ -25,9 +26,15 @@ const NavItem = ({ icon, children, to, end = false }) => (
 export default function Sidebar() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await httpClient.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+    localStorage.removeItem("token");
+    delete httpClient.defaults.headers.common["Authorization"];
+    navigate("/login");
   };
 
   return (
