@@ -35,21 +35,45 @@ const login = async (req, res) => {
   const db = req.app.get("db");
   const { email, password } = req.body;
 
+  // Validate required fields
+  if (!email || !password || email.trim() === "" || password.trim() === "") {
+    return res.status(400).json({
+      message: "Email and password are required"
+    });
+  }
+
   try {
     const user = await User.findByEmail(db, email);
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ message: "Invalid credentials" });
+    if (!match) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
-    // include role and full name in the token so frontend can easily inspect it
-    const payload = { id: user.id, email: user.email, role: user.role, full_name: user.full_name };
+    const payload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      full_name: user.full_name
+    };
+
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
 
-    // send role and full name separately as well for convenience
-    res.json({ message: "Logged in", token, role: user.role, full_name: user.full_name });
+    res.json({
+      message: "Logged in",
+      token,
+      role: user.role,
+      full_name: user.full_name
+    });
+
   } catch (err) {
-    res.status(500).json({ message: "Login failed", error: err.message });
+    res.status(500).json({
+      message: "Login failed",
+      error: err.message
+    });
   }
 };
 
