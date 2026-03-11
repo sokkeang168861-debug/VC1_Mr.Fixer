@@ -1,240 +1,259 @@
-import React, { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Wrench,
-  DollarSign,
-  MapPin,
   ChevronLeft,
-  Plus,
-  Trash2,
-  CheckCircle2,
-  Zap,
-  TrendingUp
+  CheckCircle2
 } from "lucide-react";
 
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
-/* ---------------- TYPES ---------------- */
-
 const VIEW = {
   LIST: "LIST",
-  DETAIL: "DETAIL",
-  PROPOSAL: "PROPOSAL"
+  DETAIL: "DETAIL"
 };
 
-/* ---------------- MOCK DATA ---------------- */
-
-const MOCK_JOBS = [
+const JOBS = [
   {
-    id: "#JOB-8842",
-    poster: "Michael Richardson",
+    id: "#FIX-99201",
+    name: "Michael Richardson",
     category: "Plumbing Repair",
     earnings: "$85.00",
     distance: "1.2 km away",
-    postedAt: "5 mins ago",
+    posted: "5 mins ago",
     description:
-      "Kitchen sink is leaking significantly from the main pipe underneath.",
-    urgency: "Urgent",
-    urgencyDesc: "Needs attention within 24 hours",
+      "My kitchen sink is leaking from the base and the wood underneath is damp. It seems to happen only when the faucet is running.",
     location: "842 Maplewood Avenue",
-    locationDetail: "Suite 4B",
+    location2: "Suite 4B, Brooklyn, NY 11211",
+    urgency: "Urgent",
     photos: [
-      "https://picsum.photos/seed/plumbing1/400/400",
-      "https://picsum.photos/seed/plumbing2/400/400"
+      "https://picsum.photos/400/300?1",
+      "https://picsum.photos/400/300?2",
+      "https://picsum.photos/400/300?3"
     ]
   }
 ];
 
-/* ---------------- JOB LIST ---------------- */
-
-function JobListView({ onSelectJob }) {
+function JobList({ select }) {
   return (
-    <div className="max-w-4xl mx-auto py-8 space-y-6">
-      {MOCK_JOBS.map((job) => (
+    <div className="max-w-5xl mx-auto space-y-6 py-8">
+
+      <h1 className="text-2xl font-semibold">
+        Job Acceptance
+      </h1>
+
+      {JOBS.map((job) => (
         <motion.div
           key={job.id}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="card p-6"
+          className="bg-white p-6 rounded-xl shadow border"
         >
-          <h3 className="text-xl font-bold mb-4">{job.poster}</h3>
+
+          <div className="flex justify-between mb-2 text-sm">
+            <div>
+              <span className="text-orange-500 font-semibold">
+                {job.id}
+              </span>
+              <span className="text-gray-400 ml-2">
+                • Posted {job.posted}
+              </span>
+            </div>
+
+            <div className="bg-orange-50 text-orange-500 px-3 py-1 rounded-full">
+              {job.distance}
+            </div>
+          </div>
+
+          <h2 className="text-lg font-semibold mb-4">
+            {job.name}
+          </h2>
 
           <div className="flex justify-between mb-4">
-            <div className="flex items-center">
+
+            <div className="flex items-center text-gray-600 text-sm">
               <Wrench className="w-4 h-4 mr-2" />
               {job.category}
             </div>
 
-            <div className="text-green-600 font-bold">{job.earnings}</div>
+            <div className="text-green-600 font-semibold">
+              {job.earnings}
+            </div>
+
           </div>
 
-          <p className="text-gray-600 mb-4">{job.description}</p>
+          <div className="bg-gray-50 border rounded-lg p-4 text-sm text-gray-600 mb-4">
+            {job.description}
+          </div>
 
           <button
-            onClick={() => onSelectJob(job)}
-            className="btn-primary w-full"
+            onClick={() => select(job)}
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg"
           >
             View Detail
           </button>
+
         </motion.div>
       ))}
+
     </div>
   );
 }
 
-/* ---------------- JOB DETAIL ---------------- */
-
-function JobDetailView({ job, onBack, onAccept }) {
+function JobDetail({ job, back }) {
   return (
-    <div className="max-w-5xl mx-auto py-8">
+    <div className="max-w-7xl mx-auto py-8">
 
-      <button onClick={onBack} className="flex items-center mb-6">
-        <ChevronLeft className="w-5 h-5 mr-2" />
-        Back
+      <button
+        onClick={back}
+        className="flex items-center text-gray-600 mb-6"
+      >
+        <ChevronLeft className="mr-2" />
+        Job Details
       </button>
 
-      <div className="card p-6 mb-6">
-        <h2 className="text-xl font-bold mb-4">{job.poster}</h2>
+      <div className="grid grid-cols-3 gap-6">
 
-        <p className="text-gray-600 mb-6">{job.description}</p>
+        {/* LEFT */}
 
-        <div className="grid grid-cols-3 gap-4">
-          {job.photos.map((photo, i) => (
-            <img
-              key={i}
-              src={photo}
-              className="rounded-lg object-cover"
-            />
-          ))}
-        </div>
-      </div>
+        <div className="col-span-2 space-y-6">
 
-      <button onClick={onAccept} className="btn-primary">
-        <CheckCircle2 className="w-5 h-5 mr-2" />
-        Accept Job
-      </button>
-    </div>
-  );
-}
+          <div className="bg-white p-6 rounded-xl shadow">
 
-/* ---------------- PROPOSAL ---------------- */
+            <div className="flex justify-between mb-6">
 
-function ProposalView({ job, onBack }) {
-  const [items, setItems] = useState([
-    { id: 1, name: "Diagnostic Fee", price: "45" }
-  ]);
+              <div className="flex items-center gap-3">
 
-  const addItem = () => {
-    setItems([...items, { id: Date.now(), name: "", price: "0" }]);
-  };
+                <div className="bg-blue-100 p-3 rounded-lg">
+                  <Wrench className="text-blue-600"/>
+                </div>
 
-  const removeItem = (id) => {
-    setItems(items.filter((i) => i.id !== id));
-  };
+                <div>
+                  <h2 className="font-semibold text-lg">
+                    Plumbing Issue
+                  </h2>
+                  <p className="text-gray-400 text-sm">
+                    Request ID: {job.id}
+                  </p>
+                </div>
 
-  const total = items.reduce(
-    (sum, item) => sum + Number(item.price || 0),
-    0
-  );
+              </div>
 
-  return (
-    <div className="max-w-4xl mx-auto py-8">
+              <div className="text-sm text-gray-400">
+                Oct 2, 2023 • 10:30 AM
+              </div>
 
-      <div className="card p-6 mb-6">
-        <h3 className="font-bold mb-4">Service Estimate</h3>
+            </div>
 
-        {items.map((item) => (
-          <div key={item.id} className="flex gap-4 mb-4">
+            <div className="mb-6">
 
-            <input
-              value={item.name}
-              placeholder="Item name"
-              className="input"
-              onChange={(e) =>
-                setItems(
-                  items.map((i) =>
-                    i.id === item.id
-                      ? { ...i, name: e.target.value }
-                      : i
-                  )
-                )
-              }
-            />
+              <p className="text-sm text-gray-400 mb-2">
+                WHAT'S THE PROBLEM?
+              </p>
 
-            <input
-              type="number"
-              value={item.price}
-              className="input"
-              onChange={(e) =>
-                setItems(
-                  items.map((i) =>
-                    i.id === item.id
-                      ? { ...i, price: e.target.value }
-                      : i
-                  )
-                )
-              }
-            />
+              <div className="bg-gray-50 p-4 rounded-lg border">
+                {job.description}
+              </div>
 
-            <button onClick={() => removeItem(item.id)}>
-              <Trash2 />
+            </div>
+
+            <div>
+
+              <p className="text-sm text-gray-400 mb-3">
+                ATTACHED PHOTOS
+              </p>
+
+              <div className="grid grid-cols-3 gap-4">
+
+                {job.photos.map((p, i) => (
+                  <img
+                    key={i}
+                    src={p}
+                    className="rounded-lg h-40 w-full object-cover"
+                  />
+                ))}
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow flex justify-between">
+
+            <button className="bg-orange-500 text-white px-6 py-3 rounded-lg flex items-center">
+              <CheckCircle2 className="mr-2"/>
+              Accept Job
+            </button>
+
+            <button className="text-red-500">
+              Reject
             </button>
 
           </div>
-        ))}
 
-        <button onClick={addItem} className="flex items-center text-primary">
-          <Plus className="mr-2" />
-          Add Item
-        </button>
-
-        <div className="mt-6 font-bold text-xl">
-          Total: ${total.toFixed(2)}
         </div>
+
+        {/* RIGHT */}
+
+        <div className="space-y-6">
+
+          <div className="bg-white p-6 rounded-xl shadow">
+
+            <p className="text-sm text-gray-400 mb-3">
+              URGENCY LEVEL
+            </p>
+
+            <div className="bg-yellow-50 p-4 rounded-lg text-yellow-700">
+              <strong>Urgent</strong>
+              <p className="text-sm">
+                Needs attention within 24 hours
+              </p>
+            </div>
+
+          </div>
+
+          <div className="bg-white h-48 rounded-xl shadow flex items-center justify-center text-gray-400">
+            Map Preview
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow">
+
+            <p className="text-sm text-gray-400 mb-3">
+              SERVICE LOCATION
+            </p>
+
+            <p className="font-semibold">
+              {job.location}
+            </p>
+
+            <p className="text-gray-500 text-sm">
+              {job.location2}
+            </p>
+
+          </div>
+
+        </div>
+
       </div>
 
-      <button onClick={onBack} className="btn-outline">
-        Back
-      </button>
     </div>
   );
 }
 
-/* ---------------- MAIN PAGE ---------------- */
-
 export default function Job() {
 
-  const [viewState, setViewState] = useState(VIEW.LIST);
-  const [selectedJob, setSelectedJob] = useState(null);
+  const [view, setView] = useState(VIEW.LIST);
+  const [selected, setSelected] = useState(null);
 
-  const displayName = useMemo(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) return "Fixer";
-
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      return payload?.email?.split("@")[0] || "Fixer";
-    } catch {
-      return "Fixer";
-    }
-  }, []);
-
-  const handleSelectJob = (job) => {
-    setSelectedJob(job);
-    setViewState(VIEW.DETAIL);
+  const openDetail = (job) => {
+    setSelected(job);
+    setView(VIEW.DETAIL);
   };
 
-  const handleAccept = () => setViewState(VIEW.PROPOSAL);
-
-  const handleBack = () => {
-    if (viewState === VIEW.PROPOSAL) {
-      setViewState(VIEW.DETAIL);
-    } else {
-      setViewState(VIEW.LIST);
-      setSelectedJob(null);
-    }
+  const back = () => {
+    setView(VIEW.LIST);
   };
 
   return (
@@ -244,32 +263,17 @@ export default function Job() {
 
       <div className="flex-1 flex flex-col">
 
-        <Header name={displayName} />
+        <Header name="John Fixer"/>
 
         <main className="flex-1 p-8 overflow-y-auto">
 
-          <AnimatePresence mode="wait">
+          {view === VIEW.LIST && (
+            <JobList select={openDetail}/>
+          )}
 
-            {viewState === VIEW.LIST && (
-              <JobListView onSelectJob={handleSelectJob} />
-            )}
-
-            {viewState === VIEW.DETAIL && selectedJob && (
-              <JobDetailView
-                job={selectedJob}
-                onBack={handleBack}
-                onAccept={handleAccept}
-              />
-            )}
-
-            {viewState === VIEW.PROPOSAL && selectedJob && (
-              <ProposalView
-                job={selectedJob}
-                onBack={handleBack}
-              />
-            )}
-
-          </AnimatePresence>
+          {view === VIEW.DETAIL && (
+            <JobDetail job={selected} back={back}/>
+          )}
 
         </main>
 
