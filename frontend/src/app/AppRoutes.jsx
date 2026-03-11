@@ -15,6 +15,7 @@ import AdminDashboard from "../features/dashboard/admin";
 import CustomerDashboard from "../features/dashboard/customer";
 import FixerDashboard from "../features/dashboard/fixer";
 import ServiceCategories from "../features/dashboard/admin/service_categories";
+import Job from "../features/dashboard/fixer/Job";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -87,12 +88,15 @@ function InnerRoutes() {
                   <FixerDashboard />
                 </ProtectedRoute>
               }
-            >
-              <Route index element={<FixerDashboard.Dashboard />} />
-              <Route path="jobs" element={<ComingSoon title="My Jobs" />} />
-            </Route>
-
-            <Route path="*" element={<NotFoundPage />} />
+            />
+            <Route
+              path="/dashboard/fixer/job"
+              element={
+                <ProtectedRoute requiredRole="fixer">
+                  <Job />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </main>
         {!isDashboard && <Footer />}
