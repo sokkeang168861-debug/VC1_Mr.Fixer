@@ -96,7 +96,7 @@ export default function Login() {
             {error && <p className="text-sm text-red-500">{error}</p>}
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700 ml-1">Username or Email</label>
+              <label className="text-sm font-bold text-slate-700 ml-1">Email</label>
               <div className="relative group">
                 <input 
                   type="text" 
@@ -104,6 +104,7 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-6 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  required
                 />
               </div>
             </div>
@@ -117,6 +118,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-6 pr-14 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  required
                 />
                 <button
                   type="button"

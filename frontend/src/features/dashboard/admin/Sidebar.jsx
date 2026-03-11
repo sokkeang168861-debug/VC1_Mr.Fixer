@@ -4,6 +4,7 @@ import { LogOut } from 'lucide-react';
 import { LuLayoutDashboard } from "react-icons/lu";
 import { GiHammerNails, GiBoxUnpacking, GiTakeMyMoney } from "react-icons/gi";
 import { FaUsersCog } from "react-icons/fa";
+import httpClient from '../../../api/httpClient';
 
 // NavItem Component
 const NavItem = ({ icon, children, to, end = false }) => (
@@ -25,9 +26,15 @@ const NavItem = ({ icon, children, to, end = false }) => (
 export default function Sidebar() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await httpClient.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+    localStorage.removeItem("token");
+    delete httpClient.defaults.headers.common["Authorization"];
+    navigate("/login");
   };
 
   return (
@@ -49,9 +56,7 @@ export default function Sidebar() {
       <nav className="flex flex-col gap-2 flex-1">
         <NavItem icon={<LuLayoutDashboard />} to="/dashboard/admin" end>Dashboard</NavItem>
         <NavItem icon={<GiBoxUnpacking />} to="/dashboard/admin/service-categories">Service Categories</NavItem>
-        {/* <NavItem icon={<GiHammerNails />} to="/dashboard/admin/fixers">Fixer Management</NavItem>
-        <NavItem icon={<FaUsersCog />} to="/dashboard/admin/users">User Management</NavItem>
-        <NavItem icon={<GiTakeMyMoney />} to="/dashboard/admin/transactions">Transactions</NavItem> */}
+        <NavItem icon={<GiHammerNails />} to="/dashboard/admin/fixers">Fixer Management</NavItem>
       </nav>
 
       {/* Logout Button */}

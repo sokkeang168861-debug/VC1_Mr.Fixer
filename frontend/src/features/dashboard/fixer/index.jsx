@@ -1,46 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom"; // Missing import
 import httpClient from "../../../api/httpClient";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { Star, Briefcase, Wallet, Percent, PiggyBank } from "lucide-react";
 
 /* ---------------------- Stats Cards ---------------------- */
-function StatsCards() {
-  const stats = [
-    {
-      title: "Total Jobs",
-      value: "1,284",
-      tag: "All Jobs",
-      icon: Briefcase,
-      iconBg: "bg-purple-100",
-      iconColor: "text-purple-600",
-    },
-    {
-      title: "Total Profit",
-      value: "$45,280.00",
-      change: "+12.5%",
-      icon: Wallet,
-      iconBg: "bg-orange-100",
-      iconColor: "text-orange-600",
-    },
-    {
-      title: "Total Commission",
-      value: "$6,792.00",
-      tag: "Standard",
-      icon: Percent,
-      iconBg: "bg-blue-100",
-      iconColor: "text-blue-600",
-    },
-    {
-      title: "Net Profit",
-      value: "$38,488.00",
-      change: "+8.2%",
-      icon: PiggyBank,
-      iconBg: "bg-green-100",
-      iconColor: "text-green-600",
-    },
-  ];
-
+function StatsCards({ stats }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {stats.map((stat, index) => {
@@ -51,7 +17,9 @@ function StatsCards() {
             className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.iconBg}`}>
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.iconBg}`}
+              >
                 <Icon className={`w-5 h-5 ${stat.iconColor}`} />
               </div>
 
@@ -83,7 +51,6 @@ function DetailedRatings({ ratings, loading }) {
     return (
       <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
         <h2 className="text-3xl font-bold mb-6 text-gray-800">Detailed Ratings</h2>
-
         <div className="space-y-4">
           {[1, 2, 3, 4].map((item) => (
             <div key={item} className="animate-pulse">
@@ -130,7 +97,6 @@ function DetailedRatings({ ratings, loading }) {
 }
 
 /* ---------------------- Rating Feedback ---------------------- */
-
 function formatFeedbackDate(input) {
   if (!input) return "";
   const date = new Date(input);
@@ -162,9 +128,7 @@ function RatingFeedback({ overallRating, feedback, loading }) {
       <Star
         key={index}
         className={`w-6 h-6 ${
-          index < Math.floor(rating)
-            ? "text-yellow-400 fill-yellow-400"
-            : "text-gray-300"
+          index < Math.floor(rating) ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
         }`}
       />
     ));
@@ -182,15 +146,9 @@ function RatingFeedback({ overallRating, feedback, loading }) {
       <h2 className="text-3xl font-bold mb-6 text-gray-800">Ratings & Feedback</h2>
 
       <div className="flex flex-col items-start mb-6">
-        <span className="text-6xl font-extrabold text-gray-900">
-          {ratingValue.toFixed(1)}
-        </span>
-
+        <span className="text-6xl font-extrabold text-gray-900">{ratingValue.toFixed(1)}</span>
         <div className="flex mt-2">{renderStars(ratingValue)}</div>
-
-        <p className="text-lg text-gray-500 mt-2">
-          Total {totalRatings} Ratings
-        </p>
+        <p className="text-lg text-gray-500 mt-2">Total {totalRatings} Ratings</p>
       </div>
 
       <div className="space-y-3">
@@ -203,21 +161,15 @@ function RatingFeedback({ overallRating, feedback, loading }) {
                 </div>
 
                 <div>
-                  <p className="font-semibold text-gray-900">
-                    {item.customerName}
-                  </p>
+                  <p className="font-semibold text-gray-900">{item.customerName}</p>
                   <div className="flex">{renderStars(item.rating)}</div>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-400">
-                {formatFeedbackDate(item.createdAt)}
-              </p>
+              <p className="text-xs text-gray-400">{formatFeedbackDate(item.createdAt)}</p>
             </div>
 
-            <p className="text-sm text-gray-600 mt-2 italic">
-              "{item.comment}"
-            </p>
+            <p className="text-sm text-gray-600 mt-2 italic">"{item.comment}"</p>
           </div>
         ))}
       </div>
@@ -226,12 +178,49 @@ function RatingFeedback({ overallRating, feedback, loading }) {
 }
 
 /* ---------------------- Main Dashboard ---------------------- */
-
 export default function FixerDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
+  // Static stats array
+  const stats = [
+    {
+      title: "Total Jobs",
+      value: "1,284",
+      tag: "All Jobs",
+      icon: Briefcase,
+      iconBg: "bg-purple-100",
+      iconColor: "text-purple-600",
+    },
+    {
+      title: "Total Profit",
+      value: "$45,280.00",
+      change: "+12.5%",
+      icon: Wallet,
+      iconBg: "bg-orange-100",
+      iconColor: "text-orange-600",
+    },
+    {
+      title: "Total Commission",
+      value: "$6,792.00",
+      tag: "Standard",
+      icon: Percent,
+      iconBg: "bg-blue-100",
+      iconColor: "text-blue-600",
+    },
+    {
+      title: "Net Profit",
+      value: "$38,488.00",
+      change: "+8.2%",
+      icon: PiggyBank,
+      iconBg: "bg-green-100",
+      iconColor: "text-green-600",
+    },
+  ];
+
+  // Fetch dashboard data
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -243,10 +232,10 @@ export default function FixerDashboard() {
         setLoading(false);
       }
     };
-
     fetchDashboardData();
   }, []);
 
+  // Display name from token
   const displayName = useMemo(() => {
     const token = localStorage.getItem("token");
     if (!token) return "Fixer";
@@ -254,23 +243,33 @@ export default function FixerDashboard() {
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const emailName = payload?.email?.split("@")[0];
-      return emailName
-        ? `${emailName[0].toUpperCase()}${emailName.slice(1)}`
-        : "Fixer";
+      return emailName ? `${emailName[0].toUpperCase()}${emailName.slice(1)}` : "Fixer";
     } catch {
       return "Fixer";
     }
   }, []);
 
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      await httpClient.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+    localStorage.removeItem("token");
+    delete httpClient.defaults.headers.common["Authorization"];
+    navigate("/");
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar />
+      <Sidebar onLogout={handleLogout} />
 
       <div className="flex-1 flex flex-col">
-        <Header name={displayName} />
+        <Header name={displayName} onLogout={handleLogout} />
 
         <main className="flex-1 p-8 overflow-y-auto bg-[#f4f5f7]">
-          <StatsCards />
+          <StatsCards stats={stats} />
 
           {error && (
             <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
