@@ -3,7 +3,6 @@ const app = require("./app");
 const db = require("./config/db");
 
 const PORT = process.env.PORT || 5000;
-
 // Test the database connection before starting the server.
 // Using a pool prevents the app from crashing on transient errors like ECONNRESET.
 db.getConnection((err, connection) => {

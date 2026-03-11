@@ -105,7 +105,7 @@ function Dashboard() {
       const currentYear = new Date().getFullYear();
       try {
         setError('');
-        const res = await httpClient.get('/api/admin/stats', { params: { year: currentYear } });
+        const res = await httpClient.get('/admin/stats', { params: { year: currentYear } });
         const apiData = res.data?.data || {};
         const apiMonthlyJobs = Array.isArray(apiData.monthlyJobs) ? apiData.monthlyJobs : [];
         const normalizedMonthlyJobs = new Array(12).fill(0).map((_, i) => Number(apiMonthlyJobs[i] || 0));

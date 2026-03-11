@@ -124,18 +124,9 @@ export default function CustomerDashboard() {
 
   // --- Load service categories ---
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    const client = httpClient || axios;
-
-    client
-      .get("http://localhost:5000/api/users/allCategories", {
-        headers: token
-          ? {
-            Authorization: `Bearer ${token}`,
-          }
-          : undefined,
-      })
+    setLoading(true);
+    httpClient
+      .get("/users/allCategories")
       .then((res) => {
         setServices(res.data || []);
       })
@@ -151,8 +142,8 @@ export default function CustomerDashboard() {
   // --- Load providers by category ---
   const getProvidersByCategory = async (categoryId) => {
     try {
-      const res = await axios.get(
-        `http://localhost:5000/api/users/providersEachCategory/${categoryId}`
+      const res = await httpClient.get(
+        `/users/providersEachCategory/${categoryId}`
       );
 
       setProviders(res.data || []);
