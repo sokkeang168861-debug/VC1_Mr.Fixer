@@ -6,8 +6,8 @@ export const Sidebar = ({ activeTab, onChange, onLogout }) => {
   const menuItems = [
     { id: 'services', label: 'Services', icon: Wrench },
     { id: 'bookings', label: 'Bookings', icon: Calendar },
-    // { id: 'history', label: 'History', icon: History },
-    // { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'history', label: 'History', icon: History },
+    { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
   return (
