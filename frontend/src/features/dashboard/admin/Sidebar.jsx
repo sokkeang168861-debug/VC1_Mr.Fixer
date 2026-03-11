@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { LuLayoutDashboard } from "react-icons/lu";
-import { GiHammerNails, GiBoxUnpacking, GiTakeMyMoney } from "react-icons/gi";
+import { GiHammerNails, GiBoxUnpacking } from "react-icons/gi";
 import { FaUsersCog } from "react-icons/fa";
 import httpClient from '../../../api/httpClient';
 
@@ -55,6 +55,7 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex flex-col gap-2 flex-1">
         <NavItem icon={<LuLayoutDashboard />} to="/dashboard/admin" end>Dashboard</NavItem>
+        <NavItem icon={<FaUsersCog />} to="/dashboard/admin/users">User Management</NavItem>
         <NavItem icon={<GiBoxUnpacking />} to="/dashboard/admin/service-categories">Service Categories</NavItem>
         <NavItem icon={<GiHammerNails />} to="/dashboard/admin/fixers">Fixer Management</NavItem>
       </nav>
