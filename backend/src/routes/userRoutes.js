@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { getUsers, getCurrentUser, getAllCategories, providersEachCategory } = require("../controllers/userController");
-const { createBooking } = require("../controllers/userbookingController");
+const { createBooking, getNearbyFixers } = require("../controllers/userbookingController");
 const protect = require("../middleware/authMiddleware");
 const upload = require("../middleware/upload");
 
@@ -13,5 +13,6 @@ router.get("/providersEachCategory/:categoryId", providersEachCategory);
 
 // Booking routes
 router.post("/bookings", protect, upload.any("photos"), createBooking); // create a booking from the customer form
+router.get("/bookings/:bookingId/nearby-fixers", protect, getNearbyFixers); // get nearby fixers for a booking
 
 module.exports = router;

@@ -70,6 +70,45 @@ const createBooking = async (req, res) => {
   }
 };
 
+/**
+ * Get nearby fixers for a specific booking by service category match
+ * GET /api/bookings/:bookingId/nearby-fixers
+ */
+const getNearbyFixers = (req, res) => {
+  try {
+    const db = req.app.get("db");
+    const { bookingId } = req.params;
+
+    Booking.getNearbyFixersByBooking(db, bookingId)
+      .then((fixers) => {
+        // format profile images if they exist
+        const formattedFixers = fixers.map((fixer) => {
+          if (fixer.profile_img && Buffer.isBuffer(fixer.profile_img)) {
+            fixer.profile_img = `data:image/jpeg;base64,${fixer.profile_img.toString(
+              "base64"
+            )}`;
+          }
+          return fixer;
+        });
+        res.json(formattedFixers);
+      })
+      .catch((error) => {
+        console.error("Error fetching nearby fixers:", error);
+        res.status(500).json({
+          message: "Failed to fetch nearby fixers",
+          error: error.message,
+        });
+      });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createBooking,
+  getNearbyFixers,
 };
