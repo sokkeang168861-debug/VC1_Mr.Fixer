@@ -841,21 +841,12 @@ export default function FixerManagement() {
                 <p className="text-slate-400">Manage fixer profiles and add new service professionals from the admin panel.</p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleExport}
-                disabled={!hasFilteredFixers}
-                className={`inline-flex items-center gap-2 self-start rounded-xl border px-4 py-3 text-sm font-semibold shadow-sm transition-all ${hasFilteredFixers ? 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' : 'cursor-not-allowed border-slate-100 bg-slate-100 text-slate-300'}`}
-              >
-                <Download size={16} />
-                <span>Export CSV</span>
-              </button>
+              <div className="max-w-sm rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
+                <p className="text-sm font-medium text-slate-400">Total Fixers
+                <span className="ml-2 text-2xl font-bold text-slate-900">{fixers.length.toLocaleString()}</span></p>
+              </div>
             </div>
 
-            <div className="max-w-sm rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium text-slate-400">Total Fixers</p>
-              <p className="mt-2 text-4xl font-bold text-slate-900">{fixers.length.toLocaleString()}</p>
-            </div>
 
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="flex flex-1 flex-col gap-4 rounded-3xl border border-slate-100 bg-white p-3 shadow-sm sm:flex-row">
@@ -875,7 +866,7 @@ export default function FixerManagement() {
                   onChange={(event) => setSelectedCategory(event.target.value)}
                   className="h-14 min-w-48 rounded-2xl border border-slate-100 bg-slate-50 px-4 text-sm font-medium text-slate-600 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
                 >
-                  <option value="All">Category</option>
+                  <option value="All" selected disabled>Category</option>
                   {CATEGORY_OPTIONS.map((category) => (
                     <option key={category} value={category}>{category}</option>
                   ))}

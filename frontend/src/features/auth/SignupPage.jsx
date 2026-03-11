@@ -108,7 +108,7 @@ export default function Signup() {
             {success && <p className="text-sm text-green-500">{success}</p>}
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700 ml-1">Username</label>
+              <label className="text-sm font-bold text-slate-700 ml-1">Fullname</label>
               <div className="relative group">
                 <input 
                   type="text" 
@@ -116,6 +116,7 @@ export default function Signup() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  required
                 />
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
                   <User size={20} />
@@ -132,6 +133,7 @@ export default function Signup() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  required
                 />
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
                   <Phone size={20} />
@@ -148,6 +150,7 @@ export default function Signup() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  required
                 />
                 <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors">
                   <Mail size={20} />
@@ -164,6 +167,7 @@ export default function Signup() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-14 pr-12 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  required
                 />
                 <button
                   type="button"
@@ -187,6 +191,7 @@ export default function Signup() {
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   className="w-full pl-14 pr-12 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
+                  required
                 />
                 <button
                   type="button"
@@ -202,7 +207,7 @@ export default function Signup() {
             </div>
 
             <div className="flex items-center gap-3 text-sm">
-              <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" />
+              <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary" required/>
               <span className="text-slate-500">By signing up, you agree to sign up into our app</span>
             </div>
 

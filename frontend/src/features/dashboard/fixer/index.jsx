@@ -6,7 +6,12 @@ import FixerFooter from "./FixerFooter";
 export default function FixerDashboard() {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await httpClient.post("/auth/logout");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
     localStorage.removeItem("token");
     delete httpClient.defaults.headers.common["Authorization"];
     navigate("/");
