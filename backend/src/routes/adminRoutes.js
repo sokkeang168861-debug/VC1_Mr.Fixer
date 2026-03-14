@@ -1,19 +1,52 @@
 const express = require("express");
-const upload = require("../middleware/upload");
 const router = express.Router();
 
-const ServiceCategoryController = require("../controllers/serviceCategoryController");
 const protect = require("../middleware/authMiddleware");
+const adminCheck = require("../middleware/adminMiddleware");
+const upload = require("../middleware/upload");
+
 const { getUserStats } = require("../controllers/adminController");
+const ServiceCategoryController = require("../controllers/serviceCategoryController");
 
-// router.post("/createCategory", protect, ServiceCategoryController.createCategory);
-router.post("/createCategory", protect, upload.single("image"), ServiceCategoryController.createCategory);
-router.get("/getAllCategories", protect, ServiceCategoryController.getAllCategories);
-router.get("/findCategory", protect, ServiceCategoryController.findCategory);
-// router.put("/updateCategory/:id", protect, ServiceCategoryController.updateCategory);
-router.put("/updateCategory/:id", protect, upload.single("image"), ServiceCategoryController.updateCategory);
-router.delete("/deleteCategory/:id", protect, ServiceCategoryController.deleteCategory);
+// ---------- Admin Stats ----------
+router.get("/stats", protect, adminCheck, getUserStats);
 
-router.get("/stats", protect, getUserStats);
+// ---------- Service Category  ----------
+router.post(
+  "/createCategory",
+  protect,
+  adminCheck,
+  upload.single("image"),
+  ServiceCategoryController.createCategory
+);
+
+router.get(
+  "/getAllCategories",
+  protect,
+  adminCheck,
+  ServiceCategoryController.getAllCategories
+);
+
+router.get(
+  "/findCategory",
+  protect,
+  adminCheck,
+  ServiceCategoryController.findCategory
+);
+
+router.put(
+  "/updateCategory/:id",
+  protect,
+  adminCheck,
+  upload.single("image"),
+  ServiceCategoryController.updateCategory
+);
+
+router.delete(
+  "/deleteCategory/:id",
+  protect,
+  adminCheck,
+  ServiceCategoryController.deleteCategory
+);
 
 module.exports = router;

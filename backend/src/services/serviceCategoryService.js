@@ -1,0 +1,91 @@
+const ServiceCategoryModel = require("../models/serviceCategoryModel");
+const UserModel = require("../models/userModel"); // for other uses if any
+
+class ServiceCategoryService {
+
+  static async getAllCategories(db) {
+    const categories = await ServiceCategoryModel.getAllCategories(db);
+
+    return categories.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      description: cat.description,
+      imageUrl: (cat.image && Buffer.isBuffer(cat.image))
+        ? `data:image/jpeg;base64,${cat.image.toString("base64")}`
+        : null
+    }));
+  }
+
+  static async createCategory(db, data, file) {
+    console.log("Service: createCategory called with data:", data);
+    if (!data) {
+      throw new Error("Name and description are required");
+    }
+    const { name, description } = data;
+    const image = file ? file.buffer : null;
+
+    if (!name || !description) throw new Error("Name and description are required");
+
+    const existing = await ServiceCategoryModel.findCategory(db, name);
+    if (existing) throw new Error("Category name already exists");
+
+    const result = await ServiceCategoryModel.createCategory(db, { name, description, image });
+
+    return { message: "Category created successfully", id: result.insertId };
+  }
+
+  static async findCategory(db, name) {
+    if (!name) throw new Error("Query parameter 'name' is required");
+
+    const category = await ServiceCategoryModel.findCategory(db, name);
+    if (!category) return null;
+
+    return {
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      hasImage: !!category.image
+    };
+  }
+
+  static async updateCategory(db, id, data, file) {
+    console.log("Service: updateCategory called with data:", data);
+    if (!data) {
+      throw new Error("Name and description are required");
+    }
+
+    const { name, description } = data;
+    if (!name || !description) {
+      throw new Error("Name and description are required");
+    }
+
+    const image = file ? file.buffer : null;
+
+    const existing = await ServiceCategoryModel.findCategory(db, name);
+    if (existing && existing.id != id) {
+      throw new Error("Category name already exists");
+    }
+
+    const result = await ServiceCategoryModel.updateCategory(db, id, { name, description, image });
+
+    if (result.affectedRows === 0) return null;
+
+    return { message: "Category updated successfully" };
+  }
+
+  static async deleteCategory(db, id) {
+    const result = await ServiceCategoryModel.deleteCategory(db, id);
+
+    if (result.affectedRows === 0) return null;
+
+    return { message: "Category deleted successfully" };
+  }
+
+  // Fixed providersEachCategory method to call ServiceCategoryModel
+  static async providersEachCategory(db, categoryId) {
+    // ServiceCategoryModel.providersEachCategory already handles base64 conversion for profile_img
+    return await ServiceCategoryModel.providersEachCategory(db, categoryId);
+  }
+}
+
+module.exports = ServiceCategoryService;
