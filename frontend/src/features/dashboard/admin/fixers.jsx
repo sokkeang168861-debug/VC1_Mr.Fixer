@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   BriefcaseBusiness,
-  Download,
   Mail,
   MapPin,
   Pencil,
@@ -16,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import ProviderProfile from './provider_profile.jsx';
 
 const STORAGE_KEY = 'admin-fixer-management';
 
@@ -386,12 +386,12 @@ export default function FixerManagement() {
   const [selectedFixerId, setSelectedFixerId] = useState(null);
   const [isAllReviewsOpen, setIsAllReviewsOpen] = useState(false);
   const [transactionView, setTransactionView] = useState('all');
-  const [mode, setMode] = useState('none');
-  const [error, setError] = useState('');
-  const [fixerData, setFixerData] = useState(emptyFixer());
   const [contactFixerId, setContactFixerId] = useState(null);
   const [contactError, setContactError] = useState('');
   const [contactForm, setContactForm] = useState(emptyContactForm());
+  const [mode, setMode] = useState('none');
+  const [error, setError] = useState('');
+  const [fixerData, setFixerData] = useState(emptyFixer());
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -523,22 +523,14 @@ export default function FixerManagement() {
 
   const handleOpenDetails = (fixerId) => {
     setSelectedFixerId(fixerId);
-    setTransactionView('all');
   };
 
   const handleBackToList = () => {
     setSelectedFixerId(null);
-    setIsAllReviewsOpen(false);
-    setTransactionView('all');
   };
 
-  const handleOpenAllReviews = () => {
-    setIsAllReviewsOpen(true);
-  };
-
-  const handleCloseAllReviews = () => {
-    setIsAllReviewsOpen(false);
-  };
+  const handleOpenAllReviews = () => setIsAllReviewsOpen(true);
+  const handleCloseAllReviews = () => setIsAllReviewsOpen(false);
 
   const handleOpenContact = (fixer) => {
     setContactFixerId(fixer.id);
@@ -866,7 +858,7 @@ export default function FixerManagement() {
                   onChange={(event) => setSelectedCategory(event.target.value)}
                   className="h-14 min-w-48 rounded-2xl border border-slate-100 bg-slate-50 px-4 text-sm font-medium text-slate-600 outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
                 >
-                  <option value="All" selected disabled>Category</option>
+                  <option value="All">Category</option>
                   {CATEGORY_OPTIONS.map((category) => (
                     <option key={category} value={category}>{category}</option>
                   ))}
