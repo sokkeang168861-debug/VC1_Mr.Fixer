@@ -55,7 +55,7 @@ export const Header = () => {
 
   useEffect(() => {
     httpClient
-      .get("/users/currentUser")
+      .get("/user/currentUser")
       .then((res) => {
         setUser(res.data);
       })

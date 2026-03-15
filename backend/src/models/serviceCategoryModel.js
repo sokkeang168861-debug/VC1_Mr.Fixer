@@ -16,7 +16,7 @@ class ServiceCategoryModel {
   static async getAllCategories(db) {
     return new Promise((resolve, reject) => {
       db.query(
-        "SELECT id, name, description, image FROM service_categories",
+        "SELECT id, name, description, image FROM service_categories ORDER BY id DESC",
         (err, results) => {
           if (err) reject(err);
           else resolve(results);
@@ -70,6 +70,35 @@ class ServiceCategoryModel {
     });
   }
 
+  static async providersEachCategory(db, categoryId) {
+    return new Promise((resolve, reject) => {
+      const sql = `
+        SELECT 
+          u.full_name,
+          u.profile_img,
+          u.email,
+          u.phone,
+          sp.company_name,
+          sp.location
+        FROM users u
+        INNER JOIN service_providers sp ON sp.user_id = u.id
+        INNER JOIN services s ON s.provider_id = sp.id
+        INNER JOIN service_categories sc ON sc.id = s.category_id
+        WHERE sc.id = ?
+      `;
+      db.query(sql, [categoryId], (err, results) => {
+        if (err) reject(err);
+        else resolve(
+          results.map(row => {
+            if (row.profile_img && Buffer.isBuffer(row.profile_img)) {
+              row.profile_img = `data:image/jpeg;base64,${row.profile_img.toString("base64")}`;
+            }
+            return row;
+          })
+        );
+      });
+    });
+  }
 }
 
 module.exports = ServiceCategoryModel;

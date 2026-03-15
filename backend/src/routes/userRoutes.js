@@ -1,11 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const { getUsers, getCurrentUser, getAllCategories, providersEachCategory } = require("../controllers/userController");
 const protect = require("../middleware/authMiddleware");
 
-router.get("/", protect, getUsers); // only logged-in users can access
-router.get("/currentUser", protect, getCurrentUser); // only logged-in users can access
-router.get("/allCategories", getAllCategories);
-router.get("/providersEachCategory/:categoryId", providersEachCategory);
+const {
+  getUsers,
+  getCurrentUser,
+} = require("../controllers/userController");
+
+const ServiceCategoryController = require("../controllers/serviceCategoryController");
+
+// ---------- User routes ----------
+router.get("/", protect, getUsers); // all logged-in users
+router.get("/currentUser", protect, getCurrentUser); // logged-in user info
+
+// ---------- Categories for users ----------
+router.get("/allCategories", protect, ServiceCategoryController.getAllCategories);
+router.get("/providersEachCategory/:categoryId", protect, ServiceCategoryController.getProvidersByCategory);
 
 module.exports = router;

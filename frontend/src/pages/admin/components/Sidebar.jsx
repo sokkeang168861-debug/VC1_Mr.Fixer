@@ -8,14 +8,13 @@ import httpClient from '../../../api/httpClient';
 
 // NavItem Component
 const NavItem = ({ icon, children, to, end = false }) => (
-  <NavLink 
+  <NavLink
     to={to}
     end={end}
-    className={({ isActive }) => `flex items-center gap-3 px-3 py-3 rounded-lg transition-all cursor-pointer ${
-      isActive 
-        ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-slate-900 font-semibold shadow-sm' 
-        : 'text-gray-600 hover:bg-gray-100'
-    }`}
+    className={({ isActive }) => `flex items-center gap-3 px-3 py-3 rounded-lg transition-all cursor-pointer ${isActive
+      ? 'bg-gradient-to-r from-blue-100 to-blue-50 text-slate-900 font-semibold shadow-sm'
+      : 'text-gray-600 hover:bg-gray-100'
+      }`}
   >
     <span className="text-xl w-6 text-center">{icon}</span>
     <span className="text-sm font-medium">{children}</span>
@@ -54,13 +53,21 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex flex-col gap-2 flex-1">
-        <NavItem icon={<LuLayoutDashboard />} to="/dashboard/admin" end>Dashboard</NavItem>
-        <NavItem icon={<GiBoxUnpacking />} to="/dashboard/admin/service-categories">Service Categories</NavItem>
-        <NavItem icon={<GiHammerNails />} to="/dashboard/admin/fixers">Fixer Management</NavItem>
+        <NavItem icon={<LuLayoutDashboard />} to="/dashboard/admin" end>
+          Dashboard
+        </NavItem>
+
+        <NavItem icon={<GiBoxUnpacking />} to="/dashboard/admin/ServiceCategories">
+          Service Categories
+        </NavItem>
+
+        <NavItem icon={<GiHammerNails />} to="/dashboard/admin/fixers">
+          Fixer Management
+        </NavItem>
       </nav>
 
       {/* Logout Button */}
-      <button 
+      <button
         onClick={handleLogout}
         className="w-full flex items-center justify-center gap-2 px-4 py-3 mt-auto rounded-lg bg-gradient-to-r from-red-50 to-red-100 text-red-600 font-semibold hover:from-red-100 hover:to-red-200 transition-all shadow-sm hover:shadow-md border border-red-200"
       >
