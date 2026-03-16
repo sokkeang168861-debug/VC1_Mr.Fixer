@@ -1,7 +1,8 @@
 import axios from "axios";
+import { apiBaseUrl } from "./runtimeConfig";
 
 const httpClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
+  baseURL: apiBaseUrl,
 });
 
 // Use an interceptor to ensure the latest token is always included

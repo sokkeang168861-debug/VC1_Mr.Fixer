@@ -7,6 +7,7 @@ import {
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import httpClient from '../../../api/httpClient';
+import { resolveUploadUrl } from '../../../api/runtimeConfig';
 
 const JobCard = ({ job }) => (
   <motion.div
@@ -31,7 +32,7 @@ const JobCard = ({ job }) => (
       {job.issue_image && (
         <div className="w-full md:w-48 h-32 rounded-xl overflow-hidden shrink-0 border border-gray-100">
           <img
-            src={typeof job.issue_image === 'string' && (job.issue_image.startsWith('http') || job.issue_image.startsWith('data:')) ? job.issue_image : `http://localhost:5000/uploads/${job.issue_image}`}
+            src={resolveUploadUrl(job.issue_image)}
             alt="Issue Thumbnail"
             className="w-full h-full object-cover"
           />

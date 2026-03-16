@@ -27,6 +27,8 @@ import FixerManagement from "../pages/admin/pages/FixerManagement";
 
 import ProtectedRoute from "./ProtectedRoute";
 
+const routerBasename = import.meta.env.BASE_URL;
+
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -39,7 +41,7 @@ function ScrollToTop() {
 
 export default function AppRoutes() {
   return (
-    <Router>
+    <Router basename={routerBasename}>
       <ScrollToTop />
       <InnerRoutes />
     </Router>
@@ -53,7 +55,7 @@ function InnerRoutes() {
   return (
     <div className="min-h-screen flex flex-col">
       {!isDashboard && <Navbar />}
-      <main className="flex-grow">
+      <main className="grow">
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<Home />} />

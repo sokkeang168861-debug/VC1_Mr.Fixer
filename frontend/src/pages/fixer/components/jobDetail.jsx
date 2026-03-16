@@ -11,6 +11,7 @@ import {
 import { motion } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import httpClient from '../../../api/httpClient';
+import { resolveUploadUrl } from '../../../api/runtimeConfig';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 const mapContainerStyle = {
@@ -153,7 +154,7 @@ const JobDetails = () => {
                     {job.images.map((img, i) => (
                       <div key={i} className="relative aspect-square rounded-xl overflow-hidden group cursor-pointer">
                         <img
-                          src={typeof img === 'string' && (img.startsWith('http') || img.startsWith('data:')) ? img : `http://localhost:5000/uploads/${img}`}
+                          src={resolveUploadUrl(img)}
                           alt={`Job Issue ${i + 1}`}
                           className="w-full h-full object-cover transition-transform group-hover:scale-110"
                         />
