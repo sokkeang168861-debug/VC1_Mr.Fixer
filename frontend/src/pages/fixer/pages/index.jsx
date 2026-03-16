@@ -11,7 +11,7 @@ import {
   Percent, 
   PiggyBank
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 
@@ -19,15 +19,15 @@ import Sidebar from "../components/Sidebar";
 
 
 
-const StatCard = ({ icon: Icon, label, value, badge, badgeColor, iconBg }) => (
-  <motion.div 
+const StatCard = ({ icon, label, value, badge, badgeColor, iconBg }) => (
+  <Motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex-1 min-w-[240px]"
   >
     <div className="flex justify-between items-start mb-4">
       <div className={`p-2.5 rounded-xl ${iconBg}`}>
-        <Icon size={22} className="text-white" />
+        {icon && React.createElement(icon, { size: 22, className: "text-white" })}
       </div>
       <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${badgeColor}`}>
         {badge}
@@ -37,7 +37,7 @@ const StatCard = ({ icon: Icon, label, value, badge, badgeColor, iconBg }) => (
       <p className="text-slate-400 text-xs font-medium">{label}</p>
       <h3 className="text-2xl font-bold text-slate-800">{value}</h3>
     </div>
-  </motion.div>
+  </Motion.div>
 );
 
 const RatingBar = ({ label, score }) => (
@@ -47,7 +47,7 @@ const RatingBar = ({ label, score }) => (
       <span className="text-slate-900 font-bold">{score} / 5.0</span>
     </div>
     <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-      <motion.div 
+      <Motion.div 
         initial={{ width: 0 }}
         animate={{ width: `${(score / 5) * 100}%` }}
         transition={{ duration: 1, ease: "easeOut" }}
@@ -130,11 +130,11 @@ export default function App() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Detailed Ratings */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100"
-            >
+      <Motion.div 
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100"
+      >
               <h2 className="text-xl font-bold text-slate-800 mb-8">Detailed Ratings</h2>
               <div className="space-y-8">
                 <RatingBar label="Quality of Work" score={4.8} />
@@ -142,10 +142,10 @@ export default function App() {
                 <RatingBar label="Price Fairness" score={4.5} />
                 <RatingBar label="Professional Behavior" score={4.9} />
               </div>
-            </motion.div>
+      </Motion.div>
 
             {/* Ratings & Feedback */}
-            <motion.div 
+            <Motion.div 
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100"
@@ -177,7 +177,7 @@ export default function App() {
                   comment="Marcus was incredibly professional. Fixed the leak quickly!" 
                 />
               </div>
-            </motion.div>
+            </Motion.div>
           </div>
         </main>
       </div>

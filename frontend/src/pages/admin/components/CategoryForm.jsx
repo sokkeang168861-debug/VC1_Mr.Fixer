@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion as Motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Upload, Image as ImageIcon, X } from 'lucide-react';
 import httpClient from '../../../api/httpClient';
 
@@ -45,7 +45,7 @@ export default function CategoryForm({ mode, categoryData, setCategoryData, onCl
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20 backdrop-blur-sm">
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -129,7 +129,7 @@ export default function CategoryForm({ mode, categoryData, setCategoryData, onCl
               </button>
             </div>
           </form>
-        </motion.div>
+        </Motion.div>
       </div>
     </AnimatePresence>
   );

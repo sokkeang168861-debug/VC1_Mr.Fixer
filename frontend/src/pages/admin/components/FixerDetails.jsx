@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Star, MessageSquare } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion as Motion, AnimatePresence } from 'motion/react';
 
 const FixerDetail = ({ fixer, onBack, onEdit }) => {
   const [activeTab, setActiveTab] = useState('all');
@@ -42,7 +42,7 @@ const FixerDetail = ({ fixer, onBack, onEdit }) => {
   ];
 
   return (
-    <motion.div 
+    <Motion.div 
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
@@ -115,7 +115,7 @@ const FixerDetail = ({ fixer, onBack, onEdit }) => {
                   <span className="text-sm font-bold text-slate-800">{r.score} / 5.0</span>
                 </div>
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <motion.div 
+                  <Motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${(r.score / 5) * 100}%` }}
                     transition={{ duration: 1, ease: "easeOut" }}
@@ -196,7 +196,7 @@ const FixerDetail = ({ fixer, onBack, onEdit }) => {
             <tbody>
               <AnimatePresence mode="wait">
                 {(activeTab === 'all' ? transactions : summaryData).map((t, i) => (
-                  <motion.tr 
+                  <Motion.tr 
                     key={`${activeTab}-${i}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -208,14 +208,14 @@ const FixerDetail = ({ fixer, onBack, onEdit }) => {
                     <td className="px-8 py-8 text-center text-sm font-bold text-slate-800">${t.totalPaid.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                     <td className="px-8 py-8 text-center text-sm font-bold text-blue-500">${t.commission.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
                     <td className="px-8 py-8 text-center text-sm font-bold text-emerald-500">${t.netPayout.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                  </motion.tr>
+                  </Motion.tr>
                 ))}
               </AnimatePresence>
             </tbody>
           </table>
         </div>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 };
 

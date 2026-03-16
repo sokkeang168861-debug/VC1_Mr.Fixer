@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import { ArrowLeft, MapPin } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion as Motion, AnimatePresence } from "motion/react";
 
 // import ServiceCard from "../components/ServiceCard";
 // import SpecialistCard from "../components/SpecialistCard";
@@ -21,7 +21,7 @@ export default function FixerDashboard() {
     setLoading(true);
 
     httpClient
-      .get("/users/allCategories")
+      .get("/user/allCategories")
       .then((res) => {
         setServices(res.data || []);
       })
@@ -37,7 +37,7 @@ export default function FixerDashboard() {
   const getProvidersByCategory = async (categoryId) => {
     try {
       const res = await httpClient.get(
-        `/users/providersEachCategory/${categoryId}`
+        `/user/providersEachCategory/${categoryId}`
       );
 
       setProviders(res.data || []);
@@ -67,7 +67,7 @@ export default function FixerDashboard() {
   const renderPage = () => {
     if (currentPage === "specialists") {
       return (
-        <motion.div
+        <Motion.div
           key="specialists"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -104,12 +104,12 @@ export default function FixerDashboard() {
               ))
             )}
           </div>
-        </motion.div>
+        </Motion.div>
       );
     }
 
     return (
-      <motion.div
+      <Motion.div
         key="services"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -144,7 +144,7 @@ export default function FixerDashboard() {
             ))
           )}
         </div>
-      </motion.div>
+      </Motion.div>
     );
   };
 

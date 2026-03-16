@@ -12,6 +12,7 @@ import ComingSoon from "./ComingSoon";
 
 // customer pages
 import CustomerDashboard from "../pages/customer/pages";
+import CustomerHistory from "../pages/customer/pages/history";
 
 // fixer pages
 import FixerDashboard from "../pages/fixer/pages";
@@ -119,6 +120,22 @@ function InnerRoutes() {
             element={
               <ProtectedRoute requiredRole="customer">
                 <ComingSoon title="My Orders" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/customer/history"
+            element={
+              <ProtectedRoute requiredRole="customer">
+                <CustomerHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/customer/settings"
+            element={
+              <ProtectedRoute requiredRole="customer">
+                <ComingSoon title="Settings" />
               </ProtectedRoute>
             }
           />

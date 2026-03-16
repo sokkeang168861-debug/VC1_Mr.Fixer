@@ -7,7 +7,7 @@ import {
   CheckCircle2,
   XCircle
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -30,7 +30,7 @@ const JobDetails = () => {
         <Header name="John Fixer" />
 
         <main className="flex-1 p-8 overflow-y-auto bg-[#f4f5f7]">
-          <motion.div 
+          <Motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
@@ -165,7 +165,7 @@ const JobDetails = () => {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </Motion.div>
         </main>
       </div>
     </div>

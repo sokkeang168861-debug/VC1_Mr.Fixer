@@ -1,8 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BriefcaseBusiness, TrendingUp, Bell, Settings, Wrench, LogOut  } from "lucide-react";
-import httpClient from '../../../api/httpClient';
-
-// import React, { useState, useEffect } from 'react';
+import { Home, BriefcaseBusiness, Wrench, LogOut } from "lucide-react";
 
 export default function Sidebar() {
   const location = useLocation();
@@ -23,41 +20,50 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-white h-full border-r border-gray-200">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-orange-500 flex items-center justify-center">
-          <Wrench className="w-5 h-5 text-white" />
+    <aside className="flex h-full w-64 flex-col border-r border-slate-200 bg-white">
+      <div className="flex items-center gap-3 px-6 py-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600">
+          <Wrench className="h-5 w-5 text-white" />
         </div>
-        <h1 className="text-3xl font-bold text-orange-500">Mr.FIXER</h1>
+        <div className="leading-tight">
+          <p className="text-lg font-bold text-purple-700">Mr. Fixer</p>
+          <p className="text-xs font-medium text-slate-500">Fixer Console</p>
+        </div>
       </div>
-      <nav className="mt-4">
-        {menuItems.map((item, index) => {
+
+      <nav className="mt-2 space-y-1 px-3">
+        {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;
 
           return (
             <Link
-              key={`${item.name}-${index}`}
+              key={item.path}
               to={item.path}
-              className={`flex items-center px-5 py-3 text-lg transition-colors rounded-xl mx-3 mb-1 ${isActive
-                  ? "bg-orange-100 text-orange-600 font-semibold"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                }`}
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                isActive
+                  ? "bg-purple-100 text-purple-700"
+                  : "text-slate-600 hover:bg-slate-50"
+              }`}
             >
-              <Icon className={`w-5 h-5 mr-3 ${isActive ? "text-orange-500" : "text-gray-500"}`} />
-              <span>{item.name}</span>
+              <Icon
+                className={`h-5 w-5 ${
+                  isActive ? "text-purple-600" : "text-slate-400"
+                }`}
+              />
+              {item.name}
             </Link>
           );
         })}
       </nav>
 
-      <div className="mt-auto px-4 pt-6">
+      <div className="mt-auto px-4 pb-6 pt-4">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-red-600 hover:bg-red-50"
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50"
         >
           <LogOut size={18} />
-          <span className="font-medium">Logout</span>
+          Logout
         </button>
       </div>
     </aside>

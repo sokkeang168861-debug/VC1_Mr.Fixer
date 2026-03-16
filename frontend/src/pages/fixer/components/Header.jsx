@@ -8,18 +8,25 @@ const initials = (name) => {
 
 export default function Header({ name = "Fixer" }) {
   return (
-    <header className="bg-white border-b border-gray-200">
-      <div className="flex items-center justify-end px-7 py-4">
-        
+    <header className="border-b border-slate-200 bg-white">
+      <div className="flex items-center justify-between px-7 py-4">
+        <div className="flex items-center gap-3 text-slate-500 text-sm">
+          <Wrench className="h-5 w-5 text-purple-600" />
+          <span className="font-semibold text-slate-700">Dashboard</span>
+        </div>
+
         <div className="flex items-center gap-4">
-          <div className="w-px h-8 bg-gray-200" />
+          <div className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
+            Premium Member
+          </div>
+          <div className="h-8 w-px bg-slate-200" />
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-600 text-sm font-bold text-white">
               {initials(name)}
             </div>
             <div className="leading-tight">
-              <p className="text-lg font-semibold text-gray-800">{name}</p>
-              <p className="text-xs text-gray-500">ID: 0pf_8892</p>
+              <p className="text-sm font-semibold text-slate-900">{name}</p>
+              <p className="text-xs text-slate-500">ID: 0pf_8892</p>
             </div>
           </div>
         </div>

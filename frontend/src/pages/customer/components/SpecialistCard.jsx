@@ -1,9 +1,9 @@
 import { Star, MapPin, Phone, Mail } from "lucide-react";
-import { motion } from "motion/react";
+import { motion as Motion } from "motion/react";
 
 export default function SpecialistCard({ specialist }) {
   return (
-    <motion.div
+    <Motion.div
       layout
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -59,6 +59,6 @@ export default function SpecialistCard({ specialist }) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }

@@ -6,7 +6,7 @@ import {
   Send,
   ArrowLeft
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -49,7 +49,7 @@ const ServiceEstimate = () => {
         <Header name="John Fixer" />
 
         <main className="flex-1 p-8 overflow-y-auto bg-[#f4f5f7]">
-          <motion.div 
+          <Motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -155,7 +155,7 @@ const ServiceEstimate = () => {
                 Submit Proposal
               </button>
             </div>
-          </motion.div>
+          </Motion.div>
         </main>
       </div>
     </div>

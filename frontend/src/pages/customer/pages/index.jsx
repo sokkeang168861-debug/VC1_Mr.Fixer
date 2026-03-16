@@ -3,7 +3,7 @@ import httpClient from "../../../api/httpClient";
 import React, { useState, useEffect } from "react";
 import { Sidebar, Header } from "../components/CustomerNavbar";
 import { ArrowLeft, MapPin } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion as Motion, AnimatePresence } from "motion/react";
 
 import ServiceCard from "../components/ServiceCard";
 import SpecialistCard from "../components/SpecialistCard";
@@ -15,19 +15,34 @@ export default function CustomerDashboard() {
   const [services, setServices] = useState([]);
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     setLoading(true);
+    setLoadError("");
 
     httpClient
       .get("/user/allCategories")
       .then((res) => {
-        setServices(res.data.data || []);
-        // setServices(res.data || []);
+        const list =
+          res?.data?.data?.data ??
+          res?.data?.data ??
+          res?.data?.categories ??
+          res?.data ??
+          [];
+        setServices(Array.isArray(list) ? list : []);
       })
       .catch((err) => {
         console.error(err);
         setServices([]);
+        const status = err?.response?.status;
+        if (status === 401) {
+          setLoadError("Session expired. Please log in again.");
+        } else if (status) {
+          setLoadError(`Failed to load services (HTTP ${status}).`);
+        } else {
+          setLoadError("Failed to load services. Is the backend running?");
+        }
       })
       .finally(() => {
         setLoading(false);
@@ -40,7 +55,8 @@ export default function CustomerDashboard() {
         `/user/providersEachCategory/${categoryId}`
       );
 
-      setProviders(res.data || []);
+      const list = res?.data?.data ?? res?.data ?? [];
+      setProviders(Array.isArray(list) ? list : []);
       setCurrentPage("specialists");
     } catch (err) {
       console.error("Failed to load providers", err);
@@ -67,7 +83,7 @@ export default function CustomerDashboard() {
   const renderPage = () => {
     if (currentPage === "specialists") {
       return (
-        <motion.div
+        <Motion.div
           key="specialists"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -104,12 +120,12 @@ export default function CustomerDashboard() {
               ))
             )}
           </div>
-        </motion.div>
+        </Motion.div>
       );
     }
 
     return (
-      <motion.div
+      <Motion.div
         key="services"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -130,6 +146,17 @@ export default function CustomerDashboard() {
             <div className="col-span-full text-center text-slate-500">
               Loading services…
             </div>
+          ) : loadError ? (
+            <div className="col-span-full rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
+              <p className="text-sm font-semibold text-rose-700">{loadError}</p>
+              <button
+                type="button"
+                onClick={() => navigate("/login")}
+                className="mt-4 inline-flex items-center justify-center rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-rose-700"
+              >
+                Go to Login
+              </button>
+            </div>
           ) : services.length === 0 ? (
             <div className="col-span-full text-center text-slate-500">
               No services found.
@@ -144,31 +171,43 @@ export default function CustomerDashboard() {
             ))
           )}
         </div>
-      </motion.div>
+      </Motion.div>
     );
   };
 
   const sidebarTab = currentPage === "specialists" ? "services" : currentPage;
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar
-        activeTab={sidebarTab}
-        onChange={(tab) => {
-          if (tab === "services" || tab === "specialists") {
-            setCurrentPage(tab);
-          }
-        }}
-        onLogout={handleLogout}
-      />
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      <Header />
 
-      <main className="flex-1 flex flex-col">
-        <Header />
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <Sidebar
+          activeTab={sidebarTab}
+          onChange={(tab) => {
+            if (tab === "services") {
+              setCurrentPage("services");
+              return;
+            }
+            if (tab === "bookings") {
+              navigate("/dashboard/customer/orders");
+              return;
+            }
+            if (tab === "history") {
+              navigate("/dashboard/customer/history");
+              return;
+            }
+            if (tab === "settings") {
+              navigate("/dashboard/customer/settings");
+            }
+          }}
+          onLogout={handleLogout}
+        />
 
-        <div className="p-8">
+        <main className="flex-1 min-h-0 overflow-y-auto p-8">
           <AnimatePresence mode="wait">{renderPage()}</AnimatePresence>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Home, ArrowLeft } from 'lucide-react';
 
 export default function NotFoundPage() {
   return (
     <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-8 bg-slate-50">
       <div className="max-w-md w-full text-center space-y-8">
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -19,9 +19,9 @@ export default function NotFoundPage() {
               Oops! The page you're looking for seems to have vanished into thin air.
             </p>
           </div>
-        </motion.div>
+        </Motion.div>
 
-        <motion.div
+        <Motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -41,7 +41,7 @@ export default function NotFoundPage() {
             <ArrowLeft size={20} />
             Go Back
           </button>
-        </motion.div>
+        </Motion.div>
       </div>
     </div>
   );

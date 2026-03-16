@@ -5,7 +5,7 @@ import {
   Banknote,
   Search
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
@@ -32,7 +32,7 @@ const jobs = [
 ];
 
 const JobCard = ({ job }) => (
-  <motion.div 
+  <Motion.div 
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow mb-4"
@@ -84,7 +84,7 @@ const JobCard = ({ job }) => (
     >
       View Detail
     </Link>
-  </motion.div>
+  </Motion.div>
 );
 
 export default function JobsPage() {
