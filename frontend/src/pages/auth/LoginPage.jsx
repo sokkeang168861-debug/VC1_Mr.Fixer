@@ -2,7 +2,7 @@ import { motion as Motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import httpClient from "../../api/httpClient";
 
@@ -11,11 +11,16 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current) return;
     setError("");
+    submittingRef.current = true;
+    setIsSubmitting(true);
 
     try {
       const res = await httpClient.post("/auth/login", { email, password });
@@ -39,6 +44,9 @@ export default function Login() {
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Login failed");
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -137,8 +145,12 @@ export default function Login() {
               </label>
             </div>
 
-            <button type="submit" className="w-full bg-primary text-white py-5 rounded-2xl font-bold hover:bg-primary-hover transition-all shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]">
-              Log In
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-primary text-white py-5 rounded-2xl font-bold hover:bg-primary-hover transition-all shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-primary"
+            >
+              {isSubmitting ? "Logging in..." : "Log In"}
             </button>
           </form>
 

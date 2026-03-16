@@ -95,4 +95,40 @@ const login = async (db, data) => {
   };
 };
 
-module.exports = { register, login };
+
+// ===============================CHANGE PASSWORD================================
+const changePassword = async (db, userEmail, data) => {
+  const { currentPassword, newPassword } = data || {};
+
+  if (!userEmail) {
+    throw new Error("Not authenticated");
+  }
+
+  if (
+    !currentPassword || String(currentPassword).trim() === "" ||
+    !newPassword || String(newPassword).trim() === ""
+  ) {
+    throw new Error("Current password and new password are required");
+  }
+
+  if (String(newPassword).trim().length < 6) {
+    throw new Error("New password must be at least 6 characters");
+  }
+
+  const user = await User.findByEmail(db, userEmail);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const match = await bcrypt.compare(String(currentPassword), user.password);
+  if (!match) {
+    throw new Error("Current password is incorrect");
+  }
+
+  const hashed = await bcrypt.hash(String(newPassword), 10);
+  await User.updatePasswordById(db, user.id, hashed);
+
+  return { message: "Password updated" };
+};
+
+module.exports = { register, login, changePassword };

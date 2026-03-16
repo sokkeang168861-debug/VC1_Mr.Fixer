@@ -1,6 +1,32 @@
 const authService = require("../services/authService");
 const { JWT_SECRET } = require("../config/constants");
 
+const changePassword = async (req, res) => {
+  const db = req.app.get("db");
+
+  try {
+    const result = await authService.changePassword(db, req.user?.email, req.body);
+    res.json(result);
+  } catch (err) {
+    const message = err.message || "Change password failed";
+
+    if (
+      message === "Not authenticated" ||
+      message === "User not found" ||
+      message === "Current password is incorrect" ||
+      message === "Current password and new password are required" ||
+      message === "New password must be at least 6 characters"
+    ) {
+      return res.status(400).json({ message });
+    }
+
+    res.status(500).json({
+      message: "Change password failed",
+      error: message,
+    });
+  }
+};
+
 // ===================================REGISTER====================================
 const register = async (req, res) => {
   const db = req.app.get("db");
@@ -66,4 +92,4 @@ const logout = async (req, res) => {
 };
 
 
-module.exports = { register, login, logout, JWT_SECRET };
+module.exports = { register, login, logout, changePassword, JWT_SECRET };

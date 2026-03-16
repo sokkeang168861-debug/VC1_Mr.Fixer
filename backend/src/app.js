@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const crypto = require("crypto");
 const db = require("./config/db");
 
 const authRoutes = require("./routes/authRoutes");
@@ -16,16 +17,24 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use((req, res, next) => {
-  console.log(`Incoming Request: ${req.method} ${req.url}`);
-  console.log(`Content-Type: ${req.headers["content-type"]}`);
+  req.requestId = crypto.randomUUID
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   next();
 });
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
-  if (req.method !== 'GET') {
-    console.log(`Parsed Body:`, req.body);
+  const contentType = req.headers["content-type"] || "";
+  console.log(`[${req.requestId}] ${req.method} ${req.url} (${contentType})`);
+
+  if (req.method !== "GET" && req.body && Object.keys(req.body).length > 0) {
+    console.log(`[${req.requestId}] Body:`, req.body);
   }
+
+  res.on("finish", () => {
+    console.log(`[${req.requestId}] -> ${res.statusCode}`);
+  });
   next();
 });
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

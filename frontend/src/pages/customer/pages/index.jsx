@@ -7,9 +7,11 @@ import { motion, AnimatePresence } from "motion/react";
 
 import ServiceCard from "../components/ServiceCard";
 import SpecialistCard from "../components/SpecialistCard";
+import CustomerSettings from "./setting";
 
 export default function CustomerDashboard() {
   const navigate = useNavigate();
+  const MotionDiv = motion.div;
 
   const [currentPage, setCurrentPage] = useState("services");
   const [services, setServices] = useState([]);
@@ -67,7 +69,7 @@ export default function CustomerDashboard() {
   const renderPage = () => {
     if (currentPage === "specialists") {
       return (
-        <motion.div
+        <MotionDiv
           key="specialists"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -104,12 +106,25 @@ export default function CustomerDashboard() {
               ))
             )}
           </div>
-        </motion.div>
+        </MotionDiv>
+      );
+    }
+
+    if (currentPage === "settings") {
+      return (
+        <MotionDiv
+          key="settings"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+        >
+          <CustomerSettings />
+        </MotionDiv>
       );
     }
 
     return (
-      <motion.div
+      <MotionDiv
         key="services"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -144,7 +159,7 @@ export default function CustomerDashboard() {
             ))
           )}
         </div>
-      </motion.div>
+      </MotionDiv>
     );
   };
 
@@ -155,9 +170,8 @@ export default function CustomerDashboard() {
       <Sidebar
         activeTab={sidebarTab}
         onChange={(tab) => {
-          if (tab === "services" || tab === "specialists") {
-            setCurrentPage(tab);
-          }
+          if (tab === "services") setCurrentPage("services");
+          if (tab === "settings") setCurrentPage("settings");
         }}
         onLogout={handleLogout}
       />

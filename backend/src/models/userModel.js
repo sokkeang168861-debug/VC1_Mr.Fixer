@@ -28,6 +28,19 @@ class User {
     });
   }
 
+  static updatePasswordById(db, id, hashedPassword) {
+    return new Promise((resolve, reject) => {
+      db.query(
+        "UPDATE users SET password = ? WHERE id = ?",
+        [hashedPassword, id],
+        (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }
+      );
+    });
+  }
+
 
 }
 
