@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import httpClient from '../../../../api/httpClient';
+import httpClient from '../../../api/httpClient';
 
 const JobCard = ({ job }) => (
   <motion.div

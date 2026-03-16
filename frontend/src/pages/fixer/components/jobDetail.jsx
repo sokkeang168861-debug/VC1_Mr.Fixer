@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import httpClient from '../../../../api/httpClient';
+import httpClient from '../../../api/httpClient';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 const mapContainerStyle = {
