@@ -10,8 +10,27 @@ const providerRoutes = require("./routes/providerRoutes");
 
 const app = express();
 
+const configuredFrontendOrigins = (process.env.FRONTEND_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
+  ...configuredFrontendOrigins,
+]);
+
 const corsOptions = {
-  origin: ["http://localhost:5173"],
+  origin(origin, callback) {
+    // Allow non-browser tools (curl, postman) and explicitly approved frontends.
+    if (!origin || allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
 };
 
 app.use(cors(corsOptions));
