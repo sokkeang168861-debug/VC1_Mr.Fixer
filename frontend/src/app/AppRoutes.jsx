@@ -16,8 +16,9 @@ import CustomerDashboard from "../pages/customer/pages";
 // fixer pages
 import FixerDashboard from "../pages/fixer/pages";
 import Job from "../pages/fixer/pages/jobs";
-import JobDetail from "../pages/fixer/pages/jobDetail";
-import SetProposal from "../pages/fixer/pages/setProposal";
+import JobList from "../pages/fixer/components/JobList";
+import JobDetail from "../pages/fixer/components/jobDetail";
+import SetProposal from "../pages/fixer/components/setProposal";
 
 // admin pages
 import AdminDashboard from "../pages/admin/pages/index";
@@ -139,23 +140,11 @@ function InnerRoutes() {
                 <Job />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/dashboard/fixer/jobs/:id"
-            element={
-              <ProtectedRoute requiredRole="fixer">
-                <JobDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/fixer/jobs/:id/proposal"
-            element={
-              <ProtectedRoute requiredRole="fixer">
-                <SetProposal />
-              </ProtectedRoute>
-            }
-          />
+          >
+            <Route index element={<JobList />} />
+            <Route path=":id" element={<JobDetail />} />
+            <Route path=":id/set-proposal" element={<SetProposal />} />
+          </Route>
 
           {/* 404 */}
           <Route path="*" element={<NotFoundPage />} />

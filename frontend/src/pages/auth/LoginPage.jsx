@@ -5,6 +5,7 @@ import { Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import httpClient from "../../api/httpClient";
+const signupImage = "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=1200";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -56,7 +57,7 @@ export default function Login() {
       <div className="hidden lg:flex flex-1 relative bg-primary overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-violet-900 opacity-90" />
         <img 
-          src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=1200" 
+          src= {signupImage}
           alt="Fixer professional" 
           className="absolute inset-0 w-full h-full object-cover mix-blend-overlay"
         />

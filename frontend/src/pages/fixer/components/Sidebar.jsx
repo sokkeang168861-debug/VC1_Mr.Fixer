@@ -4,7 +4,7 @@ import httpClient from '../../../api/httpClient';
 
 // import React, { useState, useEffect } from 'react';
 
-export default function Sidebar() {
+export default function Sidebar({ className = "" }) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -23,17 +23,13 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-white h-full border-r border-gray-200">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-orange-500 flex items-center justify-center">
-          <Wrench className="w-5 h-5 text-white" />
-        </div>
-        <h1 className="text-3xl font-bold text-orange-500">Mr.FIXER</h1>
-      </div>
+    <aside className={`w-64 bg-white h-full border-r border-gray-200 ${className}`}>
       <nav className="mt-4">
         {menuItems.map((item, index) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
+          const isActive = item.path === "/dashboard/fixer" 
+            ? location.pathname === "/dashboard/fixer"
+            : location.pathname.startsWith(item.path);
 
           return (
             <Link
