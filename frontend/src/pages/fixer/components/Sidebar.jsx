@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, BriefcaseBusiness, Wrench, LogOut } from "lucide-react";
 
-export default function Sidebar() {
+export default function Sidebar({ className = "" }) {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -20,21 +20,13 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-slate-200 bg-white">
-      <div className="flex items-center gap-3 px-6 py-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600">
-          <Wrench className="h-5 w-5 text-white" />
-        </div>
-        <div className="leading-tight">
-          <p className="text-lg font-bold text-purple-700">Mr. Fixer</p>
-          <p className="text-xs font-medium text-slate-500">Fixer Console</p>
-        </div>
-      </div>
-
-      <nav className="mt-2 space-y-1 px-3">
-        {menuItems.map((item) => {
+    <aside className={`w-64 bg-white h-full border-r border-gray-200 ${className}`}>
+      <nav className="mt-4">
+        {menuItems.map((item, index) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
+          const isActive = item.path === "/dashboard/fixer" 
+            ? location.pathname === "/dashboard/fixer"
+            : location.pathname.startsWith(item.path);
 
           return (
             <Link

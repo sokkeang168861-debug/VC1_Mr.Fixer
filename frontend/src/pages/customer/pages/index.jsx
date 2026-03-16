@@ -181,7 +181,7 @@ export default function CustomerDashboard() {
     <div className="flex min-h-screen flex-col bg-slate-50">
       <Header />
 
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 ">
         <Sidebar
           activeTab={sidebarTab}
           onChange={(tab) => {
