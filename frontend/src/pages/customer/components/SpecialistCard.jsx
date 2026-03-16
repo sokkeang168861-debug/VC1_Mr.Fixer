@@ -1,5 +1,6 @@
 import { Star, MapPin, Phone, Mail } from "lucide-react";
 import { motion } from "motion/react";
+import defaultProfile from "../../../assets/image/default-profile.png";
 
 export default function SpecialistCard({ specialist }) {
   return (
@@ -11,7 +12,7 @@ export default function SpecialistCard({ specialist }) {
     >
       <div className="relative h-56 overflow-hidden">
         <img
-          src={specialist.profile_img || "/default-user.png"}
+          src={specialist.profile_img || defaultProfile}
           alt={specialist.full_name}
           className="w-full h-full object-cover"
         />

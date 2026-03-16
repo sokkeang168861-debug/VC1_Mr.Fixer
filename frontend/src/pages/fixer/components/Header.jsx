@@ -6,11 +6,17 @@ const initials = (name) => {
   return parts.slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("");
 };
 
-export default function Header({ name = "Fixer" }) {
+export default function Header({ name = "Fixer", className = "" }) {
   return (
-    <header className="bg-white border-b border-gray-200">
+    <header className={`bg-white border-b border-gray-200 flex justify-between ${className}`}>
+      <div className="p-6 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-lg bg-orange-500 flex items-center justify-center">
+          <Wrench className="w-5 h-5 text-white" />
+        </div>
+        <h1 className="text-3xl font-bold text-orange-500">Mr.FIXER</h1>
+      </div>
+
       <div className="flex items-center justify-end px-7 py-4">
-        
         <div className="flex items-center gap-4">
           <div className="w-px h-8 bg-gray-200" />
           <div className="flex items-center gap-3">
