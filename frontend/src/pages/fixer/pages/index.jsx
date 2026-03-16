@@ -27,7 +27,7 @@ const StatCard = ({ icon: Icon, label, value, badge, badgeColor, iconBg }) => (
   >
     <div className="flex justify-between items-start mb-4">
       <div className={`p-2.5 rounded-xl ${iconBg}`}>
-        <Icon size={22} className="text-white" />
+        {icon && React.createElement(icon, { size: 22, className: "text-white" })}
       </div>
       <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider ${badgeColor}`}>
         {badge}

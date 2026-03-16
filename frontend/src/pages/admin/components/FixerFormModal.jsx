@@ -1,8 +1,8 @@
 import React from 'react';
 import { User, Briefcase, X } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 
-const FixerForm = ({ title, onClose, onSave, initialData }) => {
+const FixerForm = ({ title, onClose, onSave }) => {
   const categories = [
     'Car repair',
     'Motor repair',
@@ -14,13 +14,13 @@ const FixerForm = ({ title, onClose, onSave, initialData }) => {
   ];
 
   return (
-    <motion.div 
+    <Motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto"
     >
-      <motion.div 
+      <Motion.div 
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
@@ -156,8 +156,8 @@ const FixerForm = ({ title, onClose, onSave, initialData }) => {
             {title.toLowerCase().includes('edit') ? 'Update' : 'Save'}
           </button>
         </div>
-      </motion.div>
-    </motion.div>
+      </Motion.div>
+    </Motion.div>
   );
 };
 

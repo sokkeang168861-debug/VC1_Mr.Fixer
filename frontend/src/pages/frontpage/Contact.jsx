@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { MapPin, Mail, Phone, Send, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -51,7 +51,7 @@ export default function Contact() {
       <section className="py-24 bg-slate-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center gap-16">
-            <motion.div 
+            <Motion.div 
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               className="flex-1 space-y-8"
@@ -75,9 +75,9 @@ export default function Contact() {
                 </div>
                 <p className="text-sm font-medium text-slate-600">Our team is active 24/7</p>
               </div>
-            </motion.div>
+            </Motion.div>
 
-            <motion.div 
+            <Motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="flex-1 relative"
@@ -89,7 +89,7 @@ export default function Contact() {
                   className="w-full aspect-[16/10] object-cover"
                 />
               </div>
-            </motion.div>
+            </Motion.div>
           </div>
         </div>
       </section>
@@ -109,7 +109,7 @@ export default function Contact() {
 
               <div className="space-y-8">
                 {contactInfo.map((info, idx) => (
-                  <motion.div
+                  <Motion.div
                     key={info.title}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -124,13 +124,13 @@ export default function Contact() {
                       <h3 className="text-lg font-display font-bold text-slate-900 mb-2">{info.title}</h3>
                       <p className="text-slate-500 text-sm leading-relaxed whitespace-pre-line">{info.desc}</p>
                     </div>
-                  </motion.div>
+                  </Motion.div>
                 ))}
               </div>
             </div>
 
             {/* Right Column: Form */}
-            <motion.div 
+            <Motion.div 
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -213,7 +213,7 @@ export default function Contact() {
                   </button>
                 </form>
               )}
-            </motion.div>
+            </Motion.div>
           </div>
         </div>
       </section>

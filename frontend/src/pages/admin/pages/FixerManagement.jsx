@@ -18,7 +18,7 @@ import {
   Star,
   ChevronDown
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion as Motion, AnimatePresence } from 'motion/react';
 import FixerForm from '../components/FixerFormModal';
 import FixerDetail from '../components/FixerDetails';
 import Sidebar from '../components/Sidebar';
@@ -88,7 +88,7 @@ export default function App() {
         <main className="flex-1 p-8 overflow-y-auto">
           <AnimatePresence mode="wait">
             {view === 'list' ? (
-              <motion.div
+              <Motion.div
                 key="list"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -100,14 +100,14 @@ export default function App() {
 
                 {/* Stats Card */}
                 <div className="mb-8">
-                  <motion.div
+                  <Motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white p-6 rounded-3xl shadow-sm border border-slate-50 w-64"
                   >
                     <p className="text-slate-400 text-sm font-medium mb-1">Total Fixers</p>
                     <h2 className="text-4xl font-bold">1,240</h2>
-                  </motion.div>
+                  </Motion.div>
                 </div>
 
                 {/* Search and Action Bar */}
@@ -154,7 +154,7 @@ export default function App() {
                     <tbody>
                       <AnimatePresence>
                         {fixersData.map((fixer, index) => (
-                          <motion.tr
+                          <Motion.tr
                             key={fixer.id + index}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -204,13 +204,13 @@ export default function App() {
                                 </button>
                               </div>
                             </td>
-                          </motion.tr>
+                          </Motion.tr>
                         ))}
                       </AnimatePresence>
                     </tbody>
                   </table>
                 </div>
-              </motion.div>
+              </Motion.div>
             ) : (
               <FixerDetail
                 fixer={selectedFixer}

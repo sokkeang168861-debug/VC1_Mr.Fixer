@@ -1,9 +1,9 @@
-import { motion } from "motion/react";
+import { motion as Motion } from "motion/react";
 import defaultImage from "../../../assets/image/default-service.png";
 
 export default function ServiceCard({ service, onViewFixers }) {
   return (
-    <motion.div
+    <Motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -44,6 +44,6 @@ export default function ServiceCard({ service, onViewFixers }) {
           </button> */}
         </div>
       </div>
-    </motion.div>
+    </Motion.div>
   );
 }

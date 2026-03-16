@@ -1,8 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BriefcaseBusiness, TrendingUp, Bell, Settings, Wrench, LogOut  } from "lucide-react";
-import httpClient from '../../../api/httpClient';
-
-// import React, { useState, useEffect } from 'react';
+import { Home, BriefcaseBusiness, Wrench, LogOut } from "lucide-react";
 
 export default function Sidebar({ className = "" }) {
   const location = useLocation();
@@ -33,27 +30,32 @@ export default function Sidebar({ className = "" }) {
 
           return (
             <Link
-              key={`${item.name}-${index}`}
+              key={item.path}
               to={item.path}
-              className={`flex items-center px-5 py-3 text-lg transition-colors rounded-xl mx-3 mb-1 ${isActive
-                  ? "bg-orange-100 text-orange-600 font-semibold"
-                  : "text-gray-600 hover:bg-orange-50 hover:text-orange-600"
-                }`}
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                isActive
+                  ? "bg-purple-100 text-purple-700"
+                  : "text-slate-600 hover:bg-slate-50"
+              }`}
             >
-              <Icon className={`w-5 h-5 mr-3 ${isActive ? "text-orange-500" : "text-gray-500"}`} />
-              <span>{item.name}</span>
+              <Icon
+                className={`h-5 w-5 ${
+                  isActive ? "text-purple-600" : "text-slate-400"
+                }`}
+              />
+              {item.name}
             </Link>
           );
         })}
       </nav>
 
-      <div className="mt-auto px-4 pt-6">
+      <div className="mt-auto px-4 pb-6 pt-4">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-red-600 hover:bg-red-50"
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50"
         >
           <LogOut size={18} />
-          <span className="font-medium">Logout</span>
+          Logout
         </button>
       </div>
     </aside>
