@@ -29,6 +29,7 @@ const getCurrentUser = (req, res) => {
   res.json(req.user);
 };
 
+<<<<<<< HEAD
 const getAllCategories = (req, res) => {
   const db = req.app.get("db");
 
@@ -160,3 +161,6 @@ module.exports = {
   createBooking,
   getMyBookings,
 };
+=======
+module.exports = { getUsers, getCurrentUser };
+>>>>>>> 22c83295919d87676d80270642609641e2cb27f1
