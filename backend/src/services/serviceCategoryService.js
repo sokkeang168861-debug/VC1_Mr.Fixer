@@ -1,5 +1,4 @@
 const ServiceCategoryModel = require("../models/serviceCategoryModel");
-const UserModel = require("../models/userModel"); // for other uses if any
 
 class ServiceCategoryService {
 
@@ -17,7 +16,6 @@ class ServiceCategoryService {
   }
 
   static async createCategory(db, data, file) {
-    console.log("Service: createCategory called with data:", data);
     if (!data) {
       throw new Error("Name and description are required");
     }
@@ -49,7 +47,6 @@ class ServiceCategoryService {
   }
 
   static async updateCategory(db, id, data, file) {
-    console.log("Service: updateCategory called with data:", data);
     if (!data) {
       throw new Error("Name and description are required");
     }
@@ -62,7 +59,7 @@ class ServiceCategoryService {
     const image = file ? file.buffer : null;
 
     const existing = await ServiceCategoryModel.findCategory(db, name);
-    if (existing && existing.id != id) {
+    if (existing && existing.id !== Number(id)) {
       throw new Error("Category name already exists");
     }
 

@@ -4,11 +4,12 @@
   "description": "",
   "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "lint": "eslint src/ scripts/",
+    "lint:fix": "eslint src/ scripts/ --fix",
     "seed:user": "node scripts/seedUser.js",
-    "mig": "npx knex migrate:latest"
+    "migrate": "npx knex migrate:latest"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,8 @@
     "mysql2": "^3.18.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.3",
     "nodemon": "^3.1.14"
   }
 }

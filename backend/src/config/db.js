@@ -1,11 +1,9 @@
-const mysql = require("mysql2");
-const path = require("path");
+require("dotenv").config({ path: require("path").resolve(__dirname, "../../.env") });
+const mysql = require("mysql2/promise");
 
-// Load .env from the backend root directory to ensure it works in all contexts
-require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
-
-// Use a connection pool so MySQL errors (like ECONNRESET) don't crash the app.
-// Pools automatically manage reconnects and provide a clean API for queries.
+// A connection pool handles multiple simultaneous requests efficiently.
+// mysql2/promise lets every query be a simple `await db.query(...)` call
+// instead of nested callbacks — much easier to read and debug.
 const db = mysql.createPool({
   host: process.env.DB_HOST || "localhost",
   port: parseInt(process.env.DB_PORT, 10) || 3306,

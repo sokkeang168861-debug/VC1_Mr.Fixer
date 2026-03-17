@@ -1,5 +1,4 @@
 const authService = require("../services/authService");
-const { JWT_SECRET } = require("../config/constants");
 
 const changePassword = async (req, res) => {
   const db = req.app.get("db");
@@ -92,4 +91,4 @@ const logout = async (req, res) => {
 };
 
 
-module.exports = { register, login, logout, changePassword, JWT_SECRET };
+module.exports = { register, login, logout, changePassword };

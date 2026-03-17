@@ -20,6 +20,7 @@ const protect = (req, res, next) => {
     req.user = decoded; // now you can access req.user in controllers
     next();
   } catch (err) {
+    console.error("JWT verification failed:", err.message);
     return res.status(401).json({ message: "Invalid token" });
   }
 };

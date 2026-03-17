@@ -7,63 +7,19 @@ const toBase64Image = (buffer) => {
     : null;
 };
 
-// ---------- Users ----------
-const getUsers = (req, res) => {
+const getUsers = async (req, res) => {
   const db = req.app.get("db");
-
-  User.getAllUsers(db, (err, results) => {
-    if (err) {
-      return res.status(500).json({ message: "Failed to fetch users" });
-    }
-
+  try {
+    const results = await User.getAllUsers(db);
     res.json(results);
-  });
+  } catch (err) {
+    console.error("getUsers:", err.message);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
 };
 
 const getCurrentUser = (req, res) => {
-  // Provided by authMiddleware (JWT)
   res.json(req.user);
-};
-
-// ---------- Categories ----------
-const getAllCategories = (req, res) => {
-  const db = req.app.get("db");
-
-  User.getAllCategories(db, (err, results) => {
-    if (err) {
-      return res.status(500).json({
-        message: "Failed to fetch service categories",
-      });
-    }
-
-    const formatted = results.map((row) => ({
-      ...row,
-      image: toBase64Image(row.image),
-    }));
-
-    res.json(formatted);
-  });
-};
-
-const providersEachCategory = (req, res) => {
-  const db = req.app.get("db");
-  const { categoryId } = req.params;
-
-  User.providersEachCategory(db, categoryId, (err, results) => {
-    if (err) {
-      return res.status(500).json({
-        message: "Failed to fetch providers",
-        error: err.message,
-      });
-    }
-
-    const formatted = results.map((row) => ({
-      ...row,
-      profile_img: toBase64Image(row.profile_img),
-    }));
-
-    res.json(formatted);
-  });
 };
 
 // ---------- Booking ----------
@@ -151,12 +107,9 @@ const getMyBookings = async (req, res) => {
   }
 };
 
-// SINGLE export (fixed)
 module.exports = {
   getUsers,
   getCurrentUser,
-  getAllCategories,
-  providersEachCategory,
   getBookingCategories,
   createBooking,
   getMyBookings,

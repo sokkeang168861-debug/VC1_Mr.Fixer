@@ -4,26 +4,14 @@ class ProviderRequestController {
   static async getAllRequests(req, res) {
     try {
       const db = req.app.get("db");
+      const provider_id = req.user.id;
 
-      const provider_id = req.user.id; 
-      // assuming provider is logged in and middleware added req.user
+      const requests = await ProviderRequestService.getAllRequests(db, provider_id);
 
-      const requests = await ProviderRequestService.getAllRequests(
-        db,
-        provider_id
-      );
-
-      res.status(200).json({
-        success: true,
-        data: requests,
-      });
+      res.status(200).json({ success: true, data: requests });
     } catch (error) {
-      console.error(error);
-
-      res.status(500).json({
-        success: false,
-        message: "Failed to fetch requests",
-      });
+      console.error("getAllRequests:", error.message);
+      res.status(500).json({ success: false, message: "Failed to fetch requests" });
     }
   }
 
@@ -33,29 +21,16 @@ class ProviderRequestController {
       const { id } = req.params;
       const provider_id = req.user.id;
 
-      const request = await ProviderRequestService.getRequestById(
-        db,
-        id,
-        provider_id
-      );
+      const request = await ProviderRequestService.getRequestById(db, id, provider_id);
 
       if (!request) {
-        return res.status(404).json({
-          success: false,
-          message: "Request not found",
-        });
+        return res.status(404).json({ success: false, message: "Request not found" });
       }
 
-      res.status(200).json({
-        success: true,
-        data: request,
-      });
+      res.status(200).json({ success: true, data: request });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to fetch request detail",
-      });
+      console.error("getRequestById:", error.message);
+      res.status(500).json({ success: false, message: "Failed to fetch request detail" });
     }
   }
 
@@ -66,24 +41,12 @@ class ProviderRequestController {
       const { items, total } = req.body;
       const provider_id = req.user.id;
 
-      const result = await ProviderRequestService.acceptAndSetProposal(
-        db,
-        id,
-        provider_id,
-        items,
-        total
-      );
+      await ProviderRequestService.acceptAndSetProposal(db, id, provider_id, items, total);
 
-      res.status(200).json({
-        success: true,
-        message: "Proposal submitted successfully",
-      });
+      res.status(200).json({ success: true, message: "Proposal submitted successfully" });
     } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to submit proposal",
-      });
+      console.error("acceptAndSetProposal:", error.message);
+      res.status(500).json({ success: false, message: "Failed to submit proposal" });
     }
   }
 }

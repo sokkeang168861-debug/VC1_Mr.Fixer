@@ -19,14 +19,6 @@ class ServiceCategoryController {
 
   static async createCategory(req, res) {
     const db = req.app.get("db");
-    console.log("Controller: createCategory called");
-    console.log("req.body:", req.body);
-    console.log("req.file:", req.file ? {
-      fieldname: req.file.fieldname,
-      originalname: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size
-    } : "No file");
 
     try {
       const result = await ServiceCategoryService.createCategory(db, req.body, req.file);
@@ -73,15 +65,6 @@ class ServiceCategoryController {
   static async updateCategory(req, res) {
     const db = req.app.get("db");
     const { id } = req.params;
-
-    console.log("Controller: updateCategory called for id:", id);
-    console.log("req.body:", req.body);
-    console.log("req.file:", req.file ? {
-      fieldname: req.file.fieldname,
-      originalname: req.file.originalname,
-      mimetype: req.file.mimetype,
-      size: req.file.size
-    } : "No file");
 
     try {
       const result = await ServiceCategoryService.updateCategory(db, id, req.body, req.file);

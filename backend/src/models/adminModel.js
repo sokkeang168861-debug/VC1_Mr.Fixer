@@ -1,14 +1,7 @@
 class Admin {
-  static query(db, sql, params = []) {
-    return new Promise((resolve, reject) => {
-      db.query(sql, params, (err, results) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(results);
-      });
-    });
+  static async query(db, sql, params = []) {
+    const [results] = await db.query(sql, params);
+    return results;
   }
 
   static async getUserStats(db, options = {}) {

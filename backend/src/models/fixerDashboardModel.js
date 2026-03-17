@@ -1,7 +1,7 @@
 class FixerDashboardModel {
-  static getRatingSummary(db, fixerId) {
-    const query = `
-      SELECT
+  static async getRatingSummary(db, fixerId) {
+    const [rows] = await db.query(
+      `SELECT
         COALESCE(ROUND(AVG(r.quality_rating), 1), 0) AS quality_rating,
         COALESCE(ROUND(AVG(r.speed_rating), 1), 0) AS speed_rating,
         COALESCE(ROUND(AVG(r.price_fairness_rating), 1), 0) AS price_fairness_rating,
@@ -11,20 +11,15 @@ class FixerDashboardModel {
       FROM reviews r
       INNER JOIN bookings b ON b.id = r.booking_id
       INNER JOIN services s ON s.id = b.service_id
-      WHERE s.provider_id = ?
-    `;
-
-    return new Promise((resolve, reject) => {
-      db.query(query, [fixerId], (err, results) => {
-        if (err) return reject(err);
-        resolve(results[0]);
-      });
-    });
+      WHERE s.provider_id = ?`,
+      [fixerId]
+    );
+    return rows[0];
   }
 
-  static getRecentFeedback(db, fixerId, limit = 5) {
-    const query = `
-      SELECT
+  static async getRecentFeedback(db, fixerId, limit = 5) {
+    const [rows] = await db.query(
+      `SELECT
         r.id,
         r.overall_rating,
         r.comment,
@@ -38,15 +33,10 @@ class FixerDashboardModel {
         AND r.comment IS NOT NULL
         AND TRIM(r.comment) <> ''
       ORDER BY r.created_at DESC
-      LIMIT ?
-    `;
-
-    return new Promise((resolve, reject) => {
-      db.query(query, [fixerId, Number(limit)], (err, results) => {
-        if (err) return reject(err);
-        resolve(results);
-      });
-    });
+      LIMIT ?`,
+      [fixerId, Number(limit)]
+    );
+    return rows;
   }
 }
 
