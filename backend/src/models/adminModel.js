@@ -28,7 +28,7 @@ class Admin {
     const userStats = userStatsRows[0] || {};
 
     return {
-      totalUsers: Number(userStats.totalUsers) -1 || 0,
+      totalUsers: Number(userStats.totalCustomers) + Number(userStats.totalFixers) || 0,
       totalFixers: Number(userStats.totalFixers) || 0,
       totalCustomers: Number(userStats.totalCustomers) || 0,
       totalJobs,

@@ -1,18 +1,30 @@
 import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import Navbar from "../pages/components/Navbar";
-import Footer from "../pages/components/Footer";
-import Home from "../pages/index";
-import Services from "../pages/Services";
-import Contact from "../pages/Contact";
-import LoginPage from "../features/auth/LoginPage";
-import SignupPage from "../features/auth/SignupPage";
+import Navbar from "../pages/components/frontpage-Navbar";
+import Footer from "../pages/components/frontpage-Footer";
+import Home from "../pages/frontpage/index";
+import Services from "../pages/frontpage/Services";
+import Contact from "../pages/frontpage/Contact";
+import LoginPage from "../pages/auth/LoginPage";
+import SignupPage from "../pages/auth/SignupPage";
+import NotFoundPage from "./NotFoundPage";
+import ComingSoon from "./ComingSoon";
 
-// dashboard pages
-import AdminDashboard from "../features/dashboard/admin";
-import CustomerDashboard from "../features/dashboard/customer";
-import FixerDashboard from "../features/dashboard/fixer";
-import ServiceCategories from "../features/dashboard/admin/service_categories";
+// customer pages
+import CustomerDashboard from "../pages/customer/pages";
+import CustomerHistory from "../pages/customer/pages/history";
+import CustomerSetting from "../pages/customer/pages/setting";
+// fixer pages
+import FixerDashboard from "../pages/fixer/pages";
+import Job from "../pages/fixer/pages/jobs";
+import JobList from "../pages/fixer/components/JobList";
+import JobDetail from "../pages/fixer/components/jobDetail";
+import SetProposal from "../pages/fixer/components/setProposal";
+
+// admin pages
+import AdminDashboard from "../pages/admin/pages/index";
+import ServiceCategories from "../pages/admin/pages/ServiceCategories";
+import FixerManagement from "../pages/admin/pages/FixerManagement";
 
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -44,44 +56,118 @@ function InnerRoutes() {
       {!isDashboard && <Navbar />}
       <main className="flex-grow">
         <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+          {/* Public routes */}
+          <Route path="/" element={<Home />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
 
-            {/* dashboard routes; users will be redirected after login */}
-            <Route
-              path="/dashboard/admin"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminDashboard.Dashboard />} />
-              <Route path="service-categories" element={<ServiceCategories />} />
-            </Route>
-            
-            <Route
-              path="/dashboard/customer"
-              element={
-                <ProtectedRoute requiredRole="customer">
-                  <CustomerDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/fixer"
-              element={
-                <ProtectedRoute requiredRole="fixer">
-                  <FixerDashboard />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </main>
-        {!isDashboard && <Footer />}
-      </div>
+          {/* Admin Dashboard */}
+          <Route
+            path="/dashboard/admin"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin sub-routes */}
+          <Route
+            path="/dashboard/admin/ServiceCategories"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <ServiceCategories />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/users"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <ComingSoon title="User Management" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/fixers"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <FixerManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/transactions"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <ComingSoon title="Transactions" />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Customer Dashboard */}
+          <Route
+            path="/dashboard/customer"
+            element={
+              <ProtectedRoute requiredRole="customer">
+                <CustomerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/customer/orders"
+            element={
+              <ProtectedRoute requiredRole="customer">
+                <ComingSoon title="My Orders" />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/customer/history"
+            element={
+              <ProtectedRoute requiredRole="customer">
+                <CustomerHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/customer/settings"
+            element={
+              <ProtectedRoute requiredRole="customer">
+                <CustomerDashboard initialPage="settings" />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Fixer Dashboard */}
+          <Route
+            path="/dashboard/fixer"
+            element={
+              <ProtectedRoute requiredRole="fixer">
+                <FixerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/fixer/jobs"
+            element={
+              <ProtectedRoute requiredRole="fixer">
+                <Job />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<JobList />} />
+            <Route path=":id" element={<JobDetail />} />
+            <Route path=":id/set-proposal" element={<SetProposal />} />
+          </Route>
+
+          {/* 404 */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </main>
+      {!isDashboard && <Footer />}
+    </div>
   );
 }

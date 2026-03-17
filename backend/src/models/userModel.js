@@ -27,28 +27,105 @@ class User {
       });
     });
   }
-  static getAllCategories(db, callback) {
-    db.query("SELECT * FROM service_categories", callback);
+
+  static updatePasswordById(db, id, hashedPassword) {
+    return new Promise((resolve, reject) => {
+      db.query(
+        "UPDATE users SET password = ? WHERE id = ?",
+        [hashedPassword, id],
+        (err, result) => {
+          if (err) reject(err);
+          else resolve(result);
+        }
+      );
+    });
   }
 
-static providersEachCategory(db, serviceCategory, callback) {
-  const sql = `
-    SELECT 
-      u.full_name,
-      u.profile_img,
-      u.email,
-      u.phone,
-      sp.company_name,
-      sp.location
-    FROM users u
-    INNER JOIN service_providers sp ON sp.user_id = u.id
-    INNER JOIN services s ON s.provider_id = sp.id
-    INNER JOIN service_categories sc ON sc.id = s.category_id
-    WHERE sc.id = ?
-  `;
 
-  db.query(sql, [serviceCategory], callback);
-}
+  static getBookingCategories(db) {
+    const sql = `
+      SELECT
+        sc.id,
+        sc.name,
+        sc.description,
+        sc.image,
+        MIN(s.id) AS service_id
+      FROM service_categories sc
+      INNER JOIN services s ON s.category_id = sc.id
+      WHERE sc.is_active = 1
+        AND s.is_active = 1
+      GROUP BY sc.id, sc.name, sc.description, sc.image
+      ORDER BY sc.id ASC
+    `;
+
+    return new Promise((resolve, reject) => {
+      db.query(sql, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+  }
+
+  static createBooking(db, payload) {
+    const sql = `
+      INSERT INTO bookings (
+        customer_id,
+        service_id,
+        service_address,
+        issue_description,
+        status,
+        scheduled_at
+      ) VALUES (?, ?, ?, ?, ?, ?)
+    `;
+
+    const params = [
+      payload.customer_id,
+      payload.service_id,
+      payload.service_address || null,
+      payload.issue_description,
+      payload.status || "pending",
+      payload.scheduled_at || null,
+    ];
+
+    return new Promise((resolve, reject) => {
+      db.query(sql, params, (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+  }
+
+  static getBookingsByCustomer(db, customerId) {
+    const sql = `
+      SELECT
+        b.id,
+        b.customer_id,
+        b.service_id,
+        b.service_address,
+        b.issue_description,
+        b.status,
+        b.service_fee,
+        b.proposed_price,
+        b.final_price,
+        b.cancellation_reason,
+        b.created_at,
+        b.updated_at,
+        b.scheduled_at,
+        sc.name AS category_name
+      FROM bookings b
+      LEFT JOIN services s ON s.id = b.service_id
+      LEFT JOIN service_categories sc ON sc.id = s.category_id
+      WHERE b.customer_id = ?
+      ORDER BY b.created_at DESC
+    `;
+
+    return new Promise((resolve, reject) => {
+      db.query(sql, [customerId], (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+  }
 
 }
 

@@ -1,56 +1,95 @@
-const User = require("../models/userModel");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const authService = require("../services/authService");
+const { JWT_SECRET } = require("../config/constants");
 
-const JWT_SECRET = "your_secret_key"; // change this in production!!!
+const changePassword = async (req, res) => {
+  const db = req.app.get("db");
 
+  try {
+    const result = await authService.changePassword(db, req.user?.email, req.body);
+    res.json(result);
+  } catch (err) {
+    const message = err.message || "Change password failed";
+
+    if (
+      message === "Not authenticated" ||
+      message === "User not found" ||
+      message === "Current password is incorrect" ||
+      message === "Current password and new password are required" ||
+      message === "New password must be at least 6 characters"
+    ) {
+      return res.status(400).json({ message });
+    }
+
+    res.status(500).json({
+      message: "Change password failed",
+      error: message,
+    });
+  }
+};
+
+// ===================================REGISTER====================================
 const register = async (req, res) => {
   const db = req.app.get("db");
-  const { full_name, phone, email, password } = req.body;
 
   try {
-    const existing = await User.findByEmail(db, email);
-    if (existing) return res.status(400).json({ message: "Email already exists" });
+    const result = await authService.register(db, req.body);
 
-    const result = await User.createUser(db, { full_name, phone, email, password });
+    res.status(201).json(result);
 
-    // sign a JWT for the newly created user (include full name so the frontend can show it immediately)
-    const payload = { id: result.insertId, email, role: "customer", full_name };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
-
-    res.status(201).json({
-      message: "User created",
-      token,
-      role: "customer",
-      full_name,
-      userId: result.insertId,
-    });
   } catch (err) {
-    res.status(500).json({ message: "Registration failed", error: err.message });
+
+    if (err.message === "Email already exists") {
+      return res.status(400).json({ message: err.message });
+    }
+
+    if (err.message === "Full name, phone, email, and password are required") {
+      return res.status(400).json({ message: err.message });
+    }
+
+    res.status(500).json({
+      message: "Registration failed",
+      error: err.message
+    });
   }
 };
 
 
+
+
+// ===================================LOGIN====================================
 const login = async (req, res) => {
   const db = req.app.get("db");
-  const { email, password } = req.body;
 
   try {
-    const user = await User.findByEmail(db, email);
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    const result = await authService.login(db, req.body);
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).json({ message: "Invalid credentials" });
+    res.json(result);
 
-    // include role and full name in the token so frontend can easily inspect it
-    const payload = { id: user.id, email: user.email, role: user.role, full_name: user.full_name };
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
-
-    // send role and full name separately as well for convenience
-    res.json({ message: "Logged in", token, role: user.role, full_name: user.full_name });
   } catch (err) {
-    res.status(500).json({ message: "Login failed", error: err.message });
+
+    if (
+      err.message === "Invalid credentials" ||
+      err.message === "Email and password are required"
+    ) {
+      return res.status(400).json({ message: err.message });
+    }
+
+    res.status(500).json({
+      message: "Login failed",
+      error: err.message
+    });
   }
 };
 
-module.exports = { register, login, JWT_SECRET };
+
+
+
+// ===================================LOGOUT====================================
+const logout = async (req, res) => {
+  // Since JWT is stateless, the server doesn't "delete" the token.
+  // For now, we return success to confirm the intent.
+  res.json({ message: "Logged out successfully" });
+};
+
+
+module.exports = { register, login, logout, changePassword, JWT_SECRET };
