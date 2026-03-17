@@ -10,22 +10,6 @@ export const Sidebar = ({
   scrollNav = false,
 }) => {
   const menuItems = [
-<<<<<<< HEAD:frontend/src/features/dashboard/customer/CustomerNavbar.jsx
-    { id: "services", label: "Services", icon: Wrench },
-    { id: "bookings", label: "Bookings", icon: CalendarDays },
-    { id: "history", label: "History", icon: History },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
-
-  return (
-    <aside className="w-64 bg-white border-r border-slate-200 min-h-screen sticky top-0 flex flex-col p-4">
-      <div className="flex items-center gap-2 px-2 mb-8">
-        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-          <Wrench size={24} />
-        </div>
-        <span className="text-xl font-bold tracking-tight text-primary">Mr. Fixer</span>
-      </div>
-=======
     { id: 'services', label: 'Services', icon: Wrench },
     // { id: 'bookings', label: 'Bookings', icon: Calendar },
     { id: 'history', label: 'History', icon: History },
@@ -40,7 +24,6 @@ export const Sidebar = ({
     ? 'sticky top-16'
     : '';
   const sidebarHeightClasses = 'h-[calc(100vh-4rem)]';
->>>>>>> 22c83295919d87676d80270642609641e2cb27f1:frontend/src/pages/customer/components/navbar.jsx
 
   const navScrollClasses = scrollNav ? 'overflow-y-auto' : 'overflow-hidden';
 
@@ -53,39 +36,17 @@ export const Sidebar = ({
           <button
             key={item.id}
             onClick={() => onChange && onChange(item.id)}
-<<<<<<< HEAD:frontend/src/features/dashboard/customer/CustomerNavbar.jsx
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-              activeTab === item.id
-                ? "bg-primary-light text-primary font-semibold"
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
-            }`}
-=======
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${activeTab === item.id
               ? 'bg-primary-light text-primary font-semibold'
               : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
               }`}
->>>>>>> 22c83295919d87676d80270642609641e2cb27f1:frontend/src/pages/customer/components/navbar.jsx
           >
             <item.icon size={20} />
             {item.label}
           </button>
         ))}
       </nav>
-<<<<<<< HEAD:frontend/src/features/dashboard/customer/CustomerNavbar.jsx
-
-      <div className="mt-auto px-4 pt-6">
-        <button
-          onClick={() => onLogout && onLogout()}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-red-600 hover:bg-red-50"
-        >
-          <LogOut size={18} />
-          <span className="font-medium">Logout</span>
-        </button>
-      </div>
-    </aside>
-=======
     </div>
->>>>>>> 22c83295919d87676d80270642609641e2cb27f1:frontend/src/pages/customer/components/navbar.jsx
   );
 };
 
@@ -121,13 +82,6 @@ export const Header = () => {
   };
 
   return (
-<<<<<<< HEAD:frontend/src/features/dashboard/customer/CustomerNavbar.jsx
-    <header className="h-16 bg-white border-b border-slate-200 px-6 md:px-8 flex items-center justify-between sticky top-0 z-10">
-      <button className="w-9 h-9 rounded-lg border border-slate-200 flex items-center justify-center text-slate-500">
-        <Menu size={18} />
-      </button>
-      <div className="flex items-center gap-4">
-=======
     <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
@@ -137,7 +91,6 @@ export const Header = () => {
       </div>
       <div className="flex-1" />
       <div className="flex items-center gap-4 ml-8">
->>>>>>> 22c83295919d87676d80270642609641e2cb27f1:frontend/src/pages/customer/components/navbar.jsx
         <div className="text-right">{renderUserInfo()}</div>
         <div className="w-12 h-12 rounded-2xl bg-orange-100 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden">
           <img
