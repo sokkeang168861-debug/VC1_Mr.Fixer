@@ -1,15 +1,16 @@
 import { useNavigate } from "react-router-dom";
 import httpClient from "../../../api/httpClient";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Sidebar, Header } from "./CustomerNavbar";
 import { ArrowLeft, Star, MapPin, Phone, Mail } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import axios from "axios";
+import { motion as Motion, AnimatePresence } from "motion/react";
+import { clearSession } from "@/lib/auth";
+import { ROUTES } from "@/config/routes";
 
 // --- Cards ---
 
 const ServiceCard = ({ service, onViewFixers }) => (
-  <motion.div
+  <Motion.div
     layout
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -52,11 +53,11 @@ const ServiceCard = ({ service, onViewFixers }) => (
         </button>
       </div>
     </div>
-  </motion.div>
+  </Motion.div>
 );
 
 const SpecialistCard = ({ specialist }) => (
-  <motion.div
+  <Motion.div
     layout
     initial={{ opacity: 0, scale: 0.95 }}
     animate={{ opacity: 1, scale: 1 }}
@@ -111,7 +112,7 @@ const SpecialistCard = ({ specialist }) => (
         </div>
       </div>
     </div>
-  </motion.div>
+  </Motion.div>
 );
 
 export default function CustomerDashboard() {
@@ -124,18 +125,8 @@ export default function CustomerDashboard() {
 
   // --- Load service categories ---
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    const client = httpClient || axios;
-
-    client
-      .get("http://localhost:5000/api/users/allCategories", {
-        headers: token
-          ? {
-            Authorization: `Bearer ${token}`,
-          }
-          : undefined,
-      })
+    httpClient
+      .get("/api/users/allCategories")
       .then((res) => {
         setServices(res.data || []);
       })
@@ -151,8 +142,8 @@ export default function CustomerDashboard() {
   // --- Load providers by category ---
   const getProvidersByCategory = async (categoryId) => {
     try {
-      const res = await axios.get(
-        `http://localhost:5000/api/users/providersEachCategory/${categoryId}`
+      const res = await httpClient.get(
+        `/api/users/providersEachCategory/${categoryId}`
       );
 
       setProviders(res.data || []);
@@ -164,19 +155,14 @@ export default function CustomerDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-
-    if (httpClient && httpClient.defaults?.headers) {
-      delete httpClient.defaults.headers.common?.["Authorization"];
-    }
-
-    navigate("/");
+    clearSession();
+    navigate(ROUTES.home);
   };
 
   const renderPage = () => {
     if (currentPage === "specialists") {
       return (
-        <motion.div
+        <Motion.div
           key="specialists"
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -212,12 +198,12 @@ export default function CustomerDashboard() {
               ))
             )}
           </div>
-        </motion.div>
+        </Motion.div>
       );
     }
 
     return (
-      <motion.div
+      <Motion.div
         key="services"
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -252,7 +238,7 @@ export default function CustomerDashboard() {
             ))
           )}
         </div>
-      </motion.div>
+      </Motion.div>
     );
   };
 

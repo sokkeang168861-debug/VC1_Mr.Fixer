@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Car, Droplets, Zap, ShieldCheck, Banknote, Clock, CheckCircle2 } from 'lucide-react';
 
@@ -56,7 +56,7 @@ export default function Home() {
       <section className="relative pt-20 pb-32 bg-slate-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center gap-16">
-            <motion.div 
+            <Motion.div 
               initial={{ opacity: 0, x: -50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
@@ -73,9 +73,9 @@ export default function Home() {
                   Get Started
                 </Link>
               </div>
-            </motion.div>
+            </Motion.div>
 
-            <motion.div 
+            <Motion.div 
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8 }}
@@ -90,7 +90,7 @@ export default function Home() {
               </div>
               
               {/* Floating Card */}
-              <motion.div 
+              <Motion.div 
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.6 }}
@@ -103,8 +103,8 @@ export default function Home() {
                   <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Trusted Experts</p>
                   <p className="text-xl font-display font-bold text-slate-900">10,000+ Services Fixed</p>
                 </div>
-              </motion.div>
-            </motion.div>
+              </Motion.div>
+            </Motion.div>
           </div>
         </div>
       </section>
@@ -119,7 +119,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {categories.map((cat, idx) => (
-              <motion.div
+                  <Motion.div
                 key={cat.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -132,7 +132,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-2xl font-display font-bold text-slate-900 mb-4">{cat.title}</h3>
                 <p className="text-slate-600 leading-relaxed">{cat.desc}</p>
-              </motion.div>
+                  </Motion.div>
             ))}
           </div>
         </div>
@@ -150,7 +150,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
             {features.map((feature, idx) => (
-              <motion.div
+                  <Motion.div
                 key={feature.title}
                 initial={{ opacity: 0, scale: 0.9 }}
                 whileInView={{ opacity: 1, scale: 1 }}
@@ -163,7 +163,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-display font-bold text-slate-900">{feature.title}</h3>
                 <p className="text-slate-500 leading-relaxed text-sm">{feature.desc}</p>
-              </motion.div>
+                  </Motion.div>
             ))}
           </div>
         </div>
@@ -181,7 +181,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
             {steps.map((step, idx) => (
-              <motion.div
+              <Motion.div 
                 key={step.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -194,7 +194,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-lg font-display font-bold text-slate-900">{step.title}</h3>
                 <p className="text-slate-500 text-xs leading-relaxed">{step.desc}</p>
-              </motion.div>
+              </Motion.div>
             ))}
           </div>
         </div>

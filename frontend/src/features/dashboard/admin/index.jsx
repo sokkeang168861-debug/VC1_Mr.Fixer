@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale, Filler, Tooltip } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import Sidebar from './Sidebar.jsx';
@@ -88,7 +88,7 @@ function LineChart({ monthlyJobs, year }) {
   );
 }
 
-function Dashboard() {
+export function Dashboard() {
   const [stats, setStats] = useState({
     totalJobs: 0,
     totalFixers: 0,
@@ -159,4 +159,3 @@ export default function AdminLayout() {
   );
 }
 
-AdminLayout.Dashboard = Dashboard;

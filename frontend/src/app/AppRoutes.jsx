@@ -1,87 +1,96 @@
-import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
-import { useEffect } from "react";
-import Navbar from "../pages/components/Navbar";
-import Footer from "../pages/components/Footer";
-import Home from "../pages/index";
-import Services from "../pages/Services";
-import Contact from "../pages/Contact";
-import LoginPage from "../features/auth/LoginPage";
-import SignupPage from "../features/auth/SignupPage";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Suspense, createElement, useEffect } from "react";
+import { getTokenPayload } from "@/lib/auth";
 
-// dashboard pages
-import AdminDashboard from "../features/dashboard/admin";
-import CustomerDashboard from "../features/dashboard/customer";
-import FixerDashboard from "../features/dashboard/fixer";
-import ServiceCategories from "../features/dashboard/admin/service_categories";
+import ScrollToTop from "@/app/components/ScrollToTop";
+import PublicLayout from "@/app/layouts/PublicLayout";
+import {
+  preloadCommonRouteChunks,
+  preloadGuestRouteChunks,
+  publicRoutes,
+} from "@/app/routes/publicRoutes";
+import {
+  adminDashboardRoute,
+  dashboardRoutes,
+  preloadDashboardForRole,
+} from "@/app/routes/dashboardRoutes";
 
 import ProtectedRoute from "./ProtectedRoute";
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
+function RoleRoute({ requiredRole, children }) {
+  return <ProtectedRoute requiredRole={requiredRole}>{children}</ProtectedRoute>;
+}
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-
-  return null;
+function RouteLoader() {
+  return <div className="p-6 text-sm text-slate-500">Loading...</div>;
 }
 
 export default function AppRoutes() {
+  useEffect(() => {
+    const preload = () => {
+      preloadCommonRouteChunks();
+
+      const payload = getTokenPayload();
+      if (payload?.role) {
+        preloadDashboardForRole(payload.role);
+      } else {
+        preloadGuestRouteChunks();
+      }
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      const callbackId = window.requestIdleCallback(preload, { timeout: 1200 });
+      return () => window.cancelIdleCallback(callbackId);
+    }
+
+    const timeoutId = window.setTimeout(preload, 600);
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   return (
-    <Router>
+    <BrowserRouter>
       <ScrollToTop />
-      <InnerRoutes />
-    </Router>
-  );
-}
-
-function InnerRoutes() {
-  const location = useLocation();
-  const isDashboard = location.pathname.startsWith("/dashboard");
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      {!isDashboard && <Navbar />}
-      <main className="flex-grow">
+      <Suspense fallback={<RouteLoader />}>
         <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+          {publicRoutes.map(({ path, component }) => (
+            <Route
+              key={path}
+              path={path}
+              element={<PublicLayout>{createElement(component)}</PublicLayout>}
+            />
+          ))}
 
-            {/* dashboard routes; users will be redirected after login */}
+          <Route
+            path={adminDashboardRoute.path}
+            element={
+              <RoleRoute requiredRole={adminDashboardRoute.requiredRole}>
+                {createElement(adminDashboardRoute.component)}
+              </RoleRoute>
+            }
+          >
+            {adminDashboardRoute.children.map((childRoute) => (
+              <Route
+                key={childRoute.path ?? "index"}
+                index={childRoute.index}
+                path={childRoute.path}
+                element={createElement(childRoute.component)}
+              />
+            ))}
+          </Route>
+
+          {dashboardRoutes.map((route) => (
             <Route
-              path="/dashboard/admin"
+              key={route.path}
+              path={route.path}
               element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<AdminDashboard.Dashboard />} />
-              <Route path="service-categories" element={<ServiceCategories />} />
-            </Route>
-            
-            <Route
-              path="/dashboard/customer"
-              element={
-                <ProtectedRoute requiredRole="customer">
-                  <CustomerDashboard />
-                </ProtectedRoute>
+                <RoleRoute requiredRole={route.requiredRole}>
+                  {createElement(route.component)}
+                </RoleRoute>
               }
             />
-            <Route
-              path="/dashboard/fixer"
-              element={
-                <ProtectedRoute requiredRole="fixer">
-                  <FixerDashboard />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </main>
-        {!isDashboard && <Footer />}
-      </div>
+          ))}
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
   );
 }

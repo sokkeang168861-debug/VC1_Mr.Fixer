@@ -5,6 +5,8 @@ import { Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import httpClient from "../../api/httpClient";
+import { getDashboardByRole, setToken } from "@/lib/auth";
+import { ROUTES } from "@/config/routes";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -21,21 +23,8 @@ export default function Login() {
       const res = await httpClient.post("/auth/login", { email, password });
       const { token, role } = res.data;
 
-      // store token for later use (localStorage is simplest)
-      localStorage.setItem("token", token);
-      httpClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-      // redirect based on role
-      if (role === "admin") {
-        navigate("/dashboard/admin");
-      } else if (role === "customer") {
-        navigate("/dashboard/customer");
-      } else if (role === "fixer") {
-        navigate("/dashboard/fixer");
-      } else {
-        // fallback to home
-        navigate("/");
-      }
+      setToken(token);
+      navigate(getDashboardByRole(role) || ROUTES.home);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Login failed");

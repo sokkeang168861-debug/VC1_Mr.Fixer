@@ -5,6 +5,8 @@ import { User, Phone, Mail, Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import httpClient from "../../api/httpClient";
+import { ROUTES } from "@/config/routes";
+import { setToken } from "@/lib/auth";
 
 export default function Signup() {
   const [fullName, setFullName] = useState("");
@@ -38,12 +40,11 @@ export default function Signup() {
 
       // store the auth token returned by the backend
       if (data?.token) {
-        localStorage.setItem("token", data.token);
-        httpClient.defaults.headers.common["Authorization"] = `Bearer ${data.token}`;
+        setToken(data.token);
       }
 
       setSuccess("Registration successful! Redirecting to dashboard...");
-      setTimeout(() => navigate("/dashboard/customer"), 1500);
+      setTimeout(() => navigate(ROUTES.dashboardCustomer), 1500);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Registration failed");

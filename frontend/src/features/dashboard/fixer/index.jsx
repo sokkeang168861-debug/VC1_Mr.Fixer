@@ -1,15 +1,15 @@
 import { useNavigate } from "react-router-dom";
-import httpClient from "../../../api/httpClient";
 import FixerNavbar from "./FixerNavbar";
 import FixerFooter from "./FixerFooter";
+import { ROUTES } from "@/config/routes";
+import { clearSession } from "@/lib/auth";
 
 export default function FixerDashboard() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    delete httpClient.defaults.headers.common["Authorization"];
-    navigate("/");
+    clearSession();
+    navigate(ROUTES.home);
   };
 
   return (

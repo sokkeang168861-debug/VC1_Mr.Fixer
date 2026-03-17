@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Wrench, Calendar, History, Settings, LogOut } from 'lucide-react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { Wrench, LogOut } from 'lucide-react';
+import httpClient from '@/api/httpClient';
 
 export const Sidebar = ({ activeTab, onChange, onLogout }) => {
   const menuItems = [
@@ -56,11 +56,13 @@ export const Header = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    axios
-      .get("http://localhost:5000/api/users/currentUser", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+    httpClient
+      .get('/users/currentUser', {
+        headers: token
+          ? {
+              Authorization: `Bearer ${token}`,
+            }
+          : undefined,
       })
       .then((res) => {
         setUser(res.data);
@@ -103,8 +105,3 @@ export const Header = () => {
     </header>
   );
 };
-
-// Optional wrapper if you want a default export
-export default function CustomerNavbar() {
-  return null;
-}

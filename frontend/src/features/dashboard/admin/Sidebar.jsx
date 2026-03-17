@@ -1,9 +1,7 @@
-import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { LuLayoutDashboard } from "react-icons/lu";
-import { GiHammerNails, GiBoxUnpacking, GiTakeMyMoney } from "react-icons/gi";
-import { FaUsersCog } from "react-icons/fa";
+import { GiBoxUnpacking } from "react-icons/gi";
 
 // NavItem Component
 const NavItem = ({ icon, children, to, end = false }) => (
