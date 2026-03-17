@@ -1,34 +1,40 @@
-# VC1_Mr.Fixer
+# Mr. Fixer
 
-## Project Structure
+A service marketplace connecting customers with skilled fixers.
+Built with React + Vite (frontend) and Node.js + Express + MySQL (backend).
 
-- `frontend/`: React + Vite client app
-  - `src/app/`: App shell and route composition
-  - `src/features/`: Feature-first UI modules
-    - `auth/pages/`: Authentication pages
-    - `frontpage/components/`: Shared frontpage UI blocks
-    - `frontpage/pages/`: Public frontpage route screens
-  - `src/shared/api/`: Reusable API client setup
+---
 
-- `backend/`: Express API server
-  - `src/server.js`: Process entrypoint
-  - `src/app.js`: Express app setup and middleware
-  - `src/config/`: Infrastructure config (DB connection)
-  - `src/controllers/`: Route handlers
-  - `src/routes/`: Route definitions
+## Project structure
 
-## Run Apps
+```
+/
+├── frontend/       React + Vite client app
+├── backend/        Express REST API + MySQL
+└── vercel.json     Deployment config (Vercel)
+```
 
-### Backend
+See `backend/README.md` for full backend setup, API routes, and development guide.
+
+---
+
+## Quick start
+
+### 1. Backend
 
 ```bash
 cd backend
-npm run dev
+cp .env.example .env   # fill in your DB credentials and JWT secret
+npm install
+npm run mig            # run database migrations
+npm run dev            # starts on http://localhost:5000
 ```
 
-### Frontend
+### 2. Frontend
 
 ```bash
 cd frontend
-npm run dev
+cp .env.example .env   # set VITE_API_URL=http://localhost:5000
+npm install
+npm run dev            # starts on http://localhost:5173
 ```
