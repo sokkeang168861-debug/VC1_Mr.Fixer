@@ -19,6 +19,7 @@ import Job from "../pages/fixer/pages/jobs";
 import JobList from "../pages/fixer/components/JobList";
 import JobDetail from "../pages/fixer/components/jobDetail";
 import SetProposal from "../pages/fixer/components/setProposal";
+import Settings from "../pages/fixer/pages/settings";
 
 // admin pages
 import AdminDashboard from "../pages/admin/pages/index";
@@ -145,6 +146,14 @@ function InnerRoutes() {
             <Route path=":id" element={<JobDetail />} />
             <Route path=":id/set-proposal" element={<SetProposal />} />
           </Route>
+          <Route
+            path="/dashboard/fixer/settings"
+            element={
+              <ProtectedRoute requiredRole="fixer">
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
 
           {/* 404 */}
           <Route path="*" element={<NotFoundPage />} />
