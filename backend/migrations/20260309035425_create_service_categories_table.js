@@ -11,7 +11,7 @@ exports.up = async function(knex) {
       table.text('description');
       table.boolean('is_active').defaultTo(1);
       table.timestamp('created_at').defaultTo(knex.fn.now());
-      table.specificType('image', 'mediumblob');
+      table.specificType('image', 'longblob');
     });
   }
 };
