@@ -180,6 +180,14 @@ It covers:
 
 ## Vercel deployment
 
-Vercel serverless uses `backend/src/app.js` as the handler (see `vercel.json` at the repo root). There is no long-running process — each request is handled independently.
+**Quick deployment?** Follow [DEPLOYMENT_QUICKSTART.md](./DEPLOYMENT_QUICKSTART.md) (checklist format, ~25 min).
 
-Make sure to set all `.env` variables in the **Vercel project environment settings**, including `FRONTEND_URL` (your deployed frontend URL) and a production database host.
+**Need detailed explanations?** See [DEPLOYMENT.md](./DEPLOYMENT.md) for the complete step-by-step guide covering:
+- Set up a cloud database (PlanetScale, AWS RDS, etc.)
+- Configure environment variables in Vercel
+- Run database migrations on the cloud server
+- GitHub Actions automation
+- Troubleshooting
+
+**Key point:** Vercel has no persistent filesystem, so you need a cloud database (not `localhost`).
+Set your database credentials (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) in Vercel's environment settings, then run migrations.
