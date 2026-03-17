@@ -12,7 +12,7 @@ For project structure and onboarding, see `ARCHITECTURE.md`.
 npm install
 ```
 
-2. Create `.env` in the project root:
+1. Create `.env` in the project root:
 
 ```bash
 VITE_API_BASE_URL=/api
@@ -22,102 +22,37 @@ VITE_DEV_PORT=5173
 VITE_PREVIEW_HOST=0.0.0.0
 VITE_PREVIEW_PORT=4173
 VITE_BUILD_SOURCEMAP=false
+VITE_GOOGLE_MAPS_API_KEY=your_google_maps_key_here
+VITE_UPLOADS_BASE_URL=/uploads
 ```
 
-3. Create mode files:
+Notes:
 
-`.env.development`
+- `VITE_API_BASE_URL=/api` works with the Vite dev proxy.
+- `VITE_DEV_BACKEND_URL` should point to the backend in local development.
+- `VITE_DEV_HOST`, `VITE_DEV_PORT`, `VITE_PREVIEW_HOST`, and `VITE_PREVIEW_PORT` control the Vite dev/preview server binding.
+- `VITE_BUILD_SOURCEMAP=false` keeps production builds smaller unless you explicitly need sourcemaps.
+- `VITE_GOOGLE_MAPS_API_KEY` is required for the fixer job map view.
+- `VITE_UPLOADS_BASE_URL=/uploads` keeps uploaded images working behind the same backend.
+- `VITE_BASE_PATH` is optional. Only set it if you deploy under a subpath such as `/mrfixer/`.
 
-```bash
-VITE_BASE_PATH=/
-```
-
-`.env.production`
-
-```bash
-VITE_BASE_PATH=/
-```
-
-4. Start development server:
+1. Start development server:
 
 ```bash
 npm run dev
 ```
 
-5. Build for production:
+1. Build for production:
 
 ```bash
 npm run build
 ```
 
-6. Preview production build:
+1. Preview production build:
 
 ```bash
 npm run preview
 ```
-
-## Ground-Up Vite Setup (From Scratch)
-
-If you want to recreate this project foundation from zero:
-
-1. Create app with Vite:
-
-```bash
-npm create vite@latest frontend -- --template react
-cd frontend
-```
-
-2. Install runtime dependencies:
-
-```bash
-npm install react-router-dom axios lucide-react react-icons motion chart.js react-chartjs-2
-```
-
-3. Install dev dependencies:
-
-```bash
-npm install -D eslint @eslint/js globals eslint-plugin-react-hooks eslint-plugin-react-refresh @vitejs/plugin-react tailwindcss @tailwindcss/postcss
-```
-
-4. Enable path alias `@`:
-
-- `vite.config.js`: map `@` to `./src`
-- `jsconfig.json`: map `@/*` to `src/*`
-
-5. Add environment variable:
-
-- `VITE_API_BASE_URL` for app API base path (default `/api`)
-- `VITE_DEV_BACKEND_URL` for local dev proxy target
-- `VITE_BASE_PATH` for production deploy base path
-
-## Refactored Architecture
-
-```text
-src/
-	api/
-		httpClient.js          # Axios instance + auth header interceptor
-	app/
-		App.jsx                # App entry component
-		AppRoutes.jsx          # Router and page layouts
-		ProtectedRoute.jsx     # Auth + role guarding
-	config/
-		routes.js              # Centralized route constants
-	lib/
-		auth.js                # Token/session helpers and role redirects
-	features/
-		auth/
-		dashboard/
-	pages/
-		components/
-```
-
-## Key Refactor Principles Used
-
-- Centralized route paths in `src/config/routes.js`.
-- Centralized token/session logic in `src/lib/auth.js`.
-- Replaced repeated localStorage logic in pages with shared helpers.
-- Added Vite alias support (`@`) to reduce fragile relative imports.
-- Kept dashboard role gating via `ProtectedRoute`.
 
 ## NPM Scripts
 
@@ -130,17 +65,16 @@ src/
 
 ### Deploy at domain root
 
-- Use `.env.production` with `VITE_BASE_PATH=/`.
+- No extra config is needed.
 - Run `npm run build`.
 
-### Deploy at subpath (example `/mrfixer/`)
+### Deploy at subpath
 
-- Set `VITE_BASE_PATH=/mrfixer/` in `.env.production`.
-- Run `npm run build`.
+- Build with `VITE_BASE_PATH=/mrfixer/ npm run build`.
 
 ### Static-only local serving (Live Server)
 
-- Use relative base only for this case:
+- Use a relative base only for this case:
 
 ```bash
 VITE_BASE_PATH=./ npm run build
