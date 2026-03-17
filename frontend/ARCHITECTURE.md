@@ -1,54 +1,54 @@
-# Frontend Architecture (Junior Friendly)
+# Frontend Architecture
 
-This project is organized by responsibility. Start from `src/main.jsx` and follow the flow below.
+Start here:
 
-## Request Flow
+1. `src/main.jsx` mounts React.
+2. `src/app/App.jsx` loads the app router.
+3. `src/app/AppRoutes.jsx` maps URLs to pages.
+4. Pages call the backend through `src/api/httpClient.js`.
 
-1. `src/main.jsx` boots React.
-2. `src/app/App.jsx` loads the router.
-3. `src/app/AppRoutes.jsx` declares all routes.
-4. Route layouts and guards decide what wrapper/page is shown.
-5. Feature/page components call APIs through `src/api/httpClient.js`.
+## Main Folders
 
-## Folder Guide
+- `src/app/`: app-level files like routing, 404 page, and route protection.
+- `src/pages/`: actual screens grouped by area: `frontpage`, `auth`, `customer`, `fixer`, `admin`.
+- `src/api/`: axios client setup.
+- `src/config/`: shared constants such as route paths.
+- `src/lib/`: shared helpers such as auth, session, and asset URL helpers.
+- `src/assets/`: static files used by the app.
 
-- `src/app/`: App shell and routing glue.
-  - `components/ScrollToTop.jsx`: reset scroll on route change.
-  - `layouts/PublicLayout.jsx`: navbar + footer wrapper for public pages.
-  - `routes/publicRoutes.jsx`: public page route definitions.
-  - `routes/dashboardRoutes.jsx`: dashboard route definitions.
-  - `ProtectedRoute.jsx`: role-based access control.
-- `src/features/`: Domain features (auth, dashboards).
-- `src/pages/`: Public pages (Home, Services, Contact).
-- `src/api/`: HTTP setup and request interceptor.
-- `src/lib/`: Small shared utilities (`auth.js`).
-- `src/config/`: Constants (`routes.js`).
+## Important Files
+
+- `src/app/AppRoutes.jsx`: all routes live here.
+- `src/app/ProtectedRoute.jsx`: blocks pages by role.
+- `src/config/routes.js`: central route names and helpers.
+- `src/api/httpClient.js`: shared API client.
+- `src/lib/auth.js`: token helpers.
+- `src/lib/session.js`: logout/session cleanup.
 
 ## Rules For New Code
 
-- Add shared constants in `src/config/`.
-- Put reusable helpers in `src/lib/`.
-- Put domain-specific UI in `src/features/<domain>/`.
-- Use `@/...` imports (no deep `../../..` chains).
-- Keep route wiring in route files, not in page components.
+- Add routes in `src/config/routes.js` first.
+- Reuse `httpClient` instead of creating new fetch logic.
+- Put shared helpers in `src/lib/`.
+- Use `@/...` imports when the path is shared across folders.
+- Keep page-specific UI inside its page area under `src/pages/`.
 
-## Quick Examples
+## Common Tasks
 
-### Add a new public page
+### Add a new page
 
-1. Create page component in `src/pages/`.
-2. Add route path to `src/config/routes.js`.
-3. Add `{ path, component }` to `src/app/routes/publicRoutes.jsx`.
+1. Create the page under the correct folder in `src/pages/`.
+2. Add the path to `src/config/routes.js` if it needs a named route.
+3. Register the page in `src/app/AppRoutes.jsx`.
 
-### Add a new protected dashboard page
+### Add a new protected page
 
-1. Create component under `src/features/dashboard/...`.
-2. Add/extend route in `src/app/routes/dashboardRoutes.jsx`.
-3. If role-protected, wrap with `ProtectedRoute` in `src/app/AppRoutes.jsx`.
+1. Create the page.
+2. Add the route.
+3. Wrap it with `ProtectedRoute` in `src/app/AppRoutes.jsx`.
 
-## Why This Is Simpler
+## Mental Model
 
-- Routing is split into small files with single purpose.
-- Layout logic is isolated (no repeated navbar/footer markup).
-- Auth/session checks are centralized.
-- New developers can locate where to change code quickly.
+- `app` decides where users can go.
+- `pages` decide what users see.
+- `api` and `lib` handle shared logic.

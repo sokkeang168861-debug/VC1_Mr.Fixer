@@ -2,7 +2,7 @@
 
 This project is the frontend for the Mr. Fixer platform, built with React and Vite.
 
-For project structure and onboarding, see `ARCHITECTURE.md`.
+For a quick code map, see `ARCHITECTURE.md`.
 
 ## Quick Start
 
@@ -12,29 +12,17 @@ For project structure and onboarding, see `ARCHITECTURE.md`.
 npm install
 ```
 
-1. Create `.env` in the project root:
+1. Create your local env file:
 
 ```bash
-VITE_API_BASE_URL=/api
-VITE_DEV_BACKEND_URL=http://localhost:5000
-VITE_DEV_HOST=0.0.0.0
-VITE_DEV_PORT=5173
-VITE_PREVIEW_HOST=0.0.0.0
-VITE_PREVIEW_PORT=4173
-VITE_BUILD_SOURCEMAP=false
-VITE_GOOGLE_MAPS_API_KEY=your_google_maps_key_here
-VITE_UPLOADS_BASE_URL=/uploads
+cp .env.example .env
 ```
 
-Notes:
+1. Update `.env` if needed:
 
-- `VITE_API_BASE_URL=/api` works with the Vite dev proxy.
-- `VITE_DEV_BACKEND_URL` should point to the backend in local development.
-- `VITE_DEV_HOST`, `VITE_DEV_PORT`, `VITE_PREVIEW_HOST`, and `VITE_PREVIEW_PORT` control the Vite dev/preview server binding.
-- `VITE_BUILD_SOURCEMAP=false` keeps production builds smaller unless you explicitly need sourcemaps.
-- `VITE_GOOGLE_MAPS_API_KEY` is required for the fixer job map view.
-- `VITE_UPLOADS_BASE_URL=/uploads` keeps uploaded images working behind the same backend.
-- `VITE_BASE_PATH` is optional. Only set it if you deploy under a subpath such as `/mrfixer/`.
+- `VITE_DEV_BACKEND_URL` should point to your backend.
+- `VITE_GOOGLE_MAPS_API_KEY` is required for the fixer job map.
+- `VITE_BASE_PATH` is optional and only needed for subpath deploys.
 
 1. Start development server:
 
@@ -61,24 +49,10 @@ npm run preview
 - `npm run preview`: Preview built app locally
 - `npm run lint`: Run ESLint
 
-## Production Deployment Notes
+## Deployment
 
-### Deploy at domain root
+- Domain root: run `npm run build`.
+- Subpath: run `VITE_BASE_PATH=/mrfixer/ npm run build`.
+- Static local serving only: run `VITE_BASE_PATH=./ npm run build`.
 
-- No extra config is needed.
-- Run `npm run build`.
-
-### Deploy at subpath
-
-- Build with `VITE_BASE_PATH=/mrfixer/ npm run build`.
-
-### Static-only local serving (Live Server)
-
-- Use a relative base only for this case:
-
-```bash
-VITE_BASE_PATH=./ npm run build
-```
-
-- This solves asset loading from `dist/index.html` under local static servers.
-- For SPA routing behavior, use `npm run preview` or a host with rewrite rules.
+- Use `npm run preview` for checking the production build locally.
