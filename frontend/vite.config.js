@@ -5,6 +5,20 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+function getVendorChunkName(id) {
+  if (!id.includes('node_modules')) return undefined
+
+  if (id.includes('react-dom') || id.includes('/react/')) return 'react-core'
+  if (id.includes('react-router')) return 'router'
+  if (id.includes('@react-google-maps')) return 'maps'
+  if (id.includes('motion')) return 'motion'
+  if (id.includes('axios')) return 'http'
+  if (id.includes('chart.js') || id.includes('react-chartjs-2')) return 'charts'
+  if (id.includes('lucide-react') || id.includes('react-icons')) return 'icons'
+
+  return 'vendor'
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '')
@@ -43,11 +57,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (!id.includes('node_modules')) return
-
-            if (id.includes('react-dom') || id.includes('react')) return 'react-vendor'
-            if (id.includes('chart.js') || id.includes('react-chartjs-2')) return 'charts'
-            if (id.includes('lucide-react') || id.includes('react-icons')) return 'icons'
+            return getVendorChunkName(id)
           },
         },
       },

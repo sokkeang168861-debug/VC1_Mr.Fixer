@@ -1,96 +1,175 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import { Suspense, createElement, useEffect } from "react";
-import { getTokenPayload } from "@/lib/auth";
+import { BrowserRouter as Router, Route, Routes, useLocation } from "react-router-dom";
+import { Suspense, lazy, useEffect } from "react";
 
-import ScrollToTop from "@/app/components/ScrollToTop";
-import PublicLayout from "@/app/layouts/PublicLayout";
-import {
-  preloadCommonRouteChunks,
-  preloadGuestRouteChunks,
-  publicRoutes,
-} from "@/app/routes/publicRoutes";
-import {
-  adminDashboardRoute,
-  dashboardRoutes,
-  preloadDashboardForRole,
-} from "@/app/routes/dashboardRoutes";
-
+import { ROUTES } from "@/config/routes";
+import Navbar from "../pages/components/frontpage-Navbar";
+import Footer from "../pages/components/frontpage-Footer";
 import ProtectedRoute from "./ProtectedRoute";
 
-function RoleRoute({ requiredRole, children }) {
-  return <ProtectedRoute requiredRole={requiredRole}>{children}</ProtectedRoute>;
-}
+const Home = lazy(() => import("../pages/frontpage/index"));
+const Services = lazy(() => import("../pages/frontpage/Services"));
+const Contact = lazy(() => import("../pages/frontpage/Contact"));
+const LoginPage = lazy(() => import("../pages/auth/LoginPage"));
+const SignupPage = lazy(() => import("../pages/auth/SignupPage"));
 
-function RouteLoader() {
-  return <div className="p-6 text-sm text-slate-500">Loading...</div>;
+const NotFoundPage = lazy(() => import("./NotFoundPage"));
+const ComingSoon = lazy(() => import("./ComingSoon"));
+
+const CustomerDashboard = lazy(() => import("../pages/customer/pages"));
+const CustomerHistory = lazy(() => import("../pages/customer/pages/history"));
+
+const FixerDashboard = lazy(() => import("../pages/fixer/pages"));
+const Job = lazy(() => import("../pages/fixer/pages/jobs"));
+const JobList = lazy(() => import("../pages/fixer/components/JobList"));
+const JobDetail = lazy(() => import("../pages/fixer/components/jobDetail"));
+const SetProposal = lazy(() => import("../pages/fixer/components/setProposal"));
+
+const AdminDashboard = lazy(() => import("../pages/admin/pages/index"));
+const ServiceCategories = lazy(() => import("../pages/admin/pages/ServiceCategories"));
+const FixerManagement = lazy(() => import("../pages/admin/pages/FixerManagement"));
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
 }
 
 export default function AppRoutes() {
-  useEffect(() => {
-    const preload = () => {
-      preloadCommonRouteChunks();
+  return (
+    <Router>
+      <ScrollToTop />
+      <InnerRoutes />
+    </Router>
+  );
+}
 
-      const payload = getTokenPayload();
-      if (payload?.role) {
-        preloadDashboardForRole(payload.role);
-      } else {
-        preloadGuestRouteChunks();
-      }
-    };
-
-    if (typeof window.requestIdleCallback === "function") {
-      const callbackId = window.requestIdleCallback(preload, { timeout: 1200 });
-      return () => window.cancelIdleCallback(callbackId);
-    }
-
-    const timeoutId = window.setTimeout(preload, 600);
-    return () => window.clearTimeout(timeoutId);
-  }, []);
+function InnerRoutes() {
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith("/dashboard");
 
   return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <Suspense fallback={<RouteLoader />}>
-        <Routes>
-          {publicRoutes.map(({ path, component }) => (
-            <Route
-              key={path}
-              path={path}
-              element={<PublicLayout>{createElement(component)}</PublicLayout>}
-            />
-          ))}
+    <div className="min-h-screen flex flex-col">
+      {!isDashboard && <Navbar />}
+      <main className="grow">
+        <Suspense fallback={<div className="p-6 text-sm text-slate-500">Loading...</div>}>
+          <Routes>
+            {/* Public routes */}
+            <Route path={ROUTES.home} element={<Home />} />
+            <Route path={ROUTES.services} element={<Services />} />
+            <Route path={ROUTES.contact} element={<Contact />} />
+            <Route path={ROUTES.login} element={<LoginPage />} />
+            <Route path={ROUTES.signup} element={<SignupPage />} />
 
-          <Route
-            path={adminDashboardRoute.path}
-            element={
-              <RoleRoute requiredRole={adminDashboardRoute.requiredRole}>
-                {createElement(adminDashboardRoute.component)}
-              </RoleRoute>
-            }
-          >
-            {adminDashboardRoute.children.map((childRoute) => (
-              <Route
-                key={childRoute.path ?? "index"}
-                index={childRoute.index}
-                path={childRoute.path}
-                element={createElement(childRoute.component)}
-              />
-            ))}
-          </Route>
-
-          {dashboardRoutes.map((route) => (
+            {/* Admin Dashboard */}
             <Route
-              key={route.path}
-              path={route.path}
+              path={ROUTES.dashboardAdmin}
               element={
-                <RoleRoute requiredRole={route.requiredRole}>
-                  {createElement(route.component)}
-                </RoleRoute>
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
               }
             />
-          ))}
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+
+            {/* Admin sub-routes */}
+            <Route
+              path={ROUTES.dashboardAdminServiceCategories}
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <ServiceCategories />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardAdminUsers}
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <ComingSoon title="User Management" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardAdminFixers}
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <FixerManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardAdminTransactions}
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <ComingSoon title="Transactions" />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Customer Dashboard */}
+            <Route
+              path={ROUTES.dashboardCustomer}
+              element={
+                <ProtectedRoute requiredRole="customer">
+                  <CustomerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardCustomerOrders}
+              element={
+                <ProtectedRoute requiredRole="customer">
+                  <ComingSoon title="My Orders" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardCustomerHistory}
+              element={
+                <ProtectedRoute requiredRole="customer">
+                  <CustomerHistory />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardCustomerSettings}
+              element={
+                <ProtectedRoute requiredRole="customer">
+                  <CustomerDashboard initialPage="settings" />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fixer Dashboard */}
+            <Route
+              path={ROUTES.dashboardFixer}
+              element={
+                <ProtectedRoute requiredRole="fixer">
+                  <FixerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardFixerJobs}
+              element={
+                <ProtectedRoute requiredRole="fixer">
+                  <Job />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<JobList />} />
+              <Route path=":id" element={<JobDetail />} />
+              <Route path=":id/set-proposal" element={<SetProposal />} />
+            </Route>
+
+            {/* 404 */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
+      </main>
+      {!isDashboard && <Footer />}
+    </div>
   );
 }

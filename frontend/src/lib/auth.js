@@ -1,6 +1,7 @@
 import { ROLE_DASHBOARD_ROUTE, ROUTES } from "@/config/routes";
 
 const TOKEN_KEY = "token";
+const ROLE_KEY = "role";
 
 function decodeBase64Url(value) {
   const padded = value.replace(/-/g, "+").replace(/_/g, "/");
@@ -39,4 +40,5 @@ export function getDashboardByRole(role) {
 
 export function clearSession() {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(ROLE_KEY);
 }
