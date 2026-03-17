@@ -11,7 +11,7 @@ import {
 import { motion } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import httpClient from '../../../api/httpClient';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker} from '@react-google-maps/api';
 
 const mapContainerStyle = {
   width: '100%',
@@ -42,7 +42,7 @@ const JobDetails = () => {
     const fetchJobDetail = async () => {
       try {
         setLoading(true);
-        const res = await httpClient.get(`/fixer/provider/requests/${id}`);
+        const res = await httpClient.get(`/fixer/provider/requests/${id}`); 
         if (res.data.success) {
           setJob(res.data.data);
         } else {

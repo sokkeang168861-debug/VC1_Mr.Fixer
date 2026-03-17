@@ -1,27 +1,22 @@
-/**
- * @param { import("knex").Knex } knex
- * @returns { Promise<void> }
- */
 exports.up = function(knex) {
   return knex.schema.createTable('issue_img', (table) => {
-    table.increments('id').unsigned().primary();              // INT(10) UNSIGNED AUTO_INCREMENT PRIMARY KEY
+    table.increments('id').unsigned().primary();
 
     table
       .integer('booking_id')
       .unsigned()
       .notNullable()
-      .index();                                               // good for lookups by booking
+      .index();
 
     table
-      .longblob('image')
-      .notNullable();                                         // LONG BLOB for storing binary image data
+      .binary('image')   // ✅ FIXED (no 'long')
+      .notNullable();
 
     table
       .timestamp('created_at')
       .notNullable()
-      .defaultTo(knex.fn.now());                              // DEFAULT CURRENT_TIMESTAMP
+      .defaultTo(knex.fn.now());
 
-    // Foreign key constraint
     table
       .foreign('booking_id')
       .references('id')
@@ -31,10 +26,6 @@ exports.up = function(knex) {
   });
 };
 
-/**
- * @param { import("knex").Knex } knex
- * @returns { Promise<void> }
- */
 exports.down = function(knex) {
   return knex.schema.dropTableIfExists('issue_img');
 };
