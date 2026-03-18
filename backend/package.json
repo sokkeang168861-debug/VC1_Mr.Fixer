@@ -6,10 +6,15 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "lint": "eslint src/ scripts/",
-    "lint:fix": "eslint src/ scripts/ --fix",
-    "seed:user": "node scripts/seedUser.js",
-    "migrate": "npx knex migrate:latest"
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "knex": "knex --knexfile knexfile.js",
+    "migrate": "npm run knex -- migrate:latest",
+    "migrate:make": "npm run knex -- migrate:make",
+    "migrate:rollback": "npm run knex -- migrate:rollback",
+    "seed": "npm run knex -- seed:run",
+    "seed:run": "npm run knex -- seed:run",
+    "seed:make": "npm run knex -- seed:make"
   },
   "keywords": [],
   "author": "",

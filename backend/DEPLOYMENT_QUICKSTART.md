@@ -97,7 +97,7 @@ DB_PORT=3306 \
 DB_USER=xxxxxx \
 DB_PASSWORD=pscale_pw_xxxxx \
 DB_NAME=mr_fixer \
-node scripts/seedUser.js admin@mrfixer.com secret123 "Admin" 0812345678 admin
+npm run seed -- --env production
 ```
 
 ---
