@@ -1,7 +1,7 @@
 const express = require("express");
 const protect = require("../middleware/authMiddleware");
 const { getHomepageData } = require("../controllers/fixerDashboardController");
-const ProviderRequestController = require("../controllers/bookingController");
+const ProviderRequestController = require("../controllers/providerBookingController");
 
 const router = express.Router();
 

@@ -17,6 +17,7 @@ const ComingSoon = lazy(() => import("./ComingSoon"));
 
 const CustomerDashboard = lazy(() => import("../pages/customer/pages"));
 const CustomerHistory = lazy(() => import("../pages/customer/pages/history"));
+const CustomerBooking= lazy(() => import("../pages/customer/pages/booking"));
 
 const FixerDashboard = lazy(() => import("../pages/fixer/pages"));
 const Job = lazy(() => import("../pages/fixer/pages/jobs"));

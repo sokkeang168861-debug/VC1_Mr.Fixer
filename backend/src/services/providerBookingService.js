@@ -2,7 +2,7 @@ const BookingModel = require("../models/bookingModel");
 
 // This service is a thin pass-through to BookingModel.
 // Add business logic here (e.g. notifications, logging) as the app grows.
-class ProviderRequestService {
+class ProviderBookingService {
   static getAllRequests(db, provider_id) {
     return BookingModel.getAllrequest(db, provider_id);
   }
@@ -16,4 +16,4 @@ class ProviderRequestService {
   }
 }
 
-module.exports = ProviderRequestService;
+module.exports = ProviderBookingService;

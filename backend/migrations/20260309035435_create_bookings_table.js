@@ -12,6 +12,8 @@ exports.up = async function (knex) {
       table.integer('service_id').unsigned().notNullable()
         .references('id').inTable('services').onDelete('CASCADE');
       table.text('service_address');
+      table.decimal('latitude', 10, 8);
+      table.decimal('longitude', 11, 8);
       table.text('issue_description');
       table.enu('urgent_level', [
         'low',

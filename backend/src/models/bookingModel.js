@@ -105,4 +105,58 @@ class ProviderBooking {
   }
 }
 
-module.exports = ProviderBooking;
+
+
+class CustomerBooking {
+
+  static async createBooking(db, payload) {
+    const sql = `
+      INSERT INTO bookings
+        (
+          customer_id,
+          service_id,
+          issue_description,
+          service_address,
+          latitude,
+          longitude,
+          urgent_level,
+          status,
+          scheduled_at
+        )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const [result] = await db.query(sql, [
+      payload.customer_id,
+      payload.service_id,
+      payload.issue_description,
+      payload.service_address || null,
+      payload.latitude,
+      payload.longitude,
+      payload.urgent_level || "normal",
+      payload.status || "pending",
+      payload.scheduled_at || null,
+    ]);
+
+    return result;
+  }
+
+  static async getBookingsByCustomer(db, customerId) {
+    const sql = `
+      SELECT
+        b.id, b.customer_id, b.service_id, b.service_address,
+        b.issue_description, b.status, b.service_fee, b.proposed_price,
+        b.final_price, b.cancellation_reason, b.created_at, b.updated_at,
+        b.scheduled_at, sc.name AS category_name
+      FROM bookings b
+      LEFT JOIN services s ON s.id = b.service_id
+      LEFT JOIN service_categories sc ON sc.id = s.category_id
+      WHERE b.customer_id = ?
+      ORDER BY b.created_at DESC
+    `;
+    const [rows] = await db.query(sql, [customerId]);
+    return rows;
+  }
+}
+
+module.exports = { ProviderBooking, CustomerBooking };

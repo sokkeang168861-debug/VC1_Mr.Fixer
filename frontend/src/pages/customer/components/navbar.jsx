@@ -11,6 +11,7 @@ export const Sidebar = ({
 }) => {
   const menuItems = [
     { id: "services", label: "Services", icon: Wrench },
+    { id: "booking", label: "Booking", icon: Wrench },
     { id: "history", label: "History", icon: History },
     { id: "settings", label: "Settings", icon: Settings },
   ];

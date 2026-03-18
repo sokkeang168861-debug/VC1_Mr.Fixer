@@ -1,12 +1,13 @@
-const ProviderRequestService = require("../services/providerRequestService.js");
+const ProviderBookingService = require("../services/providerBookingService.js");
 
-class ProviderRequestController {
-  static async getAllRequests(req, res) {
+
+class ProviderBookingController {
+  async getAllRequests(req, res) {
     try {
       const db = req.app.get("db");
       const provider_id = req.user.id;
 
-      const requests = await ProviderRequestService.getAllRequests(db, provider_id);
+      const requests = await ProviderBookingService.getAllRequests(db, provider_id);
 
       res.status(200).json({ success: true, data: requests });
     } catch (error) {
@@ -15,13 +16,13 @@ class ProviderRequestController {
     }
   }
 
-  static async getRequestById(req, res) {
+  async getRequestById(req, res) {
     try {
       const db = req.app.get("db");
       const { id } = req.params;
       const provider_id = req.user.id;
 
-      const request = await ProviderRequestService.getRequestById(db, id, provider_id);
+      const request = await ProviderBookingService.getRequestById(db, id, provider_id);
 
       if (!request) {
         return res.status(404).json({ success: false, message: "Request not found" });
@@ -34,14 +35,14 @@ class ProviderRequestController {
     }
   }
 
-  static async acceptAndSetProposal(req, res) {
+  async acceptAndSetProposal(req, res) {
     try {
       const db = req.app.get("db");
       const { id } = req.params;
       const { items, total } = req.body;
       const provider_id = req.user.id;
 
-      await ProviderRequestService.acceptAndSetProposal(db, id, provider_id, items, total);
+      await ProviderBookingService.acceptAndSetProposal(db, id, provider_id, items, total);
 
       res.status(200).json({ success: true, message: "Proposal submitted successfully" });
     } catch (error) {
@@ -51,4 +52,5 @@ class ProviderRequestController {
   }
 }
 
-module.exports = ProviderRequestController;
+
+module.exports = new ProviderBookingController();

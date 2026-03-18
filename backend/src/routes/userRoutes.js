@@ -7,11 +7,9 @@ const protect = require("../middleware/authMiddleware");
 const {
   getUsers,
   getCurrentUser,
-  getBookingCategories,
-  createBooking,
-  getMyBookings,
 } = require("../controllers/userController");
 
+const CustomerBookingController = require("../controllers/customerBookingController");
 const ServiceCategoryController = require("../controllers/serviceCategoryController");
 
 // ---------- User routes ----------
@@ -23,9 +21,9 @@ router.get("/allCategories", ServiceCategoryController.getAllCategories);
 router.get("/providersEachCategory/:categoryId", ServiceCategoryController.getProvidersByCategory);
 
 // ---------- Booking ----------
-router.get("/booking-categories", getBookingCategories);
-router.get("/bookings/allCategories", getBookingCategories);
-router.post("/bookings", protect, createBooking);
-router.get("/bookings", protect, getMyBookings);
+router.get("/booking-categories", CustomerBookingController.getBookingCategories);
+router.get("/bookings/allCategories", CustomerBookingController.getBookingCategories);
+router.post("/bookings", protect, (req, res) => CustomerBookingController.createBooking(req, res));
+router.get("/bookings", protect, (req, res) => CustomerBookingController.getMyBookings(req, res));
 
 module.exports = router;
