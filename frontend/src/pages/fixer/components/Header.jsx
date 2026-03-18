@@ -12,9 +12,15 @@ const initials = (name) => {
 };
 export const Header = () => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !!localStorage.getItem("token"));
 
   useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      return;
+    }
+
     httpClient
       .get("/user/currentUser")
       .then((res) => {

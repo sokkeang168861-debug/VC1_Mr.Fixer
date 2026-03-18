@@ -5,11 +5,17 @@ import {
   getDashboardByRole,
   getToken,
   getTokenPayload,
+  isTokenExpired,
 } from "@/lib/auth";
 
 export default function ProtectedRoute({ children, requiredRole }) {
   const token = getToken();
   if (!token) {
+    return <Navigate to={ROUTES.login} replace />;
+  }
+
+  if (isTokenExpired(token)) {
+    clearSession();
     return <Navigate to={ROUTES.login} replace />;
   }
 

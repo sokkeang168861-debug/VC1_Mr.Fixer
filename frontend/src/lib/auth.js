@@ -38,6 +38,13 @@ export function getDashboardByRole(role) {
   return ROLE_DASHBOARD_ROUTE[role] ?? ROUTES.home;
 }
 
+export function isTokenExpired(token = getToken()) {
+  if (!token) return true;
+  const payload = getTokenPayload(token);
+  if (!payload?.exp) return false; // if no exp claim, assume valid
+  return Date.now() >= payload.exp * 1000; // exp is in seconds, Date.now() is in ms
+}
+
 export function clearSession() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(ROLE_KEY);
