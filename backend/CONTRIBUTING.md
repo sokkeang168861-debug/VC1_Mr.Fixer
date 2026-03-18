@@ -118,13 +118,13 @@ Check the response status and body. If something breaks, check:
 
 ---
 
-### 6. Seed a test user (optional)
+### 6. Seed data (optional)
 
 ```bash
-node scripts/seedUser.js admin@mrfixer.com secret123 "Admin User" 0812345678 admin
+npm run seed
 ```
 
-Get a user you can test with immediately.
+This runs Knex seed files from `seeds/`.
 
 ---
 

@@ -62,10 +62,10 @@ Migrations create all the required tables automatically.
 npm run migrate
 ```
 
-### 5. (Optional) Seed a test user
+### 5. (Optional) Seed data
 
 ```bash
-npm run seed:user
+npm run seed
 ```
 
 ### 6. Start the development server
@@ -86,8 +86,13 @@ The API will be available at `http://localhost:5000`.
 | `npm start` | Start without nodemon (production) |
 | `npm run lint` | Check code for style/error issues |
 | `npm run lint:fix` | Auto-fix formatting and common issues |
+| `npm run knex -- <command>` | Run any Knex CLI command |
 | `npm run migrate` | Run pending database migrations |
-| `npm run seed:user` | Insert a test user into the database |
+| `npm run migrate:make <name>` | Create a new migration file |
+| `npm run migrate:rollback` | Roll back the latest migration batch |
+| `npm run seed` | Run all Knex seed files |
+| `npm run seed:run` | Run all Knex seed files |
+| `npm run seed:make <name>` | Create a new seed file |
 
 ---
 

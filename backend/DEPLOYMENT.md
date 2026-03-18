@@ -166,11 +166,11 @@ Then add secrets to GitHub:
 
 ---
 
-## Part 4: Seed a test user (optional)
+## Part 4: Seed data (optional)
 
-You can seed a test user manually or via a one-time script.
+Use Knex seed files to insert test data.
 
-### Manual seed
+### Run seeds manually
 
 ```bash
 # From your local machine
@@ -178,8 +178,8 @@ cd backend
 
 # Create .env.vercel (same as above)
 
-# Seed a user
-DB_HOST=xxxx DB_USER=xxx DB_PASSWORD=xxx DB_NAME=mr_fixer node scripts/seedUser.js admin@mrfixer.com secret123 "Admin User" 0812345678 admin
+# Run seeds
+DB_HOST=xxxx DB_USER=xxx DB_PASSWORD=xxx DB_NAME=mr_fixer npm run seed -- --env production
 
 # Clean up
 rm .env.vercel
@@ -191,7 +191,7 @@ Or use a GitHub Action to seed automatically after migrations (add to the workfl
       - name: Seed database
         run: |
           cd backend
-          node scripts/seedUser.js admin@mrfixer.com secret123 "Admin User" 0812345678 admin
+          npm run seed -- --env production
         env:
           DB_HOST: ${{ secrets.DB_HOST }}
           DB_PORT: ${{ secrets.DB_PORT }}
