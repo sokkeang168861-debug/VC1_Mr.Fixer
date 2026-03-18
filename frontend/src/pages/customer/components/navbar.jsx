@@ -53,19 +53,17 @@ export const Sidebar = ({
 
 export const Header = () => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !!localStorage.getItem("token"));
 
   useEffect(() => {
     const token = localStorage.getItem("token");
 
+    if (!token) {
+      return;
+    }
+
     httpClient
-      .get("/users/currentUser", {
-        headers: token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
-          : undefined,
-      })
+      .get("/users/currentUser")
       .then((res) => {
         setUser(res.data);
       })
