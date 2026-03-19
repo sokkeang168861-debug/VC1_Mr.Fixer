@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BriefcaseBusiness, Wrench, LogOut } from "lucide-react";
+import { Home, BriefcaseBusiness, Wrench, LogOut, TrendingUp } from "lucide-react";
 import { ROUTES } from "@/config/routes";
 import { logoutUser } from "@/lib/session";
 
@@ -14,6 +14,7 @@ export default function Sidebar({ className = "" }) {
   const menuItems = [
     { name: "Home", icon: Home, path: ROUTES.dashboardFixer },
     { name: "Jobs", icon: BriefcaseBusiness, path: ROUTES.dashboardFixerJobs },
+    { name: "Profit", icon: TrendingUp, path: ROUTES.dashboardFixerProfit },
   ];
 
   return (
@@ -21,9 +22,7 @@ export default function Sidebar({ className = "" }) {
       <nav className="mt-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = item.path === ROUTES.dashboardFixer
-            ? location.pathname === ROUTES.dashboardFixer
-            : location.pathname.startsWith(item.path);
+          const isActive = location.pathname === item.path;
 
           return (
             <Link
@@ -31,13 +30,13 @@ export default function Sidebar({ className = "" }) {
               to={item.path}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
                 isActive
-                  ? "bg-purple-100 text-purple-700"
+                  ? "bg-orange-100 text-orange-700"
                   : "text-slate-600 hover:bg-slate-50"
               }`}
             >
               <Icon
                 className={`h-5 w-5 ${
-                  isActive ? "text-purple-600" : "text-slate-400"
+                  isActive ? "text-orange-600" : "text-slate-400"
                 }`}
               />
               {item.name}
