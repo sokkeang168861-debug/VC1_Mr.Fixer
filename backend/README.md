@@ -183,16 +183,15 @@ It covers:
 
 ---
 
-## Vercel deployment
+## Deployment
 
-**Quick deployment?** Follow [DEPLOYMENT_QUICKSTART.md](./DEPLOYMENT_QUICKSTART.md) (checklist format, ~25 min).
+Use the VPS deployment guide in the repository root:
 
-**Need detailed explanations?** See [DEPLOYMENT.md](./DEPLOYMENT.md) for the complete step-by-step guide covering:
-- Set up a cloud database (PlanetScale, AWS RDS, etc.)
-- Configure environment variables in Vercel
-- Run database migrations on the cloud server
-- GitHub Actions automation
-- Troubleshooting
+- `../DEPLOY_NGINX_PM2_DEV.md`
 
-**Key point:** Vercel has no persistent filesystem, so you need a cloud database (not `localhost`).
-Set your database credentials (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) in Vercel's environment settings, then run migrations.
+It covers:
+
+- Nginx reverse proxy setup
+- PM2 backend process management
+- Frontend static hosting on the same server
+- Auto deployment when `dev` updates

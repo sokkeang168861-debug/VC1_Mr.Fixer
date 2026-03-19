@@ -204,7 +204,7 @@ Check the `README.md` in this folder for:
 - Route reference
 - Project structure diagram
 - Setup instructions
-- How to deploy to Vercel
+- Deployment links
 
 ---
 

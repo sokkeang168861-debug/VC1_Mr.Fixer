@@ -7,14 +7,20 @@ Built with React + Vite (frontend) and Node.js + Express + MySQL (backend).
 
 ## Project structure
 
-```
+```text
 /
 ├── frontend/       React + Vite client app
-├── backend/        Express REST API + MySQL
-└── vercel.json     Deployment config (Vercel)
+└── backend/        Express REST API + MySQL
 ```
 
 See `backend/README.md` for full backend setup, API routes, and development guide.
+
+## VPS deployment (Nginx + PM2 + auto deploy)
+
+If you want to host frontend and backend on the same server with Nginx and PM2,
+and auto-deploy from the `dev` branch, follow:
+
+- `DEPLOY_NGINX_PM2_DEV.md`
 
 ---
 
