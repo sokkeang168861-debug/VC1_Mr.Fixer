@@ -20,6 +20,7 @@ const CustomerHistory = lazy(() => import("../pages/customer/pages/history"));
 
 const FixerDashboard = lazy(() => import("../pages/fixer/pages"));
 const Job = lazy(() => import("../pages/fixer/pages/jobs"));
+const Profit = lazy(() => import("../pages/fixer/pages/profit"));
 const JobList = lazy(() => import("../pages/fixer/components/JobList"));
 const JobDetail = lazy(() => import("../pages/fixer/components/jobDetail"));
 const SetProposal = lazy(() => import("../pages/fixer/components/setProposal"));
@@ -164,6 +165,14 @@ function InnerRoutes() {
               <Route path=":id" element={<JobDetail />} />
               <Route path=":id/set-proposal" element={<SetProposal />} />
             </Route>
+            <Route
+              path={ROUTES.dashboardFixerProfit}
+              element={
+                <ProtectedRoute requiredRole="fixer">
+                  <Profit />
+                </ProtectedRoute>
+              }
+            />
 
             {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />
