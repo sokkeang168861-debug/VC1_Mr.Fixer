@@ -198,8 +198,8 @@ export default function CustomerDashboard({ initialPage = "services" }) {
               setCurrentPage("services");
               return;
             }
-            if (tab === "bookings") {
-              navigate(ROUTES.dashboardCustomerOrders);
+            if (tab === "booking") {
+              navigate(ROUTES.dashboardCustomerBooking);
               return;
             }
             if (tab === "history") {
