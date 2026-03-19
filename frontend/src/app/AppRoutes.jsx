@@ -27,6 +27,7 @@ const SetProposal = lazy(() => import("../pages/fixer/components/setProposal"));
 const AdminDashboard = lazy(() => import("../pages/admin/pages/index"));
 const ServiceCategories = lazy(() => import("../pages/admin/pages/ServiceCategories"));
 const FixerManagement = lazy(() => import("../pages/admin/pages/FixerManagement"));
+const Transactions = lazy(() => import("../pages/admin/pages/Transactions"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -103,7 +104,7 @@ function InnerRoutes() {
               path={ROUTES.dashboardAdminTransactions}
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <ComingSoon title="Transactions" />
+                  <Transactions />
                 </ProtectedRoute>
               }
             />
