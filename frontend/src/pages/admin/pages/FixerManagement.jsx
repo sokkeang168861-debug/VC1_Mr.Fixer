@@ -3,14 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  LayoutDashboard,
-  Users,
-  UserCog,
-  Wrench,
-  ArrowRightLeft,
-  LogOut,
   Search,
   Plus,
   Edit2,
@@ -53,10 +47,25 @@ const CategoryBadge = ({ category }) => {
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All category');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formMode, setFormMode] = useState('add');
   const [selectedFixer, setSelectedFixer] = useState(null);
   const [view, setView] = useState('list');
+
+  const categories = useMemo(() => ['All category', ...Array.from(new Set(fixersData.map(f => f.category)))], []);
+
+  const filteredFixers = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return fixersData.filter((fixer) => {
+      const matchesSearch =
+        !query ||
+        fixer.name.toLowerCase().includes(query) ||
+        fixer.fixerId.toLowerCase().includes(query);
+      const matchesCategory = categoryFilter === 'All category' || fixer.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, categoryFilter]);
 
   const handleAddClick = () => {
     setFormMode('add');
@@ -112,22 +121,30 @@ export default function App() {
 
                 {/* Search and Action Bar */}
                 <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-3xl shadow-sm border border-slate-50">
-                  <div className="flex items-center gap-4 flex-1 max-w-2xl">
+                  <div className="flex items-center gap-4 flex-1 max-w-3xl">
                     <div className="relative flex-1">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                       <input
                         type="text"
-                        placeholder="Search by name"
+                        placeholder="Search by name or ID"
                         className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500/20 text-sm transition-all"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
                     <div className="relative">
-                      <button className="flex items-center gap-2 px-6 py-3 bg-slate-50 rounded-2xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
-                        Category
-                        <ChevronDown size={16} />
-                      </button>
+                      <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-2xl text-sm font-medium text-slate-600">
+                        <ChevronDown size={16} className="text-slate-400" />
+                        <select
+                          value={categoryFilter}
+                          onChange={(e) => setCategoryFilter(e.target.value)}
+                          className="bg-transparent outline-none text-slate-700 font-semibold cursor-pointer"
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <button
@@ -153,7 +170,7 @@ export default function App() {
                     </thead>
                     <tbody>
                       <AnimatePresence>
-                        {fixersData.map((fixer, index) => (
+                        {filteredFixers.map((fixer, index) => (
                           <Motion.tr
                             key={fixer.id + index}
                             initial={{ opacity: 0 }}
