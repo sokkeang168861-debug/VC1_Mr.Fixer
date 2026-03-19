@@ -1,5 +1,12 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BriefcaseBusiness, Wrench, LogOut } from "lucide-react";
+import {
+  Home,
+  BriefcaseBusiness,
+  TrendingUp,
+  Bell,
+  Settings,
+  LogOut,
+} from "lucide-react";
 import { ROUTES } from "@/config/routes";
 import { logoutUser } from "@/lib/session";
 
@@ -13,11 +20,14 @@ export default function Sidebar({ className = "" }) {
 
   const menuItems = [
     { name: "Home", icon: Home, path: ROUTES.dashboardFixer },
-    { name: "Jobs", icon: BriefcaseBusiness, path: ROUTES.dashboardFixerJobs },
+    { name: "Job", icon: BriefcaseBusiness, path: ROUTES.dashboardFixerJobs },
+    { name: "Profit", icon: TrendingUp, path: ROUTES.dashboardFixerProfit },
+    { name: "Notification", icon: Bell, path: ROUTES.dashboardFixerNotifications },
+    { name: "Settings", icon: Settings, path: ROUTES.dashboardFixerSettings },
   ];
 
   return (
-    <aside className={`w-64 bg-white h-full border-r border-gray-200 ${className}`}>
+    <aside className={`w-64 bg-white h-full border-r border-gray-200 flex flex-col ${className}`}>
       <nav className="mt-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -31,13 +41,13 @@ export default function Sidebar({ className = "" }) {
               to={item.path}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
                 isActive
-                  ? "bg-purple-100 text-purple-700"
+                  ? "bg-orange-50 text-orange-600"
                   : "text-slate-600 hover:bg-slate-50"
               }`}
             >
               <Icon
                 className={`h-5 w-5 ${
-                  isActive ? "text-purple-600" : "text-slate-400"
+                  isActive ? "text-orange-500" : "text-slate-400"
                 }`}
               />
               {item.name}
@@ -46,10 +56,10 @@ export default function Sidebar({ className = "" }) {
         })}
       </nav>
 
-      <div className="mt-auto px-4 pb-6 pt-4">
+      <div className="px-4 pb-6 pt-4 mt-80 border-t border-gray-100">
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+          className="flex w-full items-end gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50"
         >
           <LogOut size={18} />
           Logout

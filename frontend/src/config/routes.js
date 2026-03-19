@@ -20,6 +20,9 @@ export const ROUTES = {
   dashboardCustomerSettings: `${CUSTOMER_ROOT}/settings`,
   dashboardFixer: FIXER_ROOT,
   dashboardFixerJobs: `${FIXER_ROOT}/jobs`,
+  dashboardFixerProfit: `${FIXER_ROOT}/profit`,
+  dashboardFixerNotifications: `${FIXER_ROOT}/notifications`,
+  dashboardFixerSettings: `${FIXER_ROOT}/settings`,
 };
 
 export function getFixerJobDetailRoute(jobId) {

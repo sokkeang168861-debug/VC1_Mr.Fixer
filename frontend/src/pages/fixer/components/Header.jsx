@@ -58,9 +58,6 @@ export const Header = () => {
 
       <div className="flex items-center justify-end px-7 py-4">
         <div className="flex items-center gap-4">
-          <div className="rounded-full bg-purple-100 px-3 py-1 text-xs font-semibold text-purple-700">
-            Premium Member
-          </div>
           <div className="h-8 w-px bg-slate-200" />
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
