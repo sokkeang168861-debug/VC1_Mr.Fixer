@@ -20,6 +20,14 @@ class User {
     return rows[0];
   }
 
+  static async findById(db, id) {
+    const [rows] = await db.query(
+      "SELECT id, full_name, email, phone, role, profile_img FROM users WHERE id = ? LIMIT 1",
+      [id]
+    );
+    return rows[0] || null;
+  }
+
   static async updatePasswordById(db, id, hashedPassword) {
     const [result] = await db.query(
       "UPDATE users SET password = ? WHERE id = ?",

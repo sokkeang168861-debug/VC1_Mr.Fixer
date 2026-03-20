@@ -64,10 +64,9 @@ const updateFixerProfile = async (db, user, data, file) => {
   const full_name = String(data?.full_name || "").trim();
   const email = String(data?.email || "").trim();
   const phone = String(data?.phone || "").trim();
-  const location = String(data?.location || "").trim();
 
-  if (!full_name || !email || !phone || !location) {
-    const error = new Error("Full name, email, phone, and location are required");
+  if (!full_name || !email || !phone) {
+    const error = new Error("Full name, email, and phone are required");
     error.status = 400;
     throw error;
   }
@@ -118,9 +117,6 @@ const updateFixerProfile = async (db, user, data, file) => {
     phone,
     ...(file ? { profile_img: file.buffer } : {}),
   });
-  await FixerProfileModel.updateServiceProviderByUserId(db, fixerId, {
-    location,
-  });
 
   const updatedFixer = await FixerProfileModel.getFixerById(db, fixerId);
 
@@ -131,7 +127,6 @@ const updateFixerProfile = async (db, user, data, file) => {
       full_name: updatedFixer.full_name || "",
       email: updatedFixer.email || "",
       phone: updatedFixer.phone || "",
-      location: updatedFixer.location || "",
       role: updatedFixer.role || "fixer",
       profile_img: toBase64Image(updatedFixer.profile_img),
     },

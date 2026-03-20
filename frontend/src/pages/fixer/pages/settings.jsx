@@ -115,6 +115,12 @@ const Settings = () => {
 
         setProfileData(nextProfile);
         setOriginalProfileData(nextProfile);
+        saveLocalFixerSettings(
+          buildStoredSettings({
+            profile: nextProfile,
+            location: localSettings?.location || ''
+          })
+        );
       })
       .catch((error) => {
         console.error('Failed to load fixer profile:', error);
@@ -182,24 +188,69 @@ const Settings = () => {
     setIsSavingProfile(true);
     setSaveMessage('');
     setProfileError('');
-    const nextProfileData = {
-      fullName: profileData.fullName,
-      email: profileData.email,
-      phone: profileData.phone,
-      profileImage: profileData.profileImage
-    };
-    setOriginalProfileData(nextProfileData);
-    setSelectedProfileFile(null);
-    setIsEditingProfile(false);
-    saveLocalFixerSettings(
-      buildStoredSettings({
-        profile: nextProfileData,
-        location: locationValue
-      })
-    );
-    setSaveMessage('Profile saved locally.');
-    setIsSavingProfile(false);
-    return true;
+
+    try {
+      const formData = new FormData();
+      formData.append('full_name', profileData.fullName.trim());
+      formData.append('email', profileData.email.trim());
+      formData.append('phone', profileData.phone.trim());
+
+      if (selectedProfileFile) {
+        formData.append('profile_img', selectedProfileFile);
+      }
+
+      const res = await httpClient.put('/fixer/settings/profile', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      const updatedProfile = res.data?.profile || {};
+      const nextProfileData = {
+        fullName: updatedProfile.full_name || profileData.fullName,
+        email: updatedProfile.email || profileData.email,
+        phone: updatedProfile.phone || profileData.phone,
+        profileImage: updatedProfile.profile_img || profileData.profileImage
+      };
+
+      setProfileData(nextProfileData);
+      setOriginalProfileData(nextProfileData);
+      setSelectedProfileFile(null);
+      setIsEditingProfile(false);
+      saveLocalFixerSettings(
+        buildStoredSettings({
+          profile: nextProfileData,
+          location: locationValue
+        })
+      );
+      setSaveMessage(res.data?.message || 'Profile updated successfully.');
+      return true;
+    } catch (error) {
+      console.error('Failed to update fixer profile:', error);
+
+      const nextProfileData = {
+        fullName: profileData.fullName,
+        email: profileData.email,
+        phone: profileData.phone,
+        profileImage: profileData.profileImage
+      };
+
+      setOriginalProfileData(nextProfileData);
+      setSelectedProfileFile(null);
+      setIsEditingProfile(false);
+      saveLocalFixerSettings(
+        buildStoredSettings({
+          profile: nextProfileData,
+          location: locationValue
+        })
+      );
+      setProfileError(
+        error?.response?.data?.message || 'Failed to update database. Saved locally instead.'
+      );
+      return false;
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const profileInitials = useMemo(() => {
