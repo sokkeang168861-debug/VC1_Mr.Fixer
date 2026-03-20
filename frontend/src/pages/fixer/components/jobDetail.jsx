@@ -28,6 +28,8 @@ const defaultCenter = {
 const JobDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  console.log('JobDetails component loaded with ID:', id);
+  
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,13 +44,36 @@ const JobDetails = () => {
   useEffect(() => {
     const fetchJobDetail = async () => {
       try {
+        console.log('Fetching job details for ID:', id);
         setLoading(true);
+        
+        // Use mock data for testing
+        const mockJob = {
+          booking_id: id,
+          customer_name: id === '8842' ? 'Michael Richardson' : 'Sarah Jenkins',
+          category_name: id === '8842' ? 'Plumbing Repair' : 'Electrical Work',
+          issue_description: id === '8842' ? 
+            'Kitchen sink is leaking significantly from the main pipe underneath. Water is pooling in the cabinet. Need urgent assistance.' :
+            'Several outlets in the living room have stopped working. No tripped breakers found. Need a professional to diagnose.',
+          service_address: id === '8842' ? '123 Main St, Phnom Penh' : '456 Oak Ave, Phnom Penh',
+          created_at: new Date().toISOString()
+        };
+        
+        console.log('Using mock job data:', mockJob);
+        setJob(mockJob);
+        
+        // Uncomment below when API is ready
+        /*
         const res = await httpClient.get(`/fixer/provider/requests/${id}`);
+        console.log('JobDetails API response:', res);
         if (res.data.success) {
+          console.log('Job details fetched successfully:', res.data.data);
           setJob(res.data.data);
         } else {
+          console.log('Job not found in API response');
           setError('Job not found');
         }
+        */
       } catch (err) {
         console.error('Error fetching job details:', err);
         setError('Failed to load job details');
@@ -90,7 +115,9 @@ const JobDetails = () => {
           {error || 'Job not found'}
         </div>
         <div className="mt-4">
-          <button onClick={() => navigate(-1)} className="text-primary font-bold">Go Back</button>
+          <button
+          onClick={() => navigate(-1)}
+          className="text-primary font-bold">Go Back</button>
         </div>
       </div>
     );

@@ -610,14 +610,6 @@ const Settings = () => {
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Saved Addresses</h2>
         </div>
-        <button
-          type="button"
-          onClick={handleStartLocationEdit}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
-        >
-          <Plus className="w-5 h-5" />
-          Add New
-        </button>
       </div>
 
       <div className="space-y-4">
@@ -634,25 +626,6 @@ const Settings = () => {
               placeholder="Enter your location"
               className="w-full px-4 py-3 border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 text-slate-900 placeholder-orange-400"
             />
-            <div className="flex justify-end gap-3 mt-4">
-              <button
-                type="button"
-                onClick={handleCancelLocationEdit}
-                disabled={isSavingLocation}
-                className="px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-all duration-200 disabled:opacity-60"
-              >
-                <X className="w-4 h-4 inline mr-2" />
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSaveLocation}
-                disabled={isSavingLocation}
-                className="px-4 py-2 text-sm font-semibold text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-all duration-200 disabled:opacity-60"
-              >
-                {isSavingLocation ? 'Saving...' : 'Save Location'}
-              </button>
-            </div>
           </div>
         ) : (
           <>
@@ -667,15 +640,6 @@ const Settings = () => {
                     <div className="flex-1">
                       <h3 className="font-bold text-slate-900 mb-3 text-lg">{address.type}</h3>
                       <p className="text-slate-600 leading-relaxed">{address.street}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button 
-                        type="button"
-                        onClick={() => handleAddressDelete(address.id)}
-                        className="px-4 py-2 text-sm font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 transition-all duration-200 rounded-lg"
-                      >
-                        DELETE
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -819,24 +783,6 @@ const Settings = () => {
               {renderProfileSection()}
               {renderAddressesSection()}
               {renderSecuritySection()}
-              
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-4 pt-8 border-t border-orange-200">
-                <button
-                  type="button"
-                  onClick={handleDiscardAllChanges}
-                  className="px-8 py-3 border-2 border-orange-300 text-orange-700 rounded-xl hover:bg-orange-50 transition-all duration-200 font-semibold"
-                >
-                  Discard
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveAllChanges}
-                  className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
-                >
-                  Save Changes
-                </button>
-              </div>
             </div>
           </div>
         </main>
