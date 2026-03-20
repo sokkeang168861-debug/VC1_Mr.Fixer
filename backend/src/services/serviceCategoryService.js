@@ -1,7 +1,6 @@
 const ServiceCategoryModel = require("../models/serviceCategoryModel");
 
 class ServiceCategoryService {
-
   static async getAllCategories(db) {
     const categories = await ServiceCategoryModel.getAllCategories(db);
 
@@ -78,10 +77,15 @@ class ServiceCategoryService {
     return { message: "Category deleted successfully" };
   }
 
-  // Fixed providersEachCategory method to call ServiceCategoryModel
-  static async providersEachCategory(db, categoryId) {
-    // ServiceCategoryModel.providersEachCategory already handles base64 conversion for profile_img
-    return await ServiceCategoryModel.providersEachCategory(db, categoryId);
+  static async providersEachCategory(db, categoryId, latitude, longitude) {
+    const parsedLatitude = Number(latitude);
+    const parsedLongitude = Number(longitude);
+
+    if (!Number.isFinite(parsedLatitude) || !Number.isFinite(parsedLongitude)) {
+      throw { status: 400, message: "latitude and longitude are required" };
+    }
+
+    return await ServiceCategoryModel.providersEachCategory(db, categoryId, parsedLatitude, parsedLongitude);
   }
 }
 
