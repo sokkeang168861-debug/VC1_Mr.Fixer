@@ -19,6 +19,18 @@ router.get(
   adminCheck,
   FixerManagementController.getFixers
 );
+router.put(
+  "/fixers/:id",
+  protect,
+  adminCheck,
+  FixerManagementController.updateFixer
+);
+router.delete(
+  "/fixers/:id",
+  protect,
+  adminCheck,
+  FixerManagementController.deleteFixer
+);
 
 // ---------- Service Category  ----------
 router.post(

@@ -40,6 +40,7 @@ const CategoryBadge = ({ category }) => {
 
 export default function App() {
   const [fixers, setFixers] = useState([]);
+  const [categoriesData, setCategoriesData] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All category');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -59,8 +60,11 @@ export default function App() {
           : []
       )
     );
-    return ['All category', ...Array.from(categorySet)];
-  }, [fixers]);
+    const dynamic = Array.from(categorySet);
+    const fromServer = categoriesData.map((c) => c.name);
+    const merged = Array.from(new Set([...dynamic, ...fromServer]));
+    return ['All category', ...merged];
+  }, [fixers, categoriesData]);
 
   const filteredFixers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -77,6 +81,20 @@ export default function App() {
       return matchesSearch && matchesCategory;
     });
   }, [searchQuery, categoryFilter, fixers]);
+
+  const selectedFixerWithIds = useMemo(() => {
+    if (!selectedFixer) return null;
+    const nameToId = new Map(categoriesData.map((c) => [c.name, c.id]));
+    const categoryIds =
+      Array.isArray(selectedFixer.categoryIds) && selectedFixer.categoryIds.length
+        ? selectedFixer.categoryIds
+        : Array.isArray(selectedFixer.categories)
+        ? selectedFixer.categories
+            .map((name) => nameToId.get(name))
+            .filter(Boolean)
+        : [];
+    return { ...selectedFixer, categoryIds };
+  }, [selectedFixer, categoriesData]);
 
   useEffect(() => {
     let isMounted = true;
@@ -97,6 +115,9 @@ export default function App() {
           : fixer.category
           ? [fixer.category]
           : [],
+        categoryIds: Array.isArray(fixer.categoryIds)
+          ? fixer.categoryIds
+          : [],
         fixerId:
           fixer.fixerId ||
           (fixer.providerId
@@ -105,6 +126,10 @@ export default function App() {
         jobs: fixer.totalBookings ?? fixer.jobs ?? 0,
         rating: Number(fixer.rating ?? 0),
         avatar: fixer.avatar || fallbackAvatar,
+        companyName: fixer.companyName || '',
+        location: fixer.location || '',
+        experience: fixer.experience || '',
+        bio: fixer.bio || '',
       };
     };
 
@@ -139,7 +164,27 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCategories = async () => {
+      try {
+        const res = await httpClient.get('/admin/getAllCategories');
+        const data = res.data?.data || [];
+        if (isMounted) setCategoriesData(data);
+      } catch (error) {
+        console.error('Failed to load categories', error);
+      }
+    };
+
+    fetchCategories();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleAddClick = () => {
+    setError(null);
     setFormMode('add');
     setSelectedFixer(null);
     setIsFormOpen(true);
@@ -147,6 +192,7 @@ export default function App() {
 
   const handleEditClick = (e, fixer) => {
     e.stopPropagation();
+    setError(null);
     setFormMode('edit');
     setSelectedFixer(fixer);
     setIsFormOpen(true);
@@ -158,8 +204,82 @@ export default function App() {
   };
 
   const handleSave = (data) => {
-    console.log('Saving fixer data:', data);
-    setIsFormOpen(false);
+    if (formMode === 'edit') {
+      return upsertFixer(data);
+    } else {
+      // create flow not implemented yet
+      setIsFormOpen(false);
+    }
+  };
+
+  const upsertFixer = async (payload) => {
+    if (!selectedFixer?.providerId) return;
+    const sanitized = Object.fromEntries(
+      Object.entries(payload).map(([k, v]) => [k, v === '' ? null : v])
+    );
+    try {
+      setLoading(true);
+      await httpClient.put(`/admin/fixers/${selectedFixer.providerId}`, sanitized);
+      // refresh list
+      const res = await httpClient.get('/admin/fixers');
+      const data = res.data?.data || [];
+      const normalized = data.map((f) => ({
+        ...f,
+        category: Array.isArray(f.categories)
+          ? f.categories[0] || 'Unassigned'
+          : f.category || 'Unassigned',
+        categories: Array.isArray(f.categories)
+          ? f.categories
+          : f.category
+          ? [f.category]
+          : [],
+        fixerId:
+          f.fixerId ||
+          (f.providerId
+            ? `FX-${String(f.providerId).padStart(4, '0')}`
+            : `FX-${String(f.userId || '0').padStart(4, '0')}`),
+        jobs: f.totalBookings ?? f.jobs ?? 0,
+        rating: Number(f.rating ?? 0),
+        avatar:
+          f.avatar ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            f.name || 'Fixer'
+          )}&background=E0E7FF&color=1F2937`,
+      }));
+      setFixers(normalized);
+      setIsFormOpen(false);
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to save fixer';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (e, fixer) => {
+    e.stopPropagation();
+    const confirmDelete = window.confirm(
+      `Delete fixer "${fixer.name}"? This will remove their services and bookings.`
+    );
+    if (!confirmDelete) return;
+    try {
+      setLoading(true);
+      await httpClient.delete(`/admin/fixers/${fixer.providerId}`);
+      setFixers((prev) =>
+        prev.filter((f) => f.providerId !== fixer.providerId)
+      );
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to delete fixer';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -344,7 +464,7 @@ export default function App() {
                                     <Edit2 size={16} />
                                   </button>
                                   <button
-                                    onClick={(e) => e.stopPropagation()}
+                                    onClick={(e) => handleDelete(e, fixer)}
                                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                   >
                                     <Trash2 size={16} />
@@ -379,7 +499,8 @@ export default function App() {
               title={formMode === 'add' ? 'Add New Fixer' : 'Edit fixer'}
               onClose={() => setIsFormOpen(false)}
               onSave={handleSave}
-              initialData={selectedFixer}
+              initialData={selectedFixerWithIds}
+              categories={categoriesData}
             />
           )}
         </AnimatePresence>
