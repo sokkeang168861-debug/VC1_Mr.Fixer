@@ -22,6 +22,7 @@ const CustomerBooking = lazy(() => import("../pages/customer/pages/booking"));
 const FixerDashboard = lazy(() => import("../pages/fixer/pages"));
 const Job = lazy(() => import("../pages/fixer/pages/jobs"));
 const Profit = lazy(() => import("../pages/fixer/pages/profit"));
+const Settings = lazy(() => import("../pages/fixer/pages/settings"));
 const JobList = lazy(() => import("../pages/fixer/components/JobList"));
 const JobDetail = lazy(() => import("../pages/fixer/components/jobDetail"));
 const SetProposal = lazy(() => import("../pages/fixer/components/setProposal"));
@@ -181,6 +182,14 @@ function InnerRoutes() {
               element={
                 <ProtectedRoute requiredRole="fixer">
                   <Profit />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardFixerSettings}
+              element={
+                <ProtectedRoute requiredRole="fixer">
+                  <Settings />
                 </ProtectedRoute>
               }
             />

@@ -22,6 +22,7 @@ export const ROUTES = {
   dashboardFixer: FIXER_ROOT,
   dashboardFixerJobs: `${FIXER_ROOT}/jobs`,
   dashboardFixerProfit: `${FIXER_ROOT}/jobs/profit`,
+  dashboardFixerSettings: `${FIXER_ROOT}/settings`,
 };
 
 export function getFixerJobDetailRoute(jobId) {
