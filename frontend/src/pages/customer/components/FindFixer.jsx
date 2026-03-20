@@ -35,8 +35,9 @@ const FindFixer = ({ bookingDraft, onBook, submitting = false, error = '' }) => 
           phone: provider.phone,
           email: provider.email,
           distanceKm: provider.distance_km,
-          rating: 5,
-          reviews: 0,
+          rating: Number(provider.overall_rating || 0),
+          reviews: Number(provider.total_ratings || 0),
+          recentReviews: Array.isArray(provider.reviews) ? provider.reviews : [],
         })));
       })
       .catch((err) => {

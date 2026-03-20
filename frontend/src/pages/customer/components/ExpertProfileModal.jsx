@@ -52,7 +52,7 @@ const ExpertProfileModal = ({ isOpen, onClose, expert, onBook }) => {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
                       <Star className="w-5 h-5 text-orange-400 fill-orange-400" />
-                      <span className="font-bold text-slate-800">{expert.rating ?? 5}</span>
+                      <span className="font-bold text-slate-800">{expert.rating ?? 0}</span>
                     </div>
                     <span className="text-slate-400 text-sm">• {expert.reviews ?? 0} Verified Reviews</span>
                   </div>
@@ -92,6 +92,31 @@ const ExpertProfileModal = ({ isOpen, onClose, expert, onBook }) => {
                 Book {expert.name.split(' ')[0]}
                 <Zap className="w-4 h-4 fill-white" />
               </button>
+
+              <div className="mt-8">
+                <h4 className="mb-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">Reviews</h4>
+                {expert.recentReviews?.length > 0 ? (
+                  <div className="space-y-3">
+                    {expert.recentReviews.map((review) => (
+                      <div key={review.id} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                          <span className="text-sm font-bold text-slate-800">{review.customer_name}</span>
+                          <div className="flex items-center gap-1 text-orange-400">
+                            <Star className="h-4 w-4 fill-current" />
+                            <span className="text-xs font-bold text-slate-700">{Number(review.overall_rating || 0).toFixed(1)}</span>
+                          </div>
+                        </div>
+                        <p className="text-sm leading-relaxed text-slate-500">{review.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-sm text-slate-500">
+                    No reviews yet.
+                  </div>
+                )}
+              </div>
+
               <p className="text-center text-[10px] text-slate-400 mt-4 font-medium">The booking request is saved as soon as you confirm here.</p>
             </div>
           </Motion.div>

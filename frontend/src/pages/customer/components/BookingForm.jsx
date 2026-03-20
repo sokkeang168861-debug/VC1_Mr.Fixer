@@ -320,23 +320,25 @@ const BookingForm = ({ onNext, initialData }) => {
           className="hidden"
           onChange={handlePhotoChange}
         />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full border-2 border-dashed border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center bg-slate-50/30 hover:bg-slate-50 transition-colors cursor-pointer group"
-        >
-          <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600 mb-4 group-hover:scale-110 transition-transform">
-            <Camera className="w-6 h-6" />
-          </div>
-          {photos.length === 0 ? (
-            <>
-              <p className="font-bold text-slate-800 mb-1">Click to upload photos</p>
-              <p className="text-xs text-slate-400">PNG, JPG or WEBP, up to 3 photos total</p>
-            </>
-          ) : (
-            <p className="text-sm font-medium text-slate-500">Add more photos</p>
-          )}
-        </button>
+        {photos.length < 3 && (
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full border-2 border-dashed border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center bg-slate-50/30 hover:bg-slate-50 transition-colors cursor-pointer group"
+          >
+            <div className="w-12 h-12 bg-violet-100 rounded-xl flex items-center justify-center text-violet-600 mb-4 group-hover:scale-110 transition-transform">
+              <Camera className="w-6 h-6" />
+            </div>
+            {photos.length === 0 ? (
+              <>
+                <p className="font-bold text-slate-800 mb-1">Click to upload photos</p>
+                <p className="text-xs text-slate-400">PNG, JPG or WEBP, up to 3 photos total</p>
+              </>
+            ) : (
+              <p className="text-sm font-medium text-slate-500">Add more photos</p>
+            )}
+          </button>
+        )}
         <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
           <span>{photos.length}/3 photos selected</span>
           {photoError && <span className="text-red-500">{photoError}</span>}
@@ -348,7 +350,7 @@ const BookingForm = ({ onNext, initialData }) => {
                 <img
                   src={photo.previewUrl}
                   alt={photo.file.name}
-                  className="h-28 w-full object-cover"
+                  className="aspect-square w-full object-cover"
                 />
                 <button
                   type="button"

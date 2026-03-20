@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import { ROUTES } from "@/config/routes";
 import { logoutUser } from "@/lib/session";
 import httpClient from "@/api/httpClient";
@@ -33,6 +34,13 @@ export default function CustomerBooking() {
         setBookingDraft(draft);
         setBookingError("");
         setCurrentStep(2);
+    };
+
+    const handleCancelDraftBooking = () => {
+        setBookingDraft(null);
+        setBookingError("");
+        setSubmittingBooking(false);
+        setCurrentStep(1);
     };
 
     const handleCreateBooking = async (fixer) => {
@@ -120,9 +128,22 @@ export default function CustomerBooking() {
 
                 <main className="flex-1 overflow-y-auto p-10">
                     <div className="max-w-5xl mx-auto">
-                        <div className="mb-8 text-center">
-                            <h1 className="text-3xl font-bold text-slate-900 mb-2">Booking Process</h1>
-                            <p className="text-slate-500 font-medium">Follow the steps to complete your service request.</p>
+                        <div className="mb-8 flex items-start justify-between gap-4">
+                            <div className="flex-1 text-center">
+                                <h1 className="text-3xl font-bold text-slate-900 mb-2">Booking Process</h1>
+                                <p className="text-slate-500 font-medium">Follow the steps to complete your service request.</p>
+                            </div>
+                            {(bookingDraft || currentStep > 1) && currentStep <= 2 && (
+                                <button
+                                    type="button"
+                                    onClick={handleCancelDraftBooking}
+                                    aria-label="Cancel draft booking"
+                                    title="Cancel draft booking"
+                                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition-colors hover:bg-red-100"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            )}
                         </div>
 
                         {currentStep <= 7 && <ProgressBar currentStep={getProgressBarStep()} />}

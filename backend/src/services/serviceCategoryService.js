@@ -1,4 +1,5 @@
 const ServiceCategoryModel = require("../models/serviceCategoryModel");
+const FixerDashboardModel = require("../models/fixerDashboardModel");
 
 class ServiceCategoryService {
   static async getAllCategories(db) {
@@ -85,7 +86,29 @@ class ServiceCategoryService {
       throw { status: 400, message: "latitude and longitude are required" };
     }
 
-    return await ServiceCategoryModel.providersEachCategory(db, categoryId, parsedLatitude, parsedLongitude);
+    const providers = await ServiceCategoryModel.providersEachCategory(db, categoryId, parsedLatitude, parsedLongitude);
+
+    return await Promise.all(
+      providers.map(async (provider) => {
+        const [summary, feedback] = await Promise.all([
+          FixerDashboardModel.getRatingSummary(db, provider.provider_id),
+          FixerDashboardModel.getRecentFeedback(db, provider.provider_id, 20),
+        ]);
+
+        return {
+          ...provider,
+          overall_rating: Number(summary?.overall_rating || 0),
+          total_ratings: Number(summary?.total_ratings || 0),
+          reviews: feedback.map((item) => ({
+            id: item.id,
+            customer_name: item.customer_name,
+            overall_rating: Number(item.overall_rating || 0),
+            comment: item.comment,
+            created_at: item.created_at,
+          })),
+        };
+      })
+    );
   }
 }
 
