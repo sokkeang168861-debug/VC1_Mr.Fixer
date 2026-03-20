@@ -18,10 +18,11 @@ export const ROUTES = {
   dashboardCustomerOrders: `${CUSTOMER_ROOT}/orders`,
   dashboardCustomerHistory: `${CUSTOMER_ROOT}/history`,
   dashboardCustomerSettings: `${CUSTOMER_ROOT}/settings`,
+  dashboardCustomerBooking: `${CUSTOMER_ROOT}/booking`,
   dashboardFixer: FIXER_ROOT,
   dashboardFixerJobs: `${FIXER_ROOT}/jobs`,
   dashboardFixerProfit: `${FIXER_ROOT}/profit`,
-  dashboardFixerNotifications: `${FIXER_ROOT}/notifications`,
+  dashboardFixerNotifications: `${FIXER_ROOT}/notification`,
   dashboardFixerSettings: `${FIXER_ROOT}/settings`,
 };
 

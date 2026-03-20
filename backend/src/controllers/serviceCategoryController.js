@@ -1,7 +1,6 @@
 const ServiceCategoryService = require("../services/serviceCategoryService");
 
 class ServiceCategoryController {
-
   static async getAllCategories(req, res) {
     const db = req.app.get("db");
 
@@ -14,6 +13,34 @@ class ServiceCategoryController {
         message: "Get all categories failed",
         error: err.message
       });
+    }
+  }
+
+  static async getAvailableCategories(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const data = await ServiceCategoryService.getAvailableCategories(db);
+      res.status(200).json({ data });
+    } catch (err) {
+      console.error("Get Available Categories Error:", err);
+      res.status(500).json({
+        message: "Get available categories failed",
+        error: err.message
+      });
+    }
+  }
+
+  static async allProvidersByCategory(req, res) {
+    const db = req.app.get("db");
+    const { categoryId } = req.params;
+
+    try {
+      const providers = await ServiceCategoryService.allProvidersByCategory(db, categoryId);
+      res.status(200).json(providers);
+    } catch (err) {
+      console.error("Fetch Providers Error:", err);
+      res.status(500).json({ message: "Failed to fetch providers", error: err.message });
     }
   }
 
@@ -109,15 +136,40 @@ class ServiceCategoryController {
     }
   }
 
-  // Fixed providers method
+  static async getNearProvidersByCategory(req, res) {
+    const db = req.app.get("db");
+    const { categoryId } = req.params;
+    const { latitude, longitude } = req.query;
+
+    try {
+      const providers = await ServiceCategoryService.nearProvidersEachCategory(db, categoryId, latitude, longitude);
+      res.status(200).json(providers);
+    } catch (err) {
+      if (err.status === 400) {
+        return res.status(400).json({ message: err.message });
+      }
+      console.error("Fetch Providers Error:", err);
+      res.status(500).json({ message: "Failed to fetch providers", error: err.message });
+    }
+  }
+
   static async getProvidersByCategory(req, res) {
     const db = req.app.get("db");
     const { categoryId } = req.params;
+    const { latitude, longitude } = req.query;
 
     try {
-      const providers = await ServiceCategoryService.providersEachCategory(db, categoryId);
+      const providers = await ServiceCategoryService.getProvidersByCategory(
+        db,
+        categoryId,
+        latitude,
+        longitude
+      );
       res.status(200).json(providers);
     } catch (err) {
+      if (err.status === 400) {
+        return res.status(400).json({ message: err.message });
+      }
       console.error("Fetch Providers Error:", err);
       res.status(500).json({ message: "Failed to fetch providers", error: err.message });
     }

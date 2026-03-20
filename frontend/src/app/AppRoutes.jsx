@@ -17,17 +17,29 @@ const ComingSoon = lazy(() => import("./ComingSoon"));
 
 const CustomerDashboard = lazy(() => import("../pages/customer/pages"));
 const CustomerHistory = lazy(() => import("../pages/customer/pages/history"));
+const CustomerBooking = lazy(() => import("../pages/customer/pages/booking"));
 
 const FixerDashboard = lazy(() => import("../pages/fixer/pages"));
 const Job = lazy(() => import("../pages/fixer/pages/jobs"));
 const FixerNotifications = lazy(() => import("../pages/fixer/pages/Notification"));
+const Profit = lazy(() => import("../pages/fixer/pages/profit"));
+const Settings = lazy(() => import("../pages/fixer/pages/settings"));
 const JobList = lazy(() => import("../pages/fixer/components/JobList"));
 const JobDetail = lazy(() => import("../pages/fixer/components/jobDetail"));
 const SetProposal = lazy(() => import("../pages/fixer/components/setProposal"));
+const ProposalStatus = lazy(() => import("../pages/fixer/components/ProposalStatus"));
+const HeadingToCustomer = lazy(() => import("../pages/fixer/components/HeadingToCustomer"));
+const ArrivedStatus = lazy(() => import("../pages/fixer/components/ArrivedStatus"));
+const NavigationMap = lazy(() => import("../pages/fixer/components/NavigationMap"));
+const CreateInvoice = lazy(() => import("../pages/fixer/components/CreateInvoice"));
+const ExpressCheckout = lazy(() => import("../pages/fixer/components/ExpressCheckout"));
+const JobCompleted = lazy(() => import("../pages/fixer/components/JobCompleted"));
 
 const AdminDashboard = lazy(() => import("../pages/admin/pages/index"));
 const ServiceCategories = lazy(() => import("../pages/admin/pages/ServiceCategories"));
 const FixerManagement = lazy(() => import("../pages/admin/pages/FixerManagement"));
+const Transactions = lazy(() => import("../pages/admin/pages/Transactions"));
+const UserManagement = lazy(() => import("../pages/admin/pages/UserManagement"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -85,14 +97,6 @@ function InnerRoutes() {
               }
             />
             <Route
-              path={ROUTES.dashboardAdminUsers}
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <ComingSoon title="User Management" />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path={ROUTES.dashboardAdminFixers}
               element={
                 <ProtectedRoute requiredRole="admin">
@@ -101,14 +105,23 @@ function InnerRoutes() {
               }
             />
             <Route
-              path={ROUTES.dashboardAdminTransactions}
+              path={ROUTES.dashboardAdminUsers}
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <ComingSoon title="Transactions" />
+                  <UserManagement />
                 </ProtectedRoute>
               }
             />
-
+        
+            <Route
+              path={ROUTES.dashboardAdminTransactions}
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Transactions />
+                </ProtectedRoute>
+              }
+            />
+                
             {/* Customer Dashboard */}
             <Route
               path={ROUTES.dashboardCustomer}
@@ -123,6 +136,14 @@ function InnerRoutes() {
               element={
                 <ProtectedRoute requiredRole="customer">
                   <ComingSoon title="My Orders" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardCustomerBooking}
+              element={
+                <ProtectedRoute requiredRole="customer">
+                  <CustomerBooking />
                 </ProtectedRoute>
               }
             />
@@ -163,12 +184,19 @@ function InnerRoutes() {
               <Route index element={<JobList />} />
               <Route path=":id" element={<JobDetail />} />
               <Route path=":id/set-proposal" element={<SetProposal />} />
+              <Route path="proposal-status" element={<ProposalStatus />} />
+              <Route path="heading-to-customer" element={<HeadingToCustomer />} />
+              <Route path="arrived-status" element={<ArrivedStatus />} />
+              <Route path="navigation-map" element={<NavigationMap />} />
+              <Route path="create-invoice" element={<CreateInvoice />} />
+              <Route path="express-checkout" element={<ExpressCheckout />} />
+              <Route path="job-completed" element={<JobCompleted />} />
             </Route>
             <Route
               path={ROUTES.dashboardFixerProfit}
               element={
                 <ProtectedRoute requiredRole="fixer">
-                  <ComingSoon title="Profit" />
+                  <Profit />
                 </ProtectedRoute>
               }
             />
@@ -184,7 +212,7 @@ function InnerRoutes() {
               path={ROUTES.dashboardFixerSettings}
               element={
                 <ProtectedRoute requiredRole="fixer">
-                  <ComingSoon title="Settings" />
+                  <Settings />
                 </ProtectedRoute>
               }
             />

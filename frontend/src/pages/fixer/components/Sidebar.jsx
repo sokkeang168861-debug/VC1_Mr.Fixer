@@ -2,8 +2,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   BriefcaseBusiness,
-  TrendingUp,
   Bell,
+  TrendingUp,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -20,8 +20,10 @@ export default function Sidebar({ className = "" }) {
 
   const menuItems = [
     { name: "Home", icon: Home, path: ROUTES.dashboardFixer },
-    { name: "Job", icon: BriefcaseBusiness, path: ROUTES.dashboardFixerJobs },
-    { name: "Notification", icon: Bell, path: ROUTES.dashboardFixerNotifications },
+    { name: "Jobs", icon: BriefcaseBusiness, path: ROUTES.dashboardFixerJobs },
+    { name: "Profit", icon: TrendingUp, path: ROUTES.dashboardFixerProfit },
+    { name: "Notifications", icon: Bell, path: ROUTES.dashboardFixerNotifications },
+    { name: "Settings", icon: Settings, path: ROUTES.dashboardFixerSettings },
   ];
 
   return (
@@ -29,9 +31,9 @@ export default function Sidebar({ className = "" }) {
       <nav className="mt-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = item.path === ROUTES.dashboardFixer
-            ? location.pathname === ROUTES.dashboardFixer
-            : location.pathname.startsWith(item.path);
+          const isActive = location.pathname === item.path || 
+                           (item.path === ROUTES.dashboardFixerJobs && location.pathname.startsWith(item.path) && location.pathname !== ROUTES.dashboardFixerProfit) ||
+                           (item.path !== ROUTES.dashboardFixer && item.path !== ROUTES.dashboardFixerJobs && location.pathname.startsWith(item.path));
 
           return (
             <Link
@@ -39,13 +41,13 @@ export default function Sidebar({ className = "" }) {
               to={item.path}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
                 isActive
-                  ? "bg-orange-50 text-orange-600"
+                  ? "bg-orange-100 text-orange-700"
                   : "text-slate-600 hover:bg-slate-50"
               }`}
             >
               <Icon
                 className={`h-5 w-5 ${
-                  isActive ? "text-orange-500" : "text-slate-400"
+                  isActive ? "text-orange-600" : "text-slate-400"
                 }`}
               />
               {item.name}
