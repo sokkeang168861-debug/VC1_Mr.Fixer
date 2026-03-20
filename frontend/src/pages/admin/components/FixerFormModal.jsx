@@ -24,7 +24,7 @@ const FixerForm = ({ title, onClose, onSave }) => {
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-10 relative my-8"
+        className="bg-white w-full max-w-xl rounded-3xl shadow-2xl p-6 md:p-8 relative my-8 max-h-[85vh] overflow-y-auto"
       >
         <button 
           onClick={onClose}
@@ -33,9 +33,9 @@ const FixerForm = ({ title, onClose, onSave }) => {
           <X size={24} />
         </button>
 
-        <h2 className="text-2xl font-bold mb-8">{title}</h2>
+        <h2 className="text-2xl font-bold mb-6">{title}</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Photo Upload Section */}
           <div className="md:col-span-4">
             <div className="aspect-square rounded-3xl border-2 border-dashed border-blue-100 bg-blue-50/30 flex flex-col items-center justify-center gap-4 group cursor-pointer hover:bg-blue-50 transition-colors">
@@ -47,7 +47,7 @@ const FixerForm = ({ title, onClose, onSave }) => {
           </div>
 
           {/* Basic Info Fields */}
-          <div className="md:col-span-8 space-y-5">
+          <div className="md:col-span-8 space-y-4">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Full Name</label>
               <input 
@@ -84,13 +84,13 @@ const FixerForm = ({ title, onClose, onSave }) => {
         </div>
 
         {/* Professional Details Section */}
-        <div className="mt-10">
-          <div className="flex items-center gap-2 mb-6">
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-4">
             <Briefcase size={20} className="text-blue-600" />
             <h3 className="font-bold text-lg">Professional Details</h3>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {categories.map((cat) => (
               <label key={cat} className="flex items-center gap-3 cursor-pointer group">
                 <div className="relative flex items-center">
@@ -105,7 +105,7 @@ const FixerForm = ({ title, onClose, onSave }) => {
             ))}
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Location</label>
               <input 
@@ -142,7 +142,7 @@ const FixerForm = ({ title, onClose, onSave }) => {
         </div>
 
         {/* Footer Buttons */}
-        <div className="mt-10 flex justify-end gap-4">
+        <div className="mt-8 flex justify-end gap-3 sticky bottom-0 bg-white pt-4">
           <button 
             onClick={onClose}
             className="px-8 py-3 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-colors border border-slate-200"

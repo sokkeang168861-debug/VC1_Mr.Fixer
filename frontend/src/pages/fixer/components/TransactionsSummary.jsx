@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import TransactionList from '@/components/TransactionList';
+import TransactionList from '@/pages/fixer/components/TransactionList';
 
 export default function TransactionsSummary() {
   const [activeTab, setActiveTab] = useState('all');
