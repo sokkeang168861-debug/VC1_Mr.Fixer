@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Wrench, History, Settings, LogOut } from "lucide-react";
+import { Calendar, Wrench, History, Settings, LogOut } from "lucide-react";
 import httpClient from "@/api/httpClient";
 
 export const Sidebar = ({
@@ -11,6 +11,7 @@ export const Sidebar = ({
 }) => {
   const menuItems = [
     { id: "services", label: "Services", icon: Wrench },
+    { id: "booking", label: "Booking", icon: Calendar },
     { id: "history", label: "History", icon: History },
     { id: "settings", label: "Settings", icon: Settings },
   ];

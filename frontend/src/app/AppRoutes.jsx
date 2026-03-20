@@ -17,9 +17,11 @@ const ComingSoon = lazy(() => import("./ComingSoon"));
 
 const CustomerDashboard = lazy(() => import("../pages/customer/pages"));
 const CustomerHistory = lazy(() => import("../pages/customer/pages/history"));
+const CustomerBooking = lazy(() => import("../pages/customer/pages/booking"));
 
 const FixerDashboard = lazy(() => import("../pages/fixer/pages"));
 const Job = lazy(() => import("../pages/fixer/pages/jobs"));
+const Profit = lazy(() => import("../pages/fixer/pages/profit"));
 const JobList = lazy(() => import("../pages/fixer/components/JobList"));
 const JobDetail = lazy(() => import("../pages/fixer/components/jobDetail"));
 const SetProposal = lazy(() => import("../pages/fixer/components/setProposal"));
@@ -27,6 +29,7 @@ const SetProposal = lazy(() => import("../pages/fixer/components/setProposal"));
 const AdminDashboard = lazy(() => import("../pages/admin/pages/index"));
 const ServiceCategories = lazy(() => import("../pages/admin/pages/ServiceCategories"));
 const FixerManagement = lazy(() => import("../pages/admin/pages/FixerManagement"));
+const Transactions = lazy(() => import("../pages/admin/pages/Transactions"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -103,7 +106,7 @@ function InnerRoutes() {
               path={ROUTES.dashboardAdminTransactions}
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <ComingSoon title="Transactions" />
+                  <Transactions />
                 </ProtectedRoute>
               }
             />
@@ -122,6 +125,14 @@ function InnerRoutes() {
               element={
                 <ProtectedRoute requiredRole="customer">
                   <ComingSoon title="My Orders" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardCustomerBooking}
+              element={
+                <ProtectedRoute requiredRole="customer">
+                  <CustomerBooking />
                 </ProtectedRoute>
               }
             />
@@ -163,6 +174,14 @@ function InnerRoutes() {
               <Route path=":id" element={<JobDetail />} />
               <Route path=":id/set-proposal" element={<SetProposal />} />
             </Route>
+            <Route
+              path={ROUTES.dashboardFixerProfit}
+              element={
+                <ProtectedRoute requiredRole="fixer">
+                  <Profit />
+                </ProtectedRoute>
+              }
+            />
 
             {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />

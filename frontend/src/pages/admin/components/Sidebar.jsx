@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { LuLayoutDashboard } from "react-icons/lu";
 import { GiHammerNails, GiBoxUnpacking } from "react-icons/gi";
+import { FaReceipt } from "react-icons/fa6";
 import { ROUTES } from '@/config/routes';
 import { logoutUser } from '@/lib/session';
 
@@ -55,6 +56,10 @@ export default function Sidebar() {
 
         <NavItem icon={<GiHammerNails />} to={ROUTES.dashboardAdminFixers}>
           Fixer Management
+        </NavItem>
+
+        <NavItem icon={<FaReceipt />} to={ROUTES.dashboardAdminTransactions}>
+          Transactions
         </NavItem>
       </nav>
 
