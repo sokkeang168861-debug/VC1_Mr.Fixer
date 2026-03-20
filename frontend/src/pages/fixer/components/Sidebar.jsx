@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, BriefcaseBusiness, Wrench, LogOut, TrendingUp } from "lucide-react";
+import { Home, BriefcaseBusiness, Wrench, LogOut, TrendingUp, Settings } from "lucide-react";
 import { ROUTES } from "@/config/routes";
 import { logoutUser } from "@/lib/session";
 
@@ -15,6 +15,7 @@ export default function Sidebar({ className = "" }) {
     { name: "Home", icon: Home, path: ROUTES.dashboardFixer },
     { name: "Jobs", icon: BriefcaseBusiness, path: ROUTES.dashboardFixerJobs },
     { name: "Profit", icon: TrendingUp, path: ROUTES.dashboardFixerProfit },
+    { name: "Settings", icon: Settings, path: ROUTES.dashboardFixerSettings },
   ];
 
   return (
@@ -22,7 +23,9 @@ export default function Sidebar({ className = "" }) {
       <nav className="mt-4">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || 
+                           (item.path === ROUTES.dashboardFixerJobs && location.pathname.startsWith(item.path) && location.pathname !== ROUTES.dashboardFixerProfit) ||
+                           (item.path !== ROUTES.dashboardFixer && item.path !== ROUTES.dashboardFixerJobs && location.pathname.startsWith(item.path));
 
           return (
             <Link

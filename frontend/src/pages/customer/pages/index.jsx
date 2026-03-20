@@ -11,6 +11,28 @@ import ServiceCard from "../components/ServiceCard";
 import SpecialistCard from "../components/SpecialistCard";
 import CustomerSettings from "./setting";
 
+function getCurrentCoordinates() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation is not supported in this browser."));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      () => {
+        reject(new Error("Location access is required to find nearby providers."));
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+}
+
 export default function CustomerDashboard({ initialPage = "services" }) {
   const navigate = useNavigate();
   const MotionDiv = Motion.div;
@@ -24,6 +46,7 @@ export default function CustomerDashboard({ initialPage = "services" }) {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [providersError, setProvidersError] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -59,8 +82,13 @@ export default function CustomerDashboard({ initialPage = "services" }) {
 
   const getProvidersByCategory = async (categoryId) => {
     try {
+      setProvidersError("");
+      const { latitude, longitude } = await getCurrentCoordinates();
       const res = await httpClient.get(
-        `/user/providersEachCategory/${categoryId}`
+        `/user/providersEachCategory/${categoryId}`,
+        {
+          params: { latitude, longitude },
+        }
       );
 
       const list = res?.data?.data ?? res?.data ?? [];
@@ -69,6 +97,11 @@ export default function CustomerDashboard({ initialPage = "services" }) {
     } catch (err) {
       console.error("Failed to load providers", err);
       setProviders([]);
+      setProvidersError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to load nearby providers."
+      );
     }
   };
 
@@ -106,7 +139,11 @@ export default function CustomerDashboard({ initialPage = "services" }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {providers.length === 0 ? (
+            {providersError ? (
+              <div className="col-span-full text-center text-rose-600">
+                {providersError}
+              </div>
+            ) : providers.length === 0 ? (
               <div className="col-span-full text-center text-slate-500">
                 No providers found.
               </div>
@@ -153,7 +190,7 @@ export default function CustomerDashboard({ initialPage = "services" }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading ? (
             <div className="col-span-full text-center text-slate-500">
-              Loading services…
+              Loading services...
             </div>
           ) : loadError ? (
             <div className="col-span-full rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center">
@@ -198,8 +235,8 @@ export default function CustomerDashboard({ initialPage = "services" }) {
               setCurrentPage("services");
               return;
             }
-            if (tab === "bookings") {
-              navigate(ROUTES.dashboardCustomerOrders);
+            if (tab === "booking") {
+              navigate(ROUTES.dashboardCustomerBooking);
               return;
             }
             if (tab === "history") {
