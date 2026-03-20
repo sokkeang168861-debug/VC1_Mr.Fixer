@@ -11,7 +11,8 @@ class FixerDashboardModel {
       FROM reviews r
       INNER JOIN bookings b ON b.id = r.booking_id
       INNER JOIN services s ON s.id = b.service_id
-      WHERE s.provider_id = ?
+      INNER JOIN service_providers sp ON sp.id = s.provider_id
+      WHERE sp.user_id = ?
     `;
 
     return new Promise((resolve, reject) => {
@@ -33,8 +34,9 @@ class FixerDashboardModel {
       FROM reviews r
       INNER JOIN bookings b ON b.id = r.booking_id
       INNER JOIN services s ON s.id = b.service_id
+      INNER JOIN service_providers sp ON sp.id = s.provider_id
       INNER JOIN users u ON u.id = b.customer_id
-      WHERE s.provider_id = ?
+      WHERE sp.user_id = ?
         AND r.comment IS NOT NULL
         AND TRIM(r.comment) <> ''
       ORDER BY r.created_at DESC

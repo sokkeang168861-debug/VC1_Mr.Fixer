@@ -17,7 +17,7 @@ class ProviderBooking {
       INNER JOIN service_categories sc ON sc.id = s.category_id
       INNER JOIN service_providers sp ON sp.id = s.provider_id
       LEFT JOIN issue_img ii ON ii.booking_id = b.id
-      WHERE b.status = 'pending' AND s.provider_id = ?
+      WHERE b.status = 'pending' AND sp.user_id = ?
       GROUP BY b.id
       ORDER BY b.id DESC
       LIMIT 50`,
@@ -50,7 +50,7 @@ class ProviderBooking {
       INNER JOIN services s ON s.id = b.service_id
       INNER JOIN service_categories sc ON sc.id = s.category_id
       INNER JOIN service_providers sp ON sp.id = s.provider_id
-      WHERE b.id = ? AND s.provider_id = ?`,
+      WHERE b.id = ? AND sp.user_id = ?`,
       [booking_id, provider_id]
     );
 
@@ -78,8 +78,9 @@ class ProviderBooking {
       const [result] = await connection.query(
         `UPDATE bookings b
          INNER JOIN services s ON s.id = b.service_id
+         INNER JOIN service_providers sp ON sp.id = s.provider_id
          SET b.status = 'fixer_accept', b.service_fee = ?
-         WHERE b.id = ? AND s.provider_id = ?`,
+         WHERE b.id = ? AND sp.user_id = ?`,
         [total, booking_id, provider_id]
       );
 
