@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Search,
   Plus,
@@ -13,59 +13,131 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
+import httpClient from '@/api/httpClient';
 import FixerForm from '../components/FixerFormModal';
 import FixerDetail from '../components/FixerDetails';
 import Sidebar from '../components/Sidebar';
 
-// Sample data
-const fixersData = [
-  { id: '1', name: 'Elena Rodriguez', fixerId: 'FX-4510', category: 'Electrical', rating: 4.8, jobs: 215, avatar: 'https://i.pravatar.cc/150?u=elena' },
-  { id: '2', name: 'Sophie Müller', fixerId: 'FX-1029', category: 'Appliance Repair', rating: 4.5, jobs: 24, avatar: 'https://i.pravatar.cc/150?u=sophie' },
-  { id: '3', name: 'Marcus Thompson', fixerId: 'FX-8821', category: 'Plumbing', rating: 4.9, jobs: 342, avatar: 'https://i.pravatar.cc/150?u=marcus' },
-  { id: '4', name: 'Sophie Müller', fixerId: 'FX-1029', category: 'Appliance Repair', rating: 4.5, jobs: 24, avatar: 'https://i.pravatar.cc/150?u=sophie2' },
-  { id: '5', name: 'Sophie Müller', fixerId: 'FX-1029', category: 'Appliance Repair', rating: 4.5, jobs: 24, avatar: 'https://i.pravatar.cc/150?u=sophie3' },
-  { id: '6', name: 'David Chen', fixerId: 'FX-9923', category: 'HVAC', rating: 5.0, jobs: 78, avatar: 'https://i.pravatar.cc/150?u=david' },
-  { id: '7', name: 'Sophie Müller', fixerId: 'FX-1029', category: 'Appliance Repair', rating: 4.5, jobs: 24, avatar: 'https://i.pravatar.cc/150?u=sophie4' },
-  { id: '8', name: 'Marcus Thompson', fixerId: 'FX-8821', category: 'Plumbing', rating: 4.9, jobs: 342, avatar: 'https://i.pravatar.cc/150?u=marcus2' },
-];
-
 // Category badge component
 const CategoryBadge = ({ category }) => {
   const colors = {
-    'Electrical': 'bg-purple-100 text-purple-600',
+    Electrical: 'bg-purple-100 text-purple-600',
     'Appliance Repair': 'bg-emerald-100 text-emerald-600',
-    'Plumbing': 'bg-blue-100 text-blue-600',
-    'HVAC': 'bg-orange-100 text-orange-600',
+    Plumbing: 'bg-blue-100 text-blue-600',
+    HVAC: 'bg-orange-100 text-orange-600',
   };
 
   return (
-    <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${colors[category] || 'bg-slate-100 text-slate-600'}`}>
+    <span
+      className={`px-3 py-1 rounded-lg text-xs font-semibold ${
+        colors[category] || 'bg-slate-100 text-slate-600'
+      }`}
+    >
       {category}
     </span>
   );
 };
 
 export default function App() {
+  const [fixers, setFixers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All category');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formMode, setFormMode] = useState('add');
   const [selectedFixer, setSelectedFixer] = useState(null);
   const [view, setView] = useState('list');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const categories = useMemo(() => ['All category', ...Array.from(new Set(fixersData.map(f => f.category)))], []);
+  const categories = useMemo(() => {
+    const categorySet = new Set(
+      fixers.flatMap((f) =>
+        Array.isArray(f.categories)
+          ? f.categories
+          : f.category
+          ? [f.category]
+          : []
+      )
+    );
+    return ['All category', ...Array.from(categorySet)];
+  }, [fixers]);
 
   const filteredFixers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return fixersData.filter((fixer) => {
+    return fixers.filter((fixer) => {
       const matchesSearch =
         !query ||
         fixer.name.toLowerCase().includes(query) ||
         fixer.fixerId.toLowerCase().includes(query);
-      const matchesCategory = categoryFilter === 'All category' || fixer.category === categoryFilter;
+      const matchesCategory =
+        categoryFilter === 'All category' ||
+        fixer.category === categoryFilter ||
+        (Array.isArray(fixer.categories) &&
+          fixer.categories.includes(categoryFilter));
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, categoryFilter]);
+  }, [searchQuery, categoryFilter, fixers]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const normalizeFixer = (fixer) => {
+      const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        fixer.name || 'Fixer'
+      )}&background=E0E7FF&color=1F2937`;
+      const categoryLabel = Array.isArray(fixer.categories)
+        ? fixer.categories[0] || 'Unassigned'
+        : fixer.category || 'Unassigned';
+
+      return {
+        ...fixer,
+        category: categoryLabel,
+        categories: Array.isArray(fixer.categories)
+          ? fixer.categories
+          : fixer.category
+          ? [fixer.category]
+          : [],
+        fixerId:
+          fixer.fixerId ||
+          (fixer.providerId
+            ? `FX-${String(fixer.providerId).padStart(4, '0')}`
+            : `FX-${String(fixer.userId || '0').padStart(4, '0')}`),
+        jobs: fixer.totalBookings ?? fixer.jobs ?? 0,
+        rating: Number(fixer.rating ?? 0),
+        avatar: fixer.avatar || fallbackAvatar,
+      };
+    };
+
+    const fetchFixers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await httpClient.get('/admin/fixers');
+        const data = response.data?.data || [];
+        if (isMounted) {
+          setFixers(data.map(normalizeFixer));
+        }
+      } catch (err) {
+        if (isMounted) {
+          const message =
+            err.response?.data?.message ||
+            err.message ||
+            'Failed to load fixer list';
+          setError(message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchFixers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleAddClick = () => {
     setFormMode('add');
@@ -104,7 +176,9 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
               >
                 <header className="mb-8">
-                  <h1 className="text-3xl font-bold tracking-tight">Fixer Management</h1>
+                  <h1 className="text-3xl font-bold tracking-tight">
+                    Fixer Management
+                  </h1>
                 </header>
 
                 {/* Stats Card */}
@@ -114,8 +188,10 @@ export default function App() {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white p-6 rounded-3xl shadow-sm border border-slate-50 w-64"
                   >
-                    <p className="text-slate-400 text-sm font-medium mb-1">Total Fixers</p>
-                    <h2 className="text-4xl font-bold">1,240</h2>
+                    <p className="text-slate-400 text-sm font-medium mb-1">
+                      Total Fixers
+                    </p>
+                    <h2 className="text-4xl font-bold">{fixers.length}</h2>
                   </Motion.div>
                 </div>
 
@@ -123,7 +199,10 @@ export default function App() {
                 <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-3xl shadow-sm border border-slate-50">
                   <div className="flex items-center gap-4 flex-1 max-w-3xl">
                     <div className="relative flex-1">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <Search
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={18}
+                      />
                       <input
                         type="text"
                         placeholder="Search by name or ID"
@@ -141,7 +220,9 @@ export default function App() {
                           className="bg-transparent outline-none text-slate-700 font-semibold cursor-pointer"
                         >
                           {categories.map((cat) => (
-                            <option key={cat} value={cat}>{cat}</option>
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -161,69 +242,119 @@ export default function App() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-50">
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fixer Name</th>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</th>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rating</th>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Jobs</th>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Fixer Name
+                        </th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Category
+                        </th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Rating
+                        </th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Jobs
+                        </th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <AnimatePresence>
-                        {filteredFixers.map((fixer, index) => (
-                          <Motion.tr
-                            key={fixer.id + index}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: index * 0.05 }}
-                            onClick={() => handleRowClick(fixer)}
-                            className="group cursor-pointer hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-none"
+                      {loading ? (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="px-8 py-8 text-center text-slate-500"
                           >
-                            <td className="px-8 py-4">
-                              <div className="flex items-center gap-4">
-                                <img
-                                  src={fixer.avatar}
-                                  alt={fixer.name}
-                                  className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-                                  referrerPolicy="no-referrer"
-                                />
-                                <div>
-                                  <p className="font-bold text-sm text-slate-800">{fixer.name}</p>
-                                  <p className="text-xs text-slate-400 font-medium tracking-tight">ID: {fixer.fixerId}</p>
+                            Loading fixers...
+                          </td>
+                        </tr>
+                      ) : error ? (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="px-8 py-8 text-center text-red-500 font-semibold"
+                          >
+                            {error}
+                          </td>
+                        </tr>
+                      ) : filteredFixers.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="px-8 py-8 text-center text-slate-500"
+                          >
+                            No fixers found.
+                          </td>
+                        </tr>
+                      ) : (
+                        <AnimatePresence>
+                          {filteredFixers.map((fixer, index) => (
+                            <Motion.tr
+                              key={`${fixer.providerId || fixer.userId || index}`}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: index * 0.05 }}
+                              onClick={() => handleRowClick(fixer)}
+                              className="group cursor-pointer hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-none"
+                            >
+                              <td className="px-8 py-4">
+                                <div className="flex items-center gap-4">
+                                  <img
+                                    src={fixer.avatar}
+                                    alt={fixer.name}
+                                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  <div>
+                                    <p className="font-bold text-sm text-slate-800">
+                                      {fixer.name}
+                                    </p>
+                                    <p className="text-xs text-slate-400 font-medium tracking-tight">
+                                      ID: {fixer.fixerId}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-8 py-4">
-                              <CategoryBadge category={fixer.category} />
-                            </td>
-                            <td className="px-8 py-4">
-                              <div className="flex items-center gap-1.5">
-                                <Star size={14} className="fill-orange-400 text-orange-400" />
-                                <span className="text-sm font-bold text-orange-500">{fixer.rating.toFixed(1)}</span>
-                              </div>
-                            </td>
-                            <td className="px-8 py-4">
-                              <span className="text-sm font-bold text-slate-700">{fixer.jobs}</span>
-                            </td>
-                            <td className="px-8 py-4">
-                              <div className="flex items-center gap-3">
-                                <button
-                                  onClick={(e) => handleEditClick(e, fixer)}
-                                  className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                                >
-                                  <Edit2 size={16} />
-                                </button>
-                                <button
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            </td>
-                          </Motion.tr>
-                        ))}
-                      </AnimatePresence>
+                              </td>
+                              <td className="px-8 py-4">
+                                <CategoryBadge category={fixer.category} />
+                              </td>
+                              <td className="px-8 py-4">
+                                <div className="flex items-center gap-1.5">
+                                  <Star
+                                    size={14}
+                                    className="fill-orange-400 text-orange-400"
+                                  />
+                                  <span className="text-sm font-bold text-orange-500">
+                                    {Number(fixer.rating || 0).toFixed(1)}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-8 py-4">
+                                <span className="text-sm font-bold text-slate-700">
+                                  {fixer.jobs}
+                                </span>
+                              </td>
+                              <td className="px-8 py-4">
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    onClick={(e) => handleEditClick(e, fixer)}
+                                    className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </td>
+                            </Motion.tr>
+                          ))}
+                        </AnimatePresence>
+                      )}
                     </tbody>
                   </table>
                 </div>
