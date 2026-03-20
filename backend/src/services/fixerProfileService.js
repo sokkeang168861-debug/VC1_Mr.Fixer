@@ -35,6 +35,7 @@ const getFixerProfile = async (db, user) => {
     full_name: fixer.full_name || "",
     email: fixer.email || "",
     phone: fixer.phone || "",
+    location: fixer.location || "",
     role: fixer.role || "fixer",
     profile_img: toBase64Image(fixer.profile_img),
   };

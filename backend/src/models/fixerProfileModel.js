@@ -7,8 +7,11 @@ class FixerProfileModel {
         u.email,
         u.phone,
         u.role,
-        u.profile_img
+        u.profile_img,
+        sp.id AS service_provider_id,
+        sp.location
        FROM users u
+       LEFT JOIN service_providers sp ON sp.user_id = u.id
        WHERE u.id = ? AND LOWER(u.role) = 'fixer'
        LIMIT 1`,
       [fixerId]

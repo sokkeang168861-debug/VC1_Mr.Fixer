@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   MapPin, 
@@ -11,7 +12,9 @@ import {
 import { Header } from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import httpClient from "@/api/httpClient";
+import { ROUTES } from "@/config/routes";
 import { getTokenPayload } from "@/lib/auth";
+import { logoutUser } from "@/lib/session";
 import defaultProfile from "@/assets/image/default-profile.png";
 
 const FIXER_SETTINGS_STORAGE_KEY = 'fixer_settings_local';
@@ -50,6 +53,8 @@ const buildStoredSettings = ({ profile, location }) => ({
 });
 
 const Settings = () => {
+  const navigate = useNavigate();
+  const locationInputRef = useRef(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
@@ -115,10 +120,12 @@ const Settings = () => {
 
         setProfileData(nextProfile);
         setOriginalProfileData(nextProfile);
+        setAddresses(buildAddressList(data.location || localSettings?.location || ''));
+        setLocationInput(data.location || localSettings?.location || '');
         saveLocalFixerSettings(
           buildStoredSettings({
             profile: nextProfile,
-            location: localSettings?.location || ''
+            location: data.location || localSettings?.location || ''
           })
         );
       })
@@ -129,6 +136,12 @@ const Settings = () => {
         setLoadingProfile(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (isEditingLocation) {
+      locationInputRef.current?.focus();
+    }
+  }, [isEditingLocation]);
 
   const handleProfileChange = (field, value) => {
     setSaveMessage('');
@@ -277,8 +290,8 @@ const Settings = () => {
     );
   };
 
-  const handleStartLocationEdit = () => {
-    setLocationInput(addresses[0]?.street || '');
+  const handleStartLocationEdit = (location = addresses[0]?.street || '') => {
+    setLocationInput(location);
     setIsEditingLocation(true);
     setProfileError('');
     setSaveMessage('');
@@ -301,18 +314,42 @@ const Settings = () => {
     setIsSavingLocation(true);
     setProfileError('');
     setSaveMessage('');
-    setAddresses(buildAddressList(trimmedLocation));
-    setLocationInput(trimmedLocation);
-    setIsEditingLocation(false);
-    saveLocalFixerSettings(
-      buildStoredSettings({
-        profile: originalProfileData,
+
+    try {
+      const res = await httpClient.put('/fixer/settings/location', {
         location: trimmedLocation
-      })
-    );
-    setSaveMessage('Location saved locally.');
-    setIsSavingLocation(false);
-    return true;
+      });
+
+      const savedLocation = res.data?.location || trimmedLocation;
+      setAddresses(buildAddressList(savedLocation));
+      setLocationInput(savedLocation);
+      setIsEditingLocation(false);
+      saveLocalFixerSettings(
+        buildStoredSettings({
+          profile: originalProfileData,
+          location: savedLocation
+        })
+      );
+      setSaveMessage(res.data?.message || 'Location updated successfully.');
+      return true;
+    } catch (error) {
+      console.error('Failed to update fixer location:', error);
+      setAddresses(buildAddressList(trimmedLocation));
+      setLocationInput(trimmedLocation);
+      setIsEditingLocation(false);
+      saveLocalFixerSettings(
+        buildStoredSettings({
+          profile: originalProfileData,
+          location: trimmedLocation
+        })
+      );
+      setProfileError(
+        error?.response?.data?.message || 'Failed to update database. Location saved locally instead.'
+      );
+      return false;
+    } finally {
+      setIsSavingLocation(false);
+    }
   };
 
   const handlePasswordFieldChange = (field, value) => {
@@ -378,6 +415,10 @@ const Settings = () => {
     } finally {
       setIsSavingPassword(false);
     }
+  };
+
+  const handleLogout = async () => {
+    await logoutUser({ navigate, redirectTo: ROUTES.home });
   };
 
   const handleDiscardAllChanges = () => {
@@ -586,6 +627,7 @@ const Settings = () => {
               Location
             </label>
             <input
+              ref={locationInputRef}
               type="text"
               value={locationInput}
               onChange={(e) => setLocationInput(e.target.value)}
@@ -627,13 +669,6 @@ const Settings = () => {
                       <p className="text-slate-600 leading-relaxed">{address.street}</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={handleStartLocationEdit}
-                        className="px-4 py-2 text-sm font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-50 transition-all duration-200 rounded-lg"
-                      >
-                        EDIT
-                      </button>
                       <button 
                         type="button"
                         onClick={() => handleAddressDelete(address.id)}
@@ -744,6 +779,20 @@ const Settings = () => {
             </div>
           </div>
         ) : null}
+
+        <div className="flex items-center justify-between p-6 rounded-xl bg-gradient-to-r from-red-50 to-white border border-red-200">
+          <div>
+            <h3 className="font-bold text-slate-900 text-lg mb-2">Logout</h3>
+            <p className="text-sm text-red-500">Sign out from your fixer account on this device.</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+          >
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   );
