@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
-import { Wrench, History, Settings, LogOut } from "lucide-react";
+import { Calendar, Wrench, History, Settings, LogOut } from "lucide-react";
 import httpClient from "@/api/httpClient";
+import { resolveUploadUrl } from "@/lib/assets";
+import defaultProfile from "@/assets/image/default-profile.png";
 
 export const Sidebar = ({
   activeTab,
@@ -11,6 +13,7 @@ export const Sidebar = ({
 }) => {
   const menuItems = [
     { id: "services", label: "Services", icon: Wrench },
+    { id: "booking", label: "Booking", icon: Calendar },
     { id: "history", label: "History", icon: History },
     { id: "settings", label: "Settings", icon: Settings },
   ];
@@ -54,6 +57,7 @@ export const Sidebar = ({
 export const Header = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(() => !!localStorage.getItem("token"));
+  const [avatarSrc, setAvatarSrc] = useState(defaultProfile);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -63,13 +67,17 @@ export const Header = () => {
     }
 
     httpClient
-      .get("/users/currentUser")
+      .get("/user/currentUser")
       .then((res) => {
         setUser(res.data);
+        setAvatarSrc(
+          res.data?.profile_img ? resolveUploadUrl(res.data.profile_img) : defaultProfile
+        );
       })
       .catch((err) => {
         console.error(err);
         setUser(null);
+        setAvatarSrc(defaultProfile);
       })
       .finally(() => {
         setLoading(false);
@@ -101,9 +109,10 @@ export const Header = () => {
         <div className="text-right">{renderUserInfo()}</div>
         <div className="w-12 h-12 rounded-2xl bg-orange-100 border-2 border-white shadow-sm flex items-center justify-center overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100"
+            src={avatarSrc}
             alt="Profile"
             className="w-full h-full object-cover"
+            onError={() => setAvatarSrc(defaultProfile)}
             referrerPolicy="no-referrer"
           />
         </div>

@@ -17,9 +17,12 @@ const ComingSoon = lazy(() => import("./ComingSoon"));
 
 const CustomerDashboard = lazy(() => import("../pages/customer/pages"));
 const CustomerHistory = lazy(() => import("../pages/customer/pages/history"));
+const CustomerBooking = lazy(() => import("../pages/customer/pages/booking"));
 
 const FixerDashboard = lazy(() => import("../pages/fixer/pages"));
 const Job = lazy(() => import("../pages/fixer/pages/jobs"));
+const Profit = lazy(() => import("../pages/fixer/pages/profit"));
+const Settings = lazy(() => import("../pages/fixer/pages/settings"));
 const JobList = lazy(() => import("../pages/fixer/components/JobList"));
 const JobDetail = lazy(() => import("../pages/fixer/components/jobDetail"));
 const SetProposal = lazy(() => import("../pages/fixer/components/setProposal"));
@@ -27,6 +30,8 @@ const SetProposal = lazy(() => import("../pages/fixer/components/setProposal"));
 const AdminDashboard = lazy(() => import("../pages/admin/pages/index"));
 const ServiceCategories = lazy(() => import("../pages/admin/pages/ServiceCategories"));
 const FixerManagement = lazy(() => import("../pages/admin/pages/FixerManagement"));
+const Transactions = lazy(() => import("../pages/admin/pages/Transactions"));
+const UserManagement = lazy(() => import("../pages/admin/pages/UserManagement"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -84,14 +89,6 @@ function InnerRoutes() {
               }
             />
             <Route
-              path={ROUTES.dashboardAdminUsers}
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <ComingSoon title="User Management" />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path={ROUTES.dashboardAdminFixers}
               element={
                 <ProtectedRoute requiredRole="admin">
@@ -100,14 +97,23 @@ function InnerRoutes() {
               }
             />
             <Route
-              path={ROUTES.dashboardAdminTransactions}
+              path={ROUTES.dashboardAdminUsers}
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <ComingSoon title="Transactions" />
+                  <UserManagement />
                 </ProtectedRoute>
               }
             />
-
+        
+            <Route
+              path={ROUTES.dashboardTransactions}
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Transactions />
+                </ProtectedRoute>
+              }
+            />
+                
             {/* Customer Dashboard */}
             <Route
               path={ROUTES.dashboardCustomer}
@@ -122,6 +128,14 @@ function InnerRoutes() {
               element={
                 <ProtectedRoute requiredRole="customer">
                   <ComingSoon title="My Orders" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardCustomerBooking}
+              element={
+                <ProtectedRoute requiredRole="customer">
+                  <CustomerBooking />
                 </ProtectedRoute>
               }
             />
@@ -163,6 +177,22 @@ function InnerRoutes() {
               <Route path=":id" element={<JobDetail />} />
               <Route path=":id/set-proposal" element={<SetProposal />} />
             </Route>
+            <Route
+              path={ROUTES.dashboardFixerProfit}
+              element={
+                <ProtectedRoute requiredRole="fixer">
+                  <Profit />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.dashboardFixerSettings}
+              element={
+                <ProtectedRoute requiredRole="fixer">
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
 
             {/* 404 */}
             <Route path="*" element={<NotFoundPage />} />

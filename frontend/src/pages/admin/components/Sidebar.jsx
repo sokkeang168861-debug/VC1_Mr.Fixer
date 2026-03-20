@@ -2,6 +2,11 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LogOut } from 'lucide-react';
 import { LuLayoutDashboard } from "react-icons/lu";
 import { GiHammerNails, GiBoxUnpacking } from "react-icons/gi";
+import { FaReceipt } from "react-icons/fa6";
+import { HiOutlineWrenchScrewdriver} from "react-icons/hi2";
+import { FiUsers } from "react-icons/fi";
+
+import { GrServices } from "react-icons/gr";
 import { ROUTES } from '@/config/routes';
 import { logoutUser } from '@/lib/session';
 
@@ -49,12 +54,19 @@ export default function Sidebar() {
           Dashboard
         </NavItem>
 
-        <NavItem icon={<GiBoxUnpacking />} to={ROUTES.dashboardAdminServiceCategories}>
+        <NavItem icon={<HiOutlineWrenchScrewdriver />} to={ROUTES.dashboardAdminFixers}>
+          Fixer Management
+        </NavItem>
+        <NavItem icon={<FiUsers  />} to={ROUTES.dashboardAdminUsers}>
+          User Management
+        </NavItem>
+
+        <NavItem icon={<GrServices />} to={ROUTES.dashboardAdminServiceCategories}>
           Service Categories
         </NavItem>
 
-        <NavItem icon={<GiHammerNails />} to={ROUTES.dashboardAdminFixers}>
-          Fixer Management
+        <NavItem icon={<FaReceipt />} to={ROUTES.dashboardAdminTransactions}>
+          Transactions
         </NavItem>
       </nav>
 

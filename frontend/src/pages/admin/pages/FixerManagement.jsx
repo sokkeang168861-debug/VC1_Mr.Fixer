@@ -3,14 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  LayoutDashboard,
-  Users,
-  UserCog,
-  Wrench,
-  ArrowRightLeft,
-  LogOut,
   Search,
   Plus,
   Edit2,
@@ -19,46 +13,178 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { motion as Motion, AnimatePresence } from 'motion/react';
+import httpClient from '@/api/httpClient';
 import FixerForm from '../components/FixerFormModal';
 import FixerDetail from '../components/FixerDetails';
 import Sidebar from '../components/Sidebar';
 
-// Sample data
-const fixersData = [
-  { id: '1', name: 'Elena Rodriguez', fixerId: 'FX-4510', category: 'Electrical', rating: 4.8, jobs: 215, avatar: 'https://i.pravatar.cc/150?u=elena' },
-  { id: '2', name: 'Sophie Müller', fixerId: 'FX-1029', category: 'Appliance Repair', rating: 4.5, jobs: 24, avatar: 'https://i.pravatar.cc/150?u=sophie' },
-  { id: '3', name: 'Marcus Thompson', fixerId: 'FX-8821', category: 'Plumbing', rating: 4.9, jobs: 342, avatar: 'https://i.pravatar.cc/150?u=marcus' },
-  { id: '4', name: 'Sophie Müller', fixerId: 'FX-1029', category: 'Appliance Repair', rating: 4.5, jobs: 24, avatar: 'https://i.pravatar.cc/150?u=sophie2' },
-  { id: '5', name: 'Sophie Müller', fixerId: 'FX-1029', category: 'Appliance Repair', rating: 4.5, jobs: 24, avatar: 'https://i.pravatar.cc/150?u=sophie3' },
-  { id: '6', name: 'David Chen', fixerId: 'FX-9923', category: 'HVAC', rating: 5.0, jobs: 78, avatar: 'https://i.pravatar.cc/150?u=david' },
-  { id: '7', name: 'Sophie Müller', fixerId: 'FX-1029', category: 'Appliance Repair', rating: 4.5, jobs: 24, avatar: 'https://i.pravatar.cc/150?u=sophie4' },
-  { id: '8', name: 'Marcus Thompson', fixerId: 'FX-8821', category: 'Plumbing', rating: 4.9, jobs: 342, avatar: 'https://i.pravatar.cc/150?u=marcus2' },
-];
-
 // Category badge component
 const CategoryBadge = ({ category }) => {
   const colors = {
-    'Electrical': 'bg-purple-100 text-purple-600',
+    Electrical: 'bg-purple-100 text-purple-600',
     'Appliance Repair': 'bg-emerald-100 text-emerald-600',
-    'Plumbing': 'bg-blue-100 text-blue-600',
-    'HVAC': 'bg-orange-100 text-orange-600',
+    Plumbing: 'bg-blue-100 text-blue-600',
+    HVAC: 'bg-orange-100 text-orange-600',
   };
 
   return (
-    <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${colors[category] || 'bg-slate-100 text-slate-600'}`}>
+    <span
+      className={`px-3 py-1 rounded-lg text-xs font-semibold ${
+        colors[category] || 'bg-slate-100 text-slate-600'
+      }`}
+    >
       {category}
     </span>
   );
 };
 
 export default function App() {
+  const [fixers, setFixers] = useState([]);
+  const [categoriesData, setCategoriesData] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All category');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formMode, setFormMode] = useState('add');
   const [selectedFixer, setSelectedFixer] = useState(null);
   const [view, setView] = useState('list');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const categories = useMemo(() => {
+    const categorySet = new Set(
+      fixers.flatMap((f) =>
+        Array.isArray(f.categories)
+          ? f.categories
+          : f.category
+          ? [f.category]
+          : []
+      )
+    );
+    const dynamic = Array.from(categorySet);
+    const fromServer = categoriesData.map((c) => c.name);
+    const merged = Array.from(new Set([...dynamic, ...fromServer]));
+    return ['All category', ...merged];
+  }, [fixers, categoriesData]);
+
+  const filteredFixers = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return fixers.filter((fixer) => {
+      const matchesSearch =
+        !query ||
+        fixer.name.toLowerCase().includes(query) ||
+        fixer.fixerId.toLowerCase().includes(query);
+      const matchesCategory =
+        categoryFilter === 'All category' ||
+        fixer.category === categoryFilter ||
+        (Array.isArray(fixer.categories) &&
+          fixer.categories.includes(categoryFilter));
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, categoryFilter, fixers]);
+
+  const selectedFixerWithIds = useMemo(() => {
+    if (!selectedFixer) return null;
+    const nameToId = new Map(categoriesData.map((c) => [c.name, c.id]));
+    const categoryIds =
+      Array.isArray(selectedFixer.categoryIds) && selectedFixer.categoryIds.length
+        ? selectedFixer.categoryIds
+        : Array.isArray(selectedFixer.categories)
+        ? selectedFixer.categories
+            .map((name) => nameToId.get(name))
+            .filter(Boolean)
+        : [];
+    return { ...selectedFixer, categoryIds };
+  }, [selectedFixer, categoriesData]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const normalizeFixer = (fixer) => {
+      const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        fixer.name || 'Fixer'
+      )}&background=E0E7FF&color=1F2937`;
+      const categoryLabel = Array.isArray(fixer.categories)
+        ? fixer.categories[0] || 'Unassigned'
+        : fixer.category || 'Unassigned';
+
+      return {
+        ...fixer,
+        category: categoryLabel,
+        categories: Array.isArray(fixer.categories)
+          ? fixer.categories
+          : fixer.category
+          ? [fixer.category]
+          : [],
+        categoryIds: Array.isArray(fixer.categoryIds)
+          ? fixer.categoryIds
+          : [],
+        fixerId:
+          fixer.fixerId ||
+          (fixer.providerId
+            ? `FX-${String(fixer.providerId).padStart(4, '0')}`
+            : `FX-${String(fixer.userId || '0').padStart(4, '0')}`),
+        jobs: fixer.totalBookings ?? fixer.jobs ?? 0,
+        rating: Number(fixer.rating ?? 0),
+        avatar: fixer.avatar || fallbackAvatar,
+        companyName: fixer.companyName || '',
+        location: fixer.location || '',
+        experience: fixer.experience || '',
+        bio: fixer.bio || '',
+      };
+    };
+
+    const fetchFixers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await httpClient.get('/admin/fixers');
+        const data = response.data?.data || [];
+        if (isMounted) {
+          setFixers(data.map(normalizeFixer));
+        }
+      } catch (err) {
+        if (isMounted) {
+          const message =
+            err.response?.data?.message ||
+            err.message ||
+            'Failed to load fixer list';
+          setError(message);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchFixers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCategories = async () => {
+      try {
+        const res = await httpClient.get('/admin/getAllCategories');
+        const data = res.data?.data || [];
+        if (isMounted) setCategoriesData(data);
+      } catch (error) {
+        console.error('Failed to load categories', error);
+      }
+    };
+
+    fetchCategories();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleAddClick = () => {
+    setError(null);
     setFormMode('add');
     setSelectedFixer(null);
     setIsFormOpen(true);
@@ -66,6 +192,7 @@ export default function App() {
 
   const handleEditClick = (e, fixer) => {
     e.stopPropagation();
+    setError(null);
     setFormMode('edit');
     setSelectedFixer(fixer);
     setIsFormOpen(true);
@@ -77,8 +204,82 @@ export default function App() {
   };
 
   const handleSave = (data) => {
-    console.log('Saving fixer data:', data);
-    setIsFormOpen(false);
+    if (formMode === 'edit') {
+      return upsertFixer(data);
+    } else {
+      // create flow not implemented yet
+      setIsFormOpen(false);
+    }
+  };
+
+  const upsertFixer = async (payload) => {
+    if (!selectedFixer?.providerId) return;
+    const sanitized = Object.fromEntries(
+      Object.entries(payload).map(([k, v]) => [k, v === '' ? null : v])
+    );
+    try {
+      setLoading(true);
+      await httpClient.put(`/admin/fixers/${selectedFixer.providerId}`, sanitized);
+      // refresh list
+      const res = await httpClient.get('/admin/fixers');
+      const data = res.data?.data || [];
+      const normalized = data.map((f) => ({
+        ...f,
+        category: Array.isArray(f.categories)
+          ? f.categories[0] || 'Unassigned'
+          : f.category || 'Unassigned',
+        categories: Array.isArray(f.categories)
+          ? f.categories
+          : f.category
+          ? [f.category]
+          : [],
+        fixerId:
+          f.fixerId ||
+          (f.providerId
+            ? `FX-${String(f.providerId).padStart(4, '0')}`
+            : `FX-${String(f.userId || '0').padStart(4, '0')}`),
+        jobs: f.totalBookings ?? f.jobs ?? 0,
+        rating: Number(f.rating ?? 0),
+        avatar:
+          f.avatar ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            f.name || 'Fixer'
+          )}&background=E0E7FF&color=1F2937`,
+      }));
+      setFixers(normalized);
+      setIsFormOpen(false);
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to save fixer';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (e, fixer) => {
+    e.stopPropagation();
+    const confirmDelete = window.confirm(
+      `Delete fixer "${fixer.name}"? This will remove their services and bookings.`
+    );
+    if (!confirmDelete) return;
+    try {
+      setLoading(true);
+      await httpClient.delete(`/admin/fixers/${fixer.providerId}`);
+      setFixers((prev) =>
+        prev.filter((f) => f.providerId !== fixer.providerId)
+      );
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to delete fixer';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -95,7 +296,9 @@ export default function App() {
                 exit={{ opacity: 0, y: -10 }}
               >
                 <header className="mb-8">
-                  <h1 className="text-3xl font-bold tracking-tight">Fixer Management</h1>
+                  <h1 className="text-3xl font-bold tracking-tight">
+                    Fixer Management
+                  </h1>
                 </header>
 
                 {/* Stats Card */}
@@ -105,29 +308,44 @@ export default function App() {
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white p-6 rounded-3xl shadow-sm border border-slate-50 w-64"
                   >
-                    <p className="text-slate-400 text-sm font-medium mb-1">Total Fixers</p>
-                    <h2 className="text-4xl font-bold">1,240</h2>
+                    <p className="text-slate-400 text-sm font-medium mb-1">
+                      Total Fixers
+                    </p>
+                    <h2 className="text-4xl font-bold">{fixers.length}</h2>
                   </Motion.div>
                 </div>
 
                 {/* Search and Action Bar */}
                 <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-3xl shadow-sm border border-slate-50">
-                  <div className="flex items-center gap-4 flex-1 max-w-2xl">
+                  <div className="flex items-center gap-4 flex-1 max-w-3xl">
                     <div className="relative flex-1">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <Search
+                        className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={18}
+                      />
                       <input
                         type="text"
-                        placeholder="Search by name"
+                        placeholder="Search by name or ID"
                         className="w-full pl-12 pr-4 py-3 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-blue-500/20 text-sm transition-all"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
                     <div className="relative">
-                      <button className="flex items-center gap-2 px-6 py-3 bg-slate-50 rounded-2xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
-                        Category
-                        <ChevronDown size={16} />
-                      </button>
+                      <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-2xl text-sm font-medium text-slate-600">
+                        <ChevronDown size={16} className="text-slate-400" />
+                        <select
+                          value={categoryFilter}
+                          onChange={(e) => setCategoryFilter(e.target.value)}
+                          className="bg-transparent outline-none text-slate-700 font-semibold cursor-pointer"
+                        >
+                          {categories.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
                   <button
@@ -144,69 +362,119 @@ export default function App() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-50">
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fixer Name</th>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Category</th>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rating</th>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Jobs</th>
-                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Actions</th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Fixer Name
+                        </th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Category
+                        </th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Rating
+                        </th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Jobs
+                        </th>
+                        <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      <AnimatePresence>
-                        {fixersData.map((fixer, index) => (
-                          <Motion.tr
-                            key={fixer.id + index}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: index * 0.05 }}
-                            onClick={() => handleRowClick(fixer)}
-                            className="group cursor-pointer hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-none"
+                      {loading ? (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="px-8 py-8 text-center text-slate-500"
                           >
-                            <td className="px-8 py-4">
-                              <div className="flex items-center gap-4">
-                                <img
-                                  src={fixer.avatar}
-                                  alt={fixer.name}
-                                  className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-                                  referrerPolicy="no-referrer"
-                                />
-                                <div>
-                                  <p className="font-bold text-sm text-slate-800">{fixer.name}</p>
-                                  <p className="text-xs text-slate-400 font-medium tracking-tight">ID: {fixer.fixerId}</p>
+                            Loading fixers...
+                          </td>
+                        </tr>
+                      ) : error ? (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="px-8 py-8 text-center text-red-500 font-semibold"
+                          >
+                            {error}
+                          </td>
+                        </tr>
+                      ) : filteredFixers.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan="5"
+                            className="px-8 py-8 text-center text-slate-500"
+                          >
+                            No fixers found.
+                          </td>
+                        </tr>
+                      ) : (
+                        <AnimatePresence>
+                          {filteredFixers.map((fixer, index) => (
+                            <Motion.tr
+                              key={`${fixer.providerId || fixer.userId || index}`}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: index * 0.05 }}
+                              onClick={() => handleRowClick(fixer)}
+                              className="group cursor-pointer hover:bg-slate-50/50 transition-colors border-b border-slate-50 last:border-none"
+                            >
+                              <td className="px-8 py-4">
+                                <div className="flex items-center gap-4">
+                                  <img
+                                    src={fixer.avatar}
+                                    alt={fixer.name}
+                                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                                    referrerPolicy="no-referrer"
+                                  />
+                                  <div>
+                                    <p className="font-bold text-sm text-slate-800">
+                                      {fixer.name}
+                                    </p>
+                                    <p className="text-xs text-slate-400 font-medium tracking-tight">
+                                      ID: {fixer.fixerId}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-8 py-4">
-                              <CategoryBadge category={fixer.category} />
-                            </td>
-                            <td className="px-8 py-4">
-                              <div className="flex items-center gap-1.5">
-                                <Star size={14} className="fill-orange-400 text-orange-400" />
-                                <span className="text-sm font-bold text-orange-500">{fixer.rating.toFixed(1)}</span>
-                              </div>
-                            </td>
-                            <td className="px-8 py-4">
-                              <span className="text-sm font-bold text-slate-700">{fixer.jobs}</span>
-                            </td>
-                            <td className="px-8 py-4">
-                              <div className="flex items-center gap-3">
-                                <button
-                                  onClick={(e) => handleEditClick(e, fixer)}
-                                  className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                                >
-                                  <Edit2 size={16} />
-                                </button>
-                                <button
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            </td>
-                          </Motion.tr>
-                        ))}
-                      </AnimatePresence>
+                              </td>
+                              <td className="px-8 py-4">
+                                <CategoryBadge category={fixer.category} />
+                              </td>
+                              <td className="px-8 py-4">
+                                <div className="flex items-center gap-1.5">
+                                  <Star
+                                    size={14}
+                                    className="fill-orange-400 text-orange-400"
+                                  />
+                                  <span className="text-sm font-bold text-orange-500">
+                                    {Number(fixer.rating || 0).toFixed(1)}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-8 py-4">
+                                <span className="text-sm font-bold text-slate-700">
+                                  {fixer.jobs}
+                                </span>
+                              </td>
+                              <td className="px-8 py-4">
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    onClick={(e) => handleEditClick(e, fixer)}
+                                    className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                  >
+                                    <Edit2 size={16} />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDelete(e, fixer)}
+                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </td>
+                            </Motion.tr>
+                          ))}
+                        </AnimatePresence>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -231,7 +499,8 @@ export default function App() {
               title={formMode === 'add' ? 'Add New Fixer' : 'Edit fixer'}
               onClose={() => setIsFormOpen(false)}
               onSave={handleSave}
-              initialData={selectedFixer}
+              initialData={selectedFixerWithIds}
+              categories={categoriesData}
             />
           )}
         </AnimatePresence>

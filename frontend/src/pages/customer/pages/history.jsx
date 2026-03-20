@@ -126,8 +126,8 @@ export default function App() {
       return;
     }
 
-    if (tab === 'bookings') {
-      navigate(ROUTES.dashboardCustomerOrders);
+    if (tab === 'booking') {
+      navigate(ROUTES.dashboardCustomerBooking);
       return;
     }
 
