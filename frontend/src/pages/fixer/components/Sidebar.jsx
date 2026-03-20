@@ -21,9 +21,7 @@ export default function Sidebar({ className = "" }) {
   const menuItems = [
     { name: "Home", icon: Home, path: ROUTES.dashboardFixer },
     { name: "Job", icon: BriefcaseBusiness, path: ROUTES.dashboardFixerJobs },
-    { name: "Profit", icon: TrendingUp, path: ROUTES.dashboardFixerProfit },
     { name: "Notification", icon: Bell, path: ROUTES.dashboardFixerNotifications },
-    { name: "Settings", icon: Settings, path: ROUTES.dashboardFixerSettings },
   ];
 
   return (
