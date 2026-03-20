@@ -18,8 +18,10 @@ export const ROUTES = {
   dashboardCustomerOrders: `${CUSTOMER_ROOT}/orders`,
   dashboardCustomerHistory: `${CUSTOMER_ROOT}/history`,
   dashboardCustomerSettings: `${CUSTOMER_ROOT}/settings`,
+  dashboardCustomerBooking: `${CUSTOMER_ROOT}/booking`,
   dashboardFixer: FIXER_ROOT,
   dashboardFixerJobs: `${FIXER_ROOT}/jobs`,
+  dashboardFixerProfit: `${FIXER_ROOT}/jobs/profit`,
 };
 
 export function getFixerJobDetailRoute(jobId) {
