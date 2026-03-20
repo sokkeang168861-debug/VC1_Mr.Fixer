@@ -30,6 +30,7 @@ const AdminDashboard = lazy(() => import("../pages/admin/pages/index"));
 const ServiceCategories = lazy(() => import("../pages/admin/pages/ServiceCategories"));
 const FixerManagement = lazy(() => import("../pages/admin/pages/FixerManagement"));
 const Transactions = lazy(() => import("../pages/admin/pages/Transactions"));
+const UserManagement = lazy(() => import("../pages/admin/pages/UserManagement"));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -87,14 +88,6 @@ function InnerRoutes() {
               }
             />
             <Route
-              path={ROUTES.dashboardAdminUsers}
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <ComingSoon title="User Management" />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path={ROUTES.dashboardAdminFixers}
               element={
                 <ProtectedRoute requiredRole="admin">
@@ -103,14 +96,23 @@ function InnerRoutes() {
               }
             />
             <Route
-              path={ROUTES.dashboardAdminTransactions}
+              path={ROUTES.dashboardAdminUsers}
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <UserManagement />
+                </ProtectedRoute>
+              }
+            />
+        
+            <Route
+              path={ROUTES.dashboardTransactions}
               element={
                 <ProtectedRoute requiredRole="admin">
                   <Transactions />
                 </ProtectedRoute>
               }
             />
-
+                
             {/* Customer Dashboard */}
             <Route
               path={ROUTES.dashboardCustomer}
