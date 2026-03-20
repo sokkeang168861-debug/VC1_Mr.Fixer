@@ -35,7 +35,6 @@ const getFixerProfile = async (db, user) => {
     full_name: fixer.full_name || "",
     email: fixer.email || "",
     phone: fixer.phone || "",
-    location: fixer.location || "",
     role: fixer.role || "fixer",
     profile_img: toBase64Image(fixer.profile_img),
   };
@@ -174,4 +173,37 @@ const updateFixerLocation = async (db, user, data) => {
   };
 };
 
-module.exports = { getFixerProfile, updateFixerProfile, updateFixerLocation };
+const updateFixerNotifications = async (db, user, data) => {
+  const fixerId = validateFixerAccess(user);
+
+  const payload = {
+    email_notifications: Boolean(data?.emailNotifications),
+    push_notifications: Boolean(data?.pushNotifications),
+    sms_notifications: Boolean(data?.smsNotifications),
+  };
+
+  const fixer = await FixerProfileModel.getFixerById(db, fixerId);
+  if (!fixer) {
+    const error = new Error("Fixer profile not found");
+    error.status = 404;
+    throw error;
+  }
+
+  await FixerProfileModel.updateNotificationPreferences(db, fixerId, payload);
+
+  return {
+    message: "Notification preferences updated successfully",
+    notifications: {
+      emailNotifications: payload.email_notifications,
+      pushNotifications: payload.push_notifications,
+      smsNotifications: payload.sms_notifications,
+    },
+  };
+};
+
+module.exports = {
+  getFixerProfile,
+  updateFixerProfile,
+  updateFixerLocation,
+  updateFixerNotifications,
+};

@@ -7,11 +7,8 @@ class FixerProfileModel {
         u.email,
         u.phone,
         u.role,
-        u.profile_img,
-        sp.id AS service_provider_id,
-        sp.location
+        u.profile_img
        FROM users u
-       LEFT JOIN service_providers sp ON sp.user_id = u.id
        WHERE u.id = ? AND LOWER(u.role) = 'fixer'
        LIMIT 1`,
       [fixerId]
@@ -91,6 +88,25 @@ class FixerProfileModel {
       `INSERT INTO service_providers (user_id, location)
        VALUES (?, ?)`,
       [fixerId, payload.location]
+    );
+
+    return result;
+  }
+
+  static async updateNotificationPreferences(db, fixerId, payload) {
+    const [result] = await db.query(
+      `UPDATE users
+       SET email_notifications = ?,
+           push_notifications = ?,
+           sms_notifications = ?,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = ? AND LOWER(role) = 'fixer'`,
+      [
+        payload.email_notifications,
+        payload.push_notifications,
+        payload.sms_notifications,
+        fixerId,
+      ]
     );
 
     return result;
