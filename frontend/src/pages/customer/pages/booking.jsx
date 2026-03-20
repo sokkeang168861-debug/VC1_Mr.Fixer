@@ -54,10 +54,10 @@ export default function CustomerBooking() {
     };
 
     return (
-        <div className="flex min-h-screen flex-col bg-slate-50">
+        <div className="flex h-screen flex-col overflow-hidden">
             <Header />
 
-            <div className="flex flex-1 min-h-0 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden">
                 <Sidebar
                     activeTab="booking"
                     onChange={handleSidebarChange}
@@ -66,7 +66,7 @@ export default function CustomerBooking() {
                     scrollNav={false}
                 />
 
-                <main className="flex-1 min-h-0 overflow-y-auto p-10">
+                <main className="flex-1 overflow-y-auto p-10">
                     <div className="max-w-5xl mx-auto">
                         <div className="mb-8 text-center">
                             <h1 className="text-3xl font-bold text-slate-900 mb-2">Booking Process</h1>
