@@ -10,7 +10,11 @@ import { getFixerJobDetailRoute } from '@/config/routes';
 import { resolveUploadUrl } from '@/lib/assets';
 import httpClient from '../../../api/httpClient';
 
-const JobCard = ({ job }) => (
+const JobCard = ({ job }) => {
+  const detailUrl = getFixerJobDetailRoute(job.booking_id);
+  console.log('JobCard URL for job', job.booking_id, ':', detailUrl);
+  
+  return (
   <Motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -63,13 +67,14 @@ const JobCard = ({ job }) => (
     </div>
 
     <Link
-      to={getFixerJobDetailRoute(job.booking_id)}
+      to={detailUrl}
       className="w-full bg-[#FF7A00] hover:bg-[#E66E00] text-white text-center block font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-orange-200"
     >
       View Detail
     </Link>
   </Motion.div>
-);
+  );
+};
 
 export default function JobList() {
   const [jobs, setJobs] = useState([]);
@@ -80,12 +85,30 @@ export default function JobList() {
     const fetchJobs = async () => {
       try {
         setLoading(true);
-        const res = await httpClient.get('/fixer/provider/requests');
-        if (res.data.success) {
-          setJobs(res.data.data);
-        } else {
-          setError('Failed to load jobs');
+        console.log('Fetching jobs from /fixer/provider/requests...');
+        
+        // For now, always use mock data to test the UI
+        console.log('Using mock data for testing');
+        setJobs(getMockJobs());
+        
+        // Uncomment below when API is ready
+        /*
+        try {
+          const res = await httpClient.get('/fixer/provider/requests');
+          console.log('API response:', res);
+          console.log('Response data:', res.data);
+          if (res.data.success && res.data.data.length > 0) {
+            console.log('Fetched jobs:', res.data.data);
+            setJobs(res.data.data);
+          } else {
+            console.log('API returned no data, using mock data');
+            setJobs(getMockJobs());
+          }
+        } catch (apiErr) {
+          console.log('API failed, using mock data:', apiErr);
+          setJobs(getMockJobs());
         }
+        */
       } catch (err) {
         console.error('Error fetching jobs:', err);
         setError('Connection error. Please try again later.');
@@ -96,6 +119,28 @@ export default function JobList() {
 
     fetchJobs();
   }, []);
+
+  // Mock data for testing
+  const getMockJobs = () => [
+    {
+      booking_id: '8842',
+      created_at: new Date().toISOString(),
+      customer_name: 'Michael Richardson',
+      category_name: 'Plumbing Repair',
+      issue_description: 'Kitchen sink is leaking significantly from the main pipe underneath. Water is pooling in the cabinet. Need urgent assistance.',
+      service_address: '123 Main St, Phnom Penh',
+      issue_image: null
+    },
+    {
+      booking_id: '8843',
+      created_at: new Date(Date.now() - 15 * 60000).toISOString(),
+      customer_name: 'Sarah Jenkins',
+      category_name: 'Electrical Work',
+      issue_description: 'Several outlets in the living room have stopped working. No tripped breakers found. Need a professional to diagnose.',
+      service_address: '456 Oak Ave, Phnom Penh',
+      issue_image: null
+    }
+  ];
 
   return (
     <div className="max-w-5xl mx-auto">
