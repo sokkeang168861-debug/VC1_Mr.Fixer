@@ -4,7 +4,6 @@ export default function SummaryCards() {
   return (
     <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-      {/* Total Profit */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
@@ -19,7 +18,6 @@ export default function SummaryCards() {
         <p className="text-2xl font-bold">$45,280.00</p>
       </div>
 
-      {/* Total Commission */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
@@ -33,7 +31,6 @@ export default function SummaryCards() {
         <p className="text-2xl font-bold">$6,792.00</p>
       </div>
 
-      {/* Net Profit */}
       <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center">

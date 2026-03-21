@@ -61,6 +61,14 @@ const ServiceEstimate = () => {
 
     try {
       setSubmitting(true);
+      
+      // For now, skip API call and go directly to proposal status
+      console.log('Submitting proposal with items:', items);
+      alert('Proposal submitted successfully!');
+      navigate('/dashboard/fixer/jobs/proposal-status');
+      
+      // Uncomment below when API is ready
+      /*
       const res = await httpClient.post(`/fixer/provider/requests/${id}/accept`, {
         items,
         total,
@@ -69,8 +77,9 @@ const ServiceEstimate = () => {
 
       if (res.data.success) {
         alert('Proposal submitted successfully!');
-        navigate(ROUTES.dashboardFixerJobs);
+        navigate('/dashboard/fixer/jobs/proposal-status');
       }
+      */
     } catch (err) {
       console.error('Error submitting proposal', err);
       alert('Failed to submit proposal. Please try again.');

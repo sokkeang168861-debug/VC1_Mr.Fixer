@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Briefcase,
   Star,
@@ -6,12 +7,17 @@ import {
   PiggyBank
 } from 'lucide-react';
 import { motion as Motion } from 'motion/react';
+import httpClient from "@/api/httpClient";
 import { Header } from "../components/Header";
 import Sidebar from "../components/Sidebar";
 
 // --- Components ---
 
-
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+});
 
 const StatCard = ({ icon: Icon, label, value, badge, badgeColor, iconBg }) => (
   <Motion.div
@@ -77,6 +83,50 @@ const ReviewItem = ({ name, date, comment, initials }) => (
 
 // --- Main App ---
 export default function App() {
+  const [summary, setSummary] = useState({
+    completedJobs: 0,
+    totalProfit: 0,
+    commission: 0,
+    netProfit: 0,
+  });
+  const [summaryError, setSummaryError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSummary = async () => {
+      try {
+        setSummaryError("");
+        const res = await httpClient.get("/fixer/summary-cards");
+        const data = res.data?.data || {};
+
+        if (!isMounted) {
+          return;
+        }
+
+        setSummary({
+          completedJobs: Number(data.completedJobs || 0),
+          totalProfit: Number(data.totalProfit || 0),
+          commission: Number(data.commission || 0),
+          netProfit: Number(data.netProfit || 0),
+        });
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        console.error("Failed to load fixer summary:", error);
+        setSummaryError("Failed to load summary data");
+      }
+    };
+
+    loadSummary();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <div className="bg-gray-100 min-h-screen">
 
@@ -92,38 +142,43 @@ export default function App() {
         {/* Main content */}
         <main className="ml-64 mt-16 p-8 bg-[#f4f5f7] min-h-screen">
           <div className="max-w-7xl mx-auto pb-20">
+            {summaryError ? (
+              <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {summaryError}
+              </div>
+            ) : null}
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               <StatCard
                 icon={Briefcase}
                 label="Total Jobs"
-                value="1,284"
-                badge="All jobs"
+                value={summary.completedJobs.toLocaleString("en-US")}
+                badge="Completed"
                 badgeColor="bg-slate-100 text-slate-500"
                 iconBg="bg-purple-400"
               />
               <StatCard
                 icon={Wallet}
                 label="Total Profit"
-                value="$45,280.00"
-                badge="+12.5%"
+                value={currencyFormatter.format(summary.totalProfit)}
+                badge="Live"
                 badgeColor="bg-emerald-50 text-emerald-600"
                 iconBg="bg-orange-400"
               />
               <StatCard
                 icon={Percent}
                 label="Total Commission"
-                value="$6,792.00"
-                badge="Standard"
+                value={currencyFormatter.format(summary.commission)}
+                badge="10%"
                 badgeColor="bg-blue-50 text-blue-600"
                 iconBg="bg-blue-400"
               />
               <StatCard
                 icon={PiggyBank}
                 label="Net Profit"
-                value="$38,488.00"
-                badge="+8.2%"
+                value={currencyFormatter.format(summary.netProfit)}
+                badge="After fee"
                 badgeColor="bg-emerald-50 text-emerald-600"
                 iconBg="bg-emerald-400"
               />
