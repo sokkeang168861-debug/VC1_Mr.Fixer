@@ -32,7 +32,7 @@ cp .env.example .env
 Open `.env` and fill in your values:
 
 ```env
-PORT=5000
+PORT=5001
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
@@ -74,7 +74,7 @@ npm run seed
 npm run dev
 ```
 
-The API will be available at `http://localhost:5000`.
+The API will be available at `http://localhost:5001`.
 
 ---
 

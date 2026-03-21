@@ -33,14 +33,14 @@ cd backend
 cp .env.example .env   # fill in your DB credentials and JWT secret
 npm install
 npm run mig            # run database migrations
-npm run dev            # starts on http://localhost:5000
+npm run dev            # starts on http://localhost:5001
 ```
 
 ### 2. Frontend
 
 ```bash
 cd frontend
-cp .env.example .env   # set VITE_API_URL=http://localhost:5000
+cp .env.example .env   # set VITE_DEV_BACKEND_URL=http://localhost:5001
 npm install
 npm run dev            # starts on http://localhost:5173
 ```
