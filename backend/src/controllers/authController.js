@@ -4,7 +4,7 @@ const changePassword = async (req, res) => {
   const db = req.app.get("db");
 
   try {
-    const result = await authService.changePassword(db, req.user?.email, req.body);
+    const result = await authService.changePassword(db, req.user?.id, req.body);
     res.json(result);
   } catch (err) {
     const message = err.message || "Change password failed";
@@ -13,6 +13,7 @@ const changePassword = async (req, res) => {
       message === "Not authenticated" ||
       message === "User not found" ||
       message === "Current password is incorrect" ||
+      message === "New password must be different from current password" ||
       message === "Current password and new password are required" ||
       message === "New password must be at least 6 characters"
     ) {

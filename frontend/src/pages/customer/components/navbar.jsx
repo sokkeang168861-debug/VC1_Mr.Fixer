@@ -4,6 +4,8 @@ import httpClient from "@/api/httpClient";
 import { resolveUploadUrl } from "@/lib/assets";
 import defaultProfile from "@/assets/image/default-profile.png";
 
+const PROFILE_UPDATED_EVENT = "user-profile-updated";
+
 export const Sidebar = ({
   activeTab,
   onChange,
@@ -43,13 +45,6 @@ export const Sidebar = ({
         ))}
       </nav>
 
-      <button
-        onClick={() => onLogout && onLogout()}
-        className="mt-auto w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-red-600 hover:bg-red-50"
-      >
-        <LogOut size={18} />
-        <span className="font-medium">Logout</span>
-      </button>
     </div>
   );
 };
@@ -60,28 +55,50 @@ export const Header = () => {
   const [avatarSrc, setAvatarSrc] = useState(defaultProfile);
 
   useEffect(() => {
+    const applyUserProfile = (profile) => {
+      setUser(profile || null);
+      setAvatarSrc(
+        profile?.profile_img ? resolveUploadUrl(profile.profile_img) : defaultProfile
+      );
+    };
+
+    const loadCurrentUser = () => {
+      httpClient
+        .get("/user/currentUser")
+        .then((res) => {
+          applyUserProfile(res.data);
+        })
+        .catch((err) => {
+          console.error(err);
+          setUser(null);
+          setAvatarSrc(defaultProfile);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    };
+
     const token = localStorage.getItem("token");
 
     if (!token) {
       return;
     }
 
-    httpClient
-      .get("/user/currentUser")
-      .then((res) => {
-        setUser(res.data);
-        setAvatarSrc(
-          res.data?.profile_img ? resolveUploadUrl(res.data.profile_img) : defaultProfile
-        );
-      })
-      .catch((err) => {
-        console.error(err);
-        setUser(null);
-        setAvatarSrc(defaultProfile);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    const handleProfileUpdated = (event) => {
+      if (event?.detail) {
+        applyUserProfile(event.detail);
+        return;
+      }
+
+      loadCurrentUser();
+    };
+
+    loadCurrentUser();
+    window.addEventListener(PROFILE_UPDATED_EVENT, handleProfileUpdated);
+
+    return () => {
+      window.removeEventListener(PROFILE_UPDATED_EVENT, handleProfileUpdated);
+    };
   }, []);
 
   const renderUserInfo = () => {
