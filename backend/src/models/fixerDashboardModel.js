@@ -1,4 +1,16 @@
 class FixerDashboardModel {
+  static async getProviderIdByUserId(db, fixerUserId) {
+    const [rows] = await db.query(
+      `SELECT id
+       FROM service_providers
+       WHERE user_id = ?
+       LIMIT 1`,
+      [fixerUserId]
+    );
+
+    return rows[0]?.id || null;
+  }
+
   static async getCompletedJobsCount(db, fixerId) {
     const [rows] = await db.query(
       `SELECT COUNT(DISTINCT b.id) AS completed_jobs
@@ -54,7 +66,18 @@ class FixerDashboardModel {
     return Number(rows?.[0]?.total_profit || 0);
   }
 
-  static async getRatingSummary(db, fixerId) {
+  static async getRatingSummary(db, providerId) {
+    if (!providerId) {
+      return {
+        quality_rating: 0,
+        speed_rating: 0,
+        price_fairness_rating: 0,
+        behavior_rating: 0,
+        overall_rating: 0,
+        total_ratings: 0,
+      };
+    }
+
     const [rows] = await db.query(
       `SELECT
         COALESCE(ROUND(AVG(r.quality_rating), 1), 0) AS quality_rating,
@@ -67,12 +90,24 @@ class FixerDashboardModel {
       INNER JOIN bookings b ON b.id = r.booking_id
       INNER JOIN services s ON s.id = b.service_id
       WHERE s.provider_id = ?`,
-      [fixerId]
+      [providerId]
     );
-    return rows[0];
+
+    return rows[0] || {
+      quality_rating: 0,
+      speed_rating: 0,
+      price_fairness_rating: 0,
+      behavior_rating: 0,
+      overall_rating: 0,
+      total_ratings: 0,
+    };
   }
 
-  static async getRecentFeedback(db, fixerId, limit = 5) {
+  static async getRecentFeedback(db, providerId, limit = 5) {
+    if (!providerId) {
+      return [];
+    }
+
     const [rows] = await db.query(
       `SELECT
         r.id,
@@ -87,11 +122,11 @@ class FixerDashboardModel {
       WHERE s.provider_id = ?
         AND r.comment IS NOT NULL
         AND TRIM(r.comment) <> ''
-      ORDER BY r.created_at DESC
-      LIMIT ?`,
-      [fixerId, Number(limit)]
+      ORDER BY r.created_at DESC`,
+      [providerId]
     );
-    return rows;
+
+    return rows.slice(0, Math.max(Number(limit) || 0, 0));
   }
 }
 

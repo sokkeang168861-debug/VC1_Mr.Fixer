@@ -13,7 +13,7 @@ const ProviderRequestController = require("../controllers/bookingController");
 const router = express.Router();
 
 router.get("/homepage", protect, (req, res) =>
-  FixerDashboardController.getSummaryCards(req, res)
+  FixerDashboardController.getHomepageData(req, res)
 );
 router.get("/summary-cards", protect, (req, res) =>
   FixerDashboardController.getSummaryCards(req, res)

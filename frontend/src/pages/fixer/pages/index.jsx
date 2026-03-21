@@ -11,13 +11,35 @@ import httpClient from "@/api/httpClient";
 import { Header } from "../components/Header";
 import Sidebar from "../components/Sidebar";
 
-// --- Components ---
-
 const currencyFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
   minimumFractionDigits: 2,
 });
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+const getInitials = (name) => {
+  if (!name) return "NA";
+
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+};
+
+const formatReviewDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return dateFormatter.format(date);
+};
 
 const StatCard = ({ icon: Icon, label, value, badge, badgeColor, iconBg }) => (
   <Motion.div
@@ -57,7 +79,7 @@ const RatingBar = ({ label, score }) => (
   </div>
 );
 
-const ReviewItem = ({ name, date, comment, initials }) => (
+const ReviewItem = ({ name, date, comment, initials, rating }) => (
   <div className="py-4 border-b border-slate-50 last:border-0">
     <div className="flex justify-between items-start mb-1">
       <div className="flex items-center gap-3">
@@ -68,7 +90,11 @@ const ReviewItem = ({ name, date, comment, initials }) => (
           <h4 className="text-sm font-bold text-slate-800">{name}</h4>
           <div className="flex gap-0.5">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} size={10} className="fill-orange-400 text-orange-400" />
+              <Star
+                key={i}
+                size={10}
+                className={i < Math.round(rating) ? "fill-orange-400 text-orange-400" : "text-slate-200"}
+              />
             ))}
           </div>
         </div>
@@ -81,46 +107,65 @@ const ReviewItem = ({ name, date, comment, initials }) => (
   </div>
 );
 
-// --- Main App ---
 export default function App() {
-  const [summary, setSummary] = useState({
-    completedJobs: 0,
-    totalProfit: 0,
-    commission: 0,
-    netProfit: 0,
+  const [dashboard, setDashboard] = useState({
+    summary: {
+      completedJobs: 0,
+      totalProfit: 0,
+      commission: 0,
+      netProfit: 0,
+    },
+    overallRating: {
+      value: 0,
+      outOf: 5,
+      totalRatings: 0,
+    },
+    detailedRatings: [],
+    feedback: [],
   });
-  const [summaryError, setSummaryError] = useState("");
+  const [dashboardError, setDashboardError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
 
-    const loadSummary = async () => {
+    const loadDashboard = async () => {
       try {
-        setSummaryError("");
-        const res = await httpClient.get("/fixer/summary-cards");
-        const data = res.data?.data || {};
+        setDashboardError("");
+        const res = await httpClient.get("/fixer/homepage");
 
         if (!isMounted) {
           return;
         }
 
-        setSummary({
-          completedJobs: Number(data.completedJobs || 0),
-          totalProfit: Number(data.totalProfit || 0),
-          commission: Number(data.commission || 0),
-          netProfit: Number(data.netProfit || 0),
+        const payload = res.data || {};
+        const summary = payload.summary || payload.data || {};
+
+        setDashboard({
+          summary: {
+            completedJobs: Number(summary.completedJobs || 0),
+            totalProfit: Number(summary.totalProfit || 0),
+            commission: Number(summary.commission || 0),
+            netProfit: Number(summary.netProfit || 0),
+          },
+          overallRating: {
+            value: Number(payload.overallRating?.value || 0),
+            outOf: Number(payload.overallRating?.outOf || 5),
+            totalRatings: Number(payload.overallRating?.totalRatings || 0),
+          },
+          detailedRatings: Array.isArray(payload.detailedRatings) ? payload.detailedRatings : [],
+          feedback: Array.isArray(payload.feedback) ? payload.feedback : [],
         });
       } catch (error) {
         if (!isMounted) {
           return;
         }
 
-        console.error("Failed to load fixer summary:", error);
-        setSummaryError("Failed to load summary data");
+        console.error("Failed to load fixer dashboard:", error);
+        setDashboardError(error.response?.data?.message || "Failed to load dashboard data");
       }
     };
 
-    loadSummary();
+    loadDashboard();
 
     return () => {
       isMounted = false;
@@ -133,124 +178,135 @@ export default function App() {
       {/* Header */}
       <Header className="fixed top-0 left-0 right-0 h-20 z-50" />
 
-      {/* Page body */}
-      <div className="flex">
+      {/* Sidebar */}
+      <Sidebar className="fixed top-16 left-0 w-64 h-[calc(100vh-64px)] bg-white shadow-md" />
 
-        {/* Sidebar */}
-        <Sidebar className="fixed top-16 left-0 w-64 h-[calc(100vh-64px)] bg-white shadow-md" />
-
-        {/* Main content */}
-        <main className="ml-64 mt-16 p-8 bg-[#f4f5f7] min-h-screen">
-          <div className="max-w-7xl mx-auto pb-20">
-            {summaryError ? (
-              <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                {summaryError}
-              </div>
-            ) : null}
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <StatCard
-                icon={Briefcase}
-                label="Total Jobs"
-                value={summary.completedJobs.toLocaleString("en-US")}
-                badge="Completed"
-                badgeColor="bg-slate-100 text-slate-500"
-                iconBg="bg-purple-400"
-              />
-              <StatCard
-                icon={Wallet}
-                label="Total Profit"
-                value={currencyFormatter.format(summary.totalProfit)}
-                badge="Live"
-                badgeColor="bg-emerald-50 text-emerald-600"
-                iconBg="bg-orange-400"
-              />
-              <StatCard
-                icon={Percent}
-                label="Total Commission"
-                value={currencyFormatter.format(summary.commission)}
-                badge="10%"
-                badgeColor="bg-blue-50 text-blue-600"
-                iconBg="bg-blue-400"
-              />
-              <StatCard
-                icon={PiggyBank}
-                label="Net Profit"
-                value={currencyFormatter.format(summary.netProfit)}
-                badge="After fee"
-                badgeColor="bg-emerald-50 text-emerald-600"
-                iconBg="bg-emerald-400"
-              />
+      {/* Main content */}
+      <main className="ml-64 mt-16 p-8 bg-[#f4f5f7] min-h-screen">
+        <div className="max-w-7xl mx-auto pb-20">
+          {dashboardError ? (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              {dashboardError}
             </div>
+          ) : null}
 
-            {/* Content grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Detailed Ratings */}
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <StatCard
+              icon={Briefcase}
+              label="Total Jobs"
+              value={dashboard.summary.completedJobs.toLocaleString("en-US")}
+              badge="Completed"
+              badgeColor="bg-slate-100 text-slate-500"
+              iconBg="bg-purple-400"
+            />
+            <StatCard
+              icon={Wallet}
+              label="Total Profit"
+              value={currencyFormatter.format(dashboard.summary.totalProfit)}
+              badge="Live"
+              badgeColor="bg-emerald-50 text-emerald-600"
+              iconBg="bg-orange-400"
+            />
+            <StatCard
+              icon={Percent}
+              label="Total Commission"
+              value={currencyFormatter.format(dashboard.summary.commission)}
+              badge="10%"
+              badgeColor="bg-blue-50 text-blue-600"
+              iconBg="bg-blue-400"
+            />
+            <StatCard
+              icon={PiggyBank}
+              label="Net Profit"
+              value={currencyFormatter.format(dashboard.summary.netProfit)}
+              badge="After fee"
+              badgeColor="bg-emerald-50 text-emerald-600"
+              iconBg="bg-emerald-400"
+            />
+          </div>
+
+          {/* Content grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Detailed Ratings */}
               <Motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100"
+                className="lg:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100 h-[24rem] flex flex-col"
               >
                 <h2 className="text-xl font-bold text-slate-800 mb-8">
                   Detailed Ratings
                 </h2>
 
-                <div className="space-y-8">
-                  <RatingBar label="Quality of Work" score={4.8} />
-                  <RatingBar label="Speed of Service" score={4.2} />
-                  <RatingBar label="Price Fairness" score={4.5} />
-                  <RatingBar label="Professional Behavior" score={4.9} />
-                </div>
-              </Motion.div>
+                <div className="space-y-8 overflow-y-auto pr-2 flex-1">
+                  {dashboard.detailedRatings.length > 0 ? (
+                    dashboard.detailedRatings.map((rating) => (
+                      <RatingBar
+                      key={rating.key}
+                      label={rating.label}
+                      score={Number(rating.value || 0)}
+                    />
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">No ratings available yet.</p>
+                )}
+              </div>
+            </Motion.div>
 
-              {/* Ratings */}
+            {/* Ratings */}
               <Motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100"
+                className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 h-[32rem] flex flex-col"
               >
                 <h2 className="text-xl font-bold text-slate-800 mb-6">
                   Ratings & Feedback
                 </h2>
 
-                <div className="text-center mb-8">
-                  <h3 className="text-6xl font-black text-slate-900 mb-2">
-                    4.8
-                  </h3>
+              <div className="text-center mb-8">
+                <h3 className="text-6xl font-black text-slate-900 mb-2">
+                  {dashboard.overallRating.value.toFixed(1)}
+                </h3>
 
-                  <div className="flex justify-center gap-1 mb-2">
-                    {[...Array(4)].map((_, i) => (
-                      <Star key={i} size={20} className="fill-orange-500 text-orange-500" />
-                    ))}
-                    <Star size={20} className="text-orange-500" />
-                  </div>
-
-                  <p className="text-sm text-slate-400 font-medium">
-                    Total 84 Ratings
-                  </p>
+                <div className="flex justify-center gap-1 mb-2">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      size={20}
+                      className={
+                        i < Math.round(dashboard.overallRating.value)
+                          ? "fill-orange-500 text-orange-500"
+                          : "text-slate-200"
+                      }
+                    />
+                  ))}
                 </div>
 
-                <div className="space-y-2">
-                  <ReviewItem
-                    name="James Lee"
-                    date="Oct 12, 2023"
-                    initials="JL"
-                    comment="Excellent electrical work on our renovation. Very knowledgeable."
-                  />
-                  <ReviewItem
-                    name="Sarah Williams"
-                    date="2 days ago"
-                    initials="SW"
-                    comment="Marcus was incredibly professional. Fixed the leak quickly!"
-                  />
-                </div>
-              </Motion.div>
-            </div>
+                <p className="text-sm text-slate-400 font-medium">
+                  Total {dashboard.overallRating.totalRatings} Ratings
+                </p>
+              </div>
 
+                <div className="space-y-2 overflow-y-auto pr-2 flex-1">
+                  {dashboard.feedback.length > 0 ? (
+                    dashboard.feedback.map((review) => (
+                      <ReviewItem
+                      key={review.id}
+                      name={review.customerName || "Anonymous"}
+                      date={formatReviewDate(review.createdAt)}
+                      initials={getInitials(review.customerName)}
+                      comment={review.comment}
+                      rating={Number(review.rating || 0)}
+                    />
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">No customer feedback yet.</p>
+                )}
+              </div>
+            </Motion.div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

@@ -1,18 +1,12 @@
 import { useState, useEffect } from "react";
 import { Wrench } from "lucide-react";
 import httpClient from "../../../api/httpClient";
-
-const initials = (name) => {
-  if (!name) return "FX";
-  const parts = name.trim().split(/\s+/);
-  return parts
-    .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() || "")
-    .join("");
-};
+import { resolveUploadUrl } from "@/lib/assets";
+import defaultProfile from "@/assets/image/default-profile.png";
 export const Header = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(() => !!localStorage.getItem("token"));
+  const [avatarSrc, setAvatarSrc] = useState(defaultProfile);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -25,10 +19,14 @@ export const Header = () => {
       .get("/user/currentUser")
       .then((res) => {
         setUser(res.data);
+        setAvatarSrc(
+          res.data?.profile_img ? resolveUploadUrl(res.data.profile_img) : defaultProfile
+        );
       })
       .catch((err) => {
         console.error(err);
         setUser(null);
+        setAvatarSrc(defaultProfile);
       })
       .finally(() => {
         setLoading(false);
@@ -60,8 +58,14 @@ export const Header = () => {
         <div className="flex items-center gap-4">
           <div className="h-8 w-px bg-slate-200" />
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center text-white font-semibold">
-              {initials(user?.full_name)}
+            <div className="w-10 h-10 rounded-full bg-orange-100 overflow-hidden flex items-center justify-center text-white font-semibold">
+              <img
+                src={avatarSrc}
+                alt={user?.full_name || "Fixer profile"}
+                className="w-full h-full object-cover"
+                onError={() => setAvatarSrc(defaultProfile)}
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div className="leading-tight">{renderUserInfo()}</div>
           </div>

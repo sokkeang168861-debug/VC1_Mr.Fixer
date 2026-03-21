@@ -40,6 +40,8 @@ DB_PASSWORD=your_db_password
 DB_NAME=mr_fixer_db
 JWT_SECRET=a_long_random_secret_string
 FRONTEND_URL=http://localhost:5173   # your frontend origin
+SEED_FIXER_EMAIL=fixer@mrfixer.com   # optional seed account
+SEED_CUSTOMER_EMAIL=customer@mrfixer.com   # optional seed account
 ```
 
 > **Tip:** Generate a strong JWT secret with:

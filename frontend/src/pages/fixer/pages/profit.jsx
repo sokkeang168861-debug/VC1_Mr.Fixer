@@ -17,10 +17,7 @@ export default function ProfitPage() {
       <Sidebar className="fixed top-16 left-0 w-64 h-[calc(100vh-64px)]" />
       
       <main className="ml-64 mt-16 p-8 space-y-8">
-        {/* Top: Summary Cards */}
         <SummaryCards />
-
-        {/* Middle: Search & Filter */}
         <SearchFilter
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
@@ -29,8 +26,6 @@ export default function ProfitPage() {
           selectedYear={selectedYear}
           setSelectedYear={setSelectedYear}
         />
-
-        {/* Bottom: Transactions Summary */}
         <TransactionsSummary />
       </main>
     </div>
