@@ -2,8 +2,29 @@ const bcrypt = require("bcrypt");
 
 class User {
   static async getAllUsers(db) {
-    const [rows] = await db.query("SELECT * FROM users");
+    const [rows] = await db.query(
+      `SELECT
+        u.id,
+        u.full_name,
+        u.email,
+        u.phone,
+        u.role,
+        u.is_active,
+        CASE WHEN u.is_active = 1 THEN 'Active' ELSE 'Suspended' END AS status,
+        COALESCE(COUNT(b.id), 0) AS total_bookings,
+        u.created_at
+      FROM users u
+      LEFT JOIN bookings b ON b.customer_id = u.id
+      WHERE LOWER(u.role) = 'customer'
+      GROUP BY u.id
+      ORDER BY u.created_at DESC`
+    );
     return rows;
+  }
+
+  static async getAdminUsers(db) {
+    // Admin users list is meant to include only customer users (same as getAllUsers)
+    return await this.getAllUsers(db);
   }
 
   static async createUser(db, { full_name, phone, email, password }) {
@@ -50,6 +71,28 @@ class User {
        FROM users
        WHERE id = ? AND LOWER(role) = 'customer'
        LIMIT 1`,
+      [id]
+    );
+    return rows[0] || null;
+  }
+
+  static async getCustomerById(db, id) {
+    const [rows] = await db.query(
+      `SELECT
+        u.id,
+        u.full_name,
+        u.email,
+        u.phone,
+        u.role,
+        u.is_active,
+        CASE WHEN u.is_active = 1 THEN 'Active' ELSE 'Suspended' END AS status,
+        COALESCE(COUNT(b.id), 0) AS total_bookings,
+        u.created_at
+      FROM users u
+      LEFT JOIN bookings b ON b.customer_id = u.id
+      WHERE u.id = ? AND LOWER(u.role) = 'customer'
+      GROUP BY u.id
+      LIMIT 1`,
       [id]
     );
     return rows[0] || null;
