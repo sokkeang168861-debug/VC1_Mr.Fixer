@@ -368,7 +368,7 @@ export default function App() {
 
                 {/* Search and Action Bar */}
                 <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-3xl shadow-sm border border-slate-50">
-                  <div className="flex items-center gap-4 flex-1 max-w-5xl">
+                  <div className="flex items-center gap-4 flex-1 max-w-4xl">
                     <div className="relative flex-1">
                       <Search
                         className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"

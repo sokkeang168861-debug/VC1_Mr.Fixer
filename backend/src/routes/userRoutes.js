@@ -11,7 +11,7 @@ const CustomerBookingController = require("../controllers/customerBookingControl
 router.get("/", protect, getUsers);
 router.get("/currentUser", protect, getCurrentUser);
 
-router.get("/allCategories", ServiceCategoryController.getAllCategories);
+router.get("/allCategories", ServiceCategoryController.getAvailableCategories);
 router.get("/providersEachCategory/:categoryId", ServiceCategoryController.getProvidersByCategory);
 
 router.post(

@@ -85,20 +85,12 @@ class Admin {
     return { tableName, dateColumn, statusColumn, rejectedByColumn };
   }
 
-  static buildNotRejectedWhere(statusColumn, rejectedByColumn) {
-    const conditions = [];
-
+  static buildCompletedWhere(statusColumn) {
     if (!statusColumn) {
-      conditions.push("1=1");
-    } else {
-      conditions.push(`(\`${statusColumn}\` IS NULL OR LOWER(\`${statusColumn}\`) NOT IN ('rejected', 'reject'))`);
+      return "1=0";
     }
 
-    if (rejectedByColumn) {
-      conditions.push(`\`${rejectedByColumn}\` IS NULL`);
-    }
-
-    return conditions.join(" AND ");
+    return `LOWER(\`${statusColumn}\`) = 'complete'`;
   }
 
   static async getTotalJobsCount(db, jobsMeta) {
@@ -106,7 +98,7 @@ class Admin {
       return 0;
     }
 
-    const whereClause = this.buildNotRejectedWhere(jobsMeta.statusColumn, jobsMeta.rejectedByColumn);
+    const whereClause = this.buildCompletedWhere(jobsMeta.statusColumn);
     const countRows = await this.query(
       db,
       `SELECT COUNT(*) AS totalJobs
@@ -124,7 +116,7 @@ class Admin {
       return emptyMonthly;
     }
 
-    const whereClause = this.buildNotRejectedWhere(jobsMeta.statusColumn, jobsMeta.rejectedByColumn);
+    const whereClause = this.buildCompletedWhere(jobsMeta.statusColumn);
     const rows = await this.query(
       db,
       `SELECT MONTH(\`${jobsMeta.dateColumn}\`) AS monthNumber, COUNT(*) AS total

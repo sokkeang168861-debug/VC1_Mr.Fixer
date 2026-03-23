@@ -22,7 +22,7 @@ function getVendorChunkName(id) {
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, '')
-  const devBackendUrl = env.VITE_DEV_BACKEND_URL || 'http://localhost:5000'
+  const devBackendUrl = env.VITE_DEV_BACKEND_URL || 'http://localhost:5001'
 
   return {
     plugins: [react()],

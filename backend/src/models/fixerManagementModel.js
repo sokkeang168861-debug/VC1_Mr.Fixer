@@ -41,7 +41,7 @@ class FixerManagementModel {
           COALESCE(stats.total_bookings, 0) AS total_bookings,
           COALESCE(stats.avg_rating, sp.overall_rating, 0) AS overall_rating
         FROM users u
-        INNER JOIN service_providers sp ON sp.user_id = u.id
+        LEFT JOIN service_providers sp ON sp.user_id = u.id
         LEFT JOIN (
           SELECT
             s.provider_id,
@@ -57,7 +57,9 @@ class FixerManagementModel {
             COUNT(DISTINCT b.id) AS total_bookings,
             ROUND(AVG(r.overall_rating), 1) AS avg_rating
           FROM services s
-          LEFT JOIN bookings b ON b.service_id = s.id
+          LEFT JOIN bookings b
+            ON b.service_id = s.id
+           AND b.status = 'complete'
           LEFT JOIN reviews r ON r.booking_id = b.id
           GROUP BY s.provider_id
         ) AS stats ON stats.provider_id = sp.id
