@@ -8,7 +8,7 @@ const {
   updateFixerLocation,
   updateFixerNotifications,
 } = require("../controllers/fixerProfileController");
-const ProviderRequestController = require("../controllers/bookingController");
+const FixerBookingController = require("../controllers/fixerBookingController");
 
 const router = express.Router();
 
@@ -26,21 +26,21 @@ router.put("/settings/notifications", protect, updateFixerNotifications);
 router.get(
   "/provider/requests",
   protect,
-  ProviderRequestController.getAllRequests
+  FixerBookingController.getAllRequests
 );
 router.get(
   "/provider/requests/:id",
   protect,
-  ProviderRequestController.getRequestById
+  FixerBookingController.getRequestById
 );
 router.post(
   "/provider/requests/:id/accept",
   protect,
-  ProviderRequestController.acceptAndSetProposal
+  FixerBookingController.acceptAndSetProposal
 );
 router.post(
   "/provider/requests/:id/reject",
   protect,
-  ProviderRequestController.rejectBooking
+  FixerBookingController.rejectBooking
 );
 module.exports = router;

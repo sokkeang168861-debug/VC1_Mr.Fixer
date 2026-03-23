@@ -109,6 +109,55 @@ class CustomerBooking {
       };
     });
   }
+
+  static async getProviderUserIdByServiceId(db, serviceId) {
+    const [rows] = await db.query(
+      `SELECT sp.user_id
+       FROM services s
+       INNER JOIN service_providers sp ON sp.id = s.provider_id
+       WHERE s.id = ?
+       LIMIT 1`,
+      [serviceId]
+    );
+
+    return rows[0]?.user_id || null;
+  }
+
+  static async getProviderBookingCardById(db, bookingId) {
+    const [rows] = await db.query(
+      `SELECT
+        b.id AS booking_id,
+        sc.name AS category_name,
+        b.issue_description,
+        b.service_address,
+        b.urgent_level,
+        b.created_at,
+        u.full_name AS customer_name,
+        sp.location AS provider_location,
+        MIN(ii.image) AS issue_image
+      FROM bookings b
+      INNER JOIN users u ON u.id = b.customer_id
+      INNER JOIN services s ON s.id = b.service_id
+      INNER JOIN service_categories sc ON sc.id = s.category_id
+      INNER JOIN service_providers sp ON sp.id = s.provider_id
+      LEFT JOIN issue_img ii ON ii.booking_id = b.id
+      WHERE b.id = ?
+      GROUP BY b.id
+      LIMIT 1`,
+      [bookingId]
+    );
+
+    const row = rows[0] || null;
+    if (!row) {
+      return null;
+    }
+
+    if (row.issue_image && Buffer.isBuffer(row.issue_image)) {
+      row.issue_image = `data:image/jpeg;base64,${row.issue_image.toString("base64")}`;
+    }
+
+    return row;
+  }
 }
 
 module.exports = CustomerBooking;

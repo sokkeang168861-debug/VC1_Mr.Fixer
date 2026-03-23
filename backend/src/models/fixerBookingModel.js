@@ -1,4 +1,4 @@
-class ProviderBooking {
+class FixerBookingModel {
   static async getAllrequest(db, current_provider_id) {
     const [rows] = await db.query(
       `SELECT
@@ -39,6 +39,8 @@ class ProviderBooking {
         sc.name AS category_name,
         b.issue_description,
         b.service_address,
+        b.latitude,
+        b.longitude,
         b.urgent_level,
         b.created_at,
         u.full_name AS customer_name,
@@ -106,4 +108,4 @@ class ProviderBooking {
   }
 }
 
-module.exports = ProviderBooking;
+module.exports = FixerBookingModel;

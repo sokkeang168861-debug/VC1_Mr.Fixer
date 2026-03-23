@@ -85,11 +85,23 @@ class BookingService {
     };
 
     const result = await BookingModel.createBooking(db, payload, files);
+    const providerUserId = await BookingModel.getProviderUserIdByServiceId(
+      db,
+      parsedServiceId
+    );
+    const providerBookingCard = await BookingModel.getProviderBookingCardById(
+      db,
+      result.insertId
+    );
 
     // Start the 3-minute timeout for this booking
     bookingTimeoutService.startTimeout(result.insertId, customerId);
 
-    return result;
+    return {
+      ...result,
+      providerUserId,
+      providerBookingCard,
+    };
   }
 }
 

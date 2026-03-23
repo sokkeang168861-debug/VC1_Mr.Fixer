@@ -1,6 +1,6 @@
-const ProviderRequestService = require("../services/providerRequestService.js");
+const FixerBookingService = require("../services/fixerBookingService.js");
 
-class ProviderRequestController {
+class FixerBookingController {
   static async getAllRequests(req, res) {
     try {
       const db = req.app.get("db");
@@ -8,7 +8,7 @@ class ProviderRequestController {
       const provider_id = req.user.id; 
       // assuming provider is logged in and middleware added req.user
 
-      const requests = await ProviderRequestService.getAllRequests(
+      const requests = await FixerBookingService.getAllRequests(
         db,
         provider_id
       );
@@ -33,7 +33,7 @@ class ProviderRequestController {
       const { id } = req.params;
       const provider_id = req.user.id;
 
-      const request = await ProviderRequestService.getRequestById(
+      const request = await FixerBookingService.getRequestById(
         db,
         id,
         provider_id
@@ -66,7 +66,7 @@ class ProviderRequestController {
       const { items, total } = req.body;
       const provider_id = req.user.id;
 
-      await ProviderRequestService.acceptAndSetProposal(
+      await FixerBookingService.acceptAndSetProposal(
         db,
         id,
         provider_id,
@@ -94,7 +94,7 @@ class ProviderRequestController {
       const { reason } = req.body;
       const provider_id = req.user.id;
 
-      const result = await ProviderRequestService.rejectBooking(
+      const result = await FixerBookingService.rejectBooking(
         db,
         id,
         provider_id,
@@ -115,4 +115,4 @@ class ProviderRequestController {
   }
 }
 
-module.exports = ProviderRequestController;
+module.exports = FixerBookingController;

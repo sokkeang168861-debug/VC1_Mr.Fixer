@@ -11,25 +11,57 @@ import {
 import { motion as Motion } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import httpClient from '../../../api/httpClient';
-import { GoogleMap, Marker } from '@react-google-maps/api';
 import { getFixerProposalRoute } from '@/config/routes';
 import { resolveUploadUrl } from '@/lib/assets';
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '100%'
-};
 
 const defaultCenter = {
   lat: 11.5564, // Phnom Penh default
   lng: 104.9282
 };
 
+async function geocodeAddress(address) {
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    q: address,
+    limit: '1',
+  });
+
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Geocoding failed');
+  }
+
+  const results = await response.json();
+  const match = Array.isArray(results) ? results[0] : null;
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    lat: Number(match.lat),
+    lng: Number(match.lon),
+  };
+}
+
+function getOpenStreetMapEmbedUrl({ lat, lng }) {
+  const delta = 0.01;
+  const left = lng - delta;
+  const right = lng + delta;
+  const top = lat + delta;
+  const bottom = lat - delta;
+
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lng}`;
+}
+
 const JobDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  console.log('JobDetails component loaded with ID:', id);
-  
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,10 +69,8 @@ const JobDetails = () => {
   const [rejecting, setRejecting] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
-
-  // Google Maps loader
-  const isLoaded = window.google && window.google.maps;
-  const loadError = !import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_API_KEY === 'your_google_maps_key_here';
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState('');
 
   const handleReject = async () => {
     if (!rejectReason.trim()) {
@@ -73,22 +103,22 @@ const JobDetails = () => {
   useEffect(() => {
     const fetchJobDetail = async () => {
       try {
-        console.log('Fetching job details for ID:', id);
         setLoading(true);
+        setError(null);
 
         const res = await httpClient.get(`/fixer/provider/requests/${id}`);
-        console.log('JobDetails API response:', res);
+        const jobData = res.data?.success ? res.data.data : null;
 
-        if (res.data) {
-          console.log('Job details fetched successfully:', res.data);
-          setJob(res.data);
+        if (jobData) {
+          setJob(jobData);
         } else {
-          console.log('Job not found in API response');
           setError('Job not found');
+          setJob(null);
         }
       } catch (err) {
         console.error('Error fetching job details:', err);
-        setError('Failed to load job details');
+        setError(err.response?.data?.message || 'Failed to load job details');
+        setJob(null);
       } finally {
         setLoading(false);
       }
@@ -98,19 +128,56 @@ const JobDetails = () => {
   }, [id]);
 
   useEffect(() => {
-    if (isLoaded && job?.service_address && window.google?.maps) {
-      const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode({ address: job.service_address }, (results, status) => {
-        if (status === 'OK' && results[0]) {
-          const location = results[0].geometry.location;
-          setMapCenter({
-            lat: location.lat(),
-            lng: location.lng()
-          });
-        }
-      });
+    if (!job) {
+      return;
     }
-  }, [isLoaded, job?.service_address]);
+
+    if (job.latitude && job.longitude) {
+      setMapCenter({
+        lat: Number(job.latitude),
+        lng: Number(job.longitude)
+      });
+      setMapError('');
+      return;
+    }
+
+    if (!job.service_address) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const resolveMapCenter = async () => {
+      try {
+        setMapLoading(true);
+        setMapError('');
+        const resolvedCenter = await geocodeAddress(job.service_address);
+
+        if (!cancelled && resolvedCenter) {
+          setMapCenter(resolvedCenter);
+          return;
+        }
+
+        if (!cancelled) {
+          setMapError('Unable to locate this address on the map.');
+        }
+      } catch {
+        if (!cancelled) {
+          setMapError('Unable to load the map for this address.');
+        }
+      } finally {
+        if (!cancelled) {
+          setMapLoading(false);
+        }
+      }
+    };
+
+    resolveMapCenter();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [job]);
 
   if (loading) {
     return (
@@ -245,29 +312,23 @@ const JobDetails = () => {
           {/* Location */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="h-48 bg-gray-100 relative">
-              {loadError ? (
+              {mapError ? (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 p-4 text-center">
                   <AlertTriangle className="text-red-500 mb-2" size={24} />
-                  <p className="text-xs text-red-600 font-bold">Maps API Error</p>
+                  <p className="text-xs text-red-600 font-bold">{mapError}</p>
                 </div>
-              ) : isLoaded ? (
-                <div className="w-full h-full relative">
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={mapCenter}
-                    zoom={15}
-                    options={{
-                      disableDefaultUI: true,
-                      zoomControl: true,
-                    }}
-                  >
-                    <Marker position={mapCenter} />
-                  </GoogleMap>
-                </div>
-              ) : (
+              ) : mapLoading ? (
                 <div className="w-full h-full flex items-center justify-center bg-slate-50">
                   <Loader2 className="animate-spin text-slate-300" size={24} />
                 </div>
+              ) : (
+                <iframe
+                  title={`Booking ${job.booking_id} location`}
+                  src={getOpenStreetMapEmbedUrl(mapCenter)}
+                  className="h-full w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
               )}
             </div>
             <div className="p-6">

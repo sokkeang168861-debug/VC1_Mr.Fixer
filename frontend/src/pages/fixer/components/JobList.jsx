@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Wrench,
   MapPin,
-  Loader2
+  Loader2,
+  Zap,
 } from 'lucide-react';
 import { motion as Motion } from 'motion/react';
 import { Link } from 'react-router-dom';
@@ -102,18 +103,39 @@ export default function JobList() {
 
   // Listen for booking missed events
   useEffect(() => {
+    if (!userId) {
+      return undefined;
+    }
+
+    const handleNewBooking = (payload) => {
+      const incomingJob = payload?.booking;
+      if (!incomingJob?.booking_id) {
+        fetchJobs();
+        return;
+      }
+
+      setJobs((currentJobs) => {
+        const withoutDuplicate = currentJobs.filter(
+          (job) => job.booking_id !== incomingJob.booking_id
+        );
+        return [incomingJob, ...withoutDuplicate];
+      });
+    };
+
     const handleBookingMissed = (data) => {
       console.log('Booking missed:', data);
       // Refresh the jobs list to remove the missed booking
       fetchJobs();
     };
 
+    on('new_booking', handleNewBooking);
     on('booking_missed', handleBookingMissed);
 
     return () => {
+      off('new_booking', handleNewBooking);
       off('booking_missed', handleBookingMissed);
     };
-  }, [on, off]);
+  }, [off, on, userId]);
 
   const fetchJobs = async () => {
     try {
@@ -123,9 +145,11 @@ export default function JobList() {
       const res = await httpClient.get('/fixer/provider/requests');
       console.log('API response:', res);
 
-      if (res.data && Array.isArray(res.data)) {
-        console.log('Fetched jobs:', res.data);
-        setJobs(res.data);
+      const nextJobs = Array.isArray(res.data?.data) ? res.data.data : [];
+
+      if (nextJobs.length > 0) {
+        console.log('Fetched jobs:', nextJobs);
+        setJobs(nextJobs);
       } else {
         console.log('No jobs found');
         setJobs([]);

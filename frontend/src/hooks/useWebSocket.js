@@ -1,6 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 
+function getSocketUrl() {
+  if (import.meta.env.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL;
+  }
+
+  if (import.meta.env.DEV && import.meta.env.VITE_DEV_BACKEND_URL) {
+    return import.meta.env.VITE_DEV_BACKEND_URL;
+  }
+
+  return window.location.origin;
+}
+
 const useWebSocket = (userId) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
@@ -8,11 +20,9 @@ const useWebSocket = (userId) => {
   useEffect(() => {
     if (!userId) return;
 
-    // Connect to WebSocket server
-    const newSocket = io(import.meta.env.PROD
-      ? window.location.origin
-      : 'http://localhost:5000'
-    );
+    const newSocket = io(getSocketUrl(), {
+      transports: ['websocket'],
+    });
 
     socketRef.current = newSocket;
 
