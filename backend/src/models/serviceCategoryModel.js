@@ -9,11 +9,8 @@ class ServiceCategoryModel {
 
   static async getAllCategories(db) {
     const [rows] = await db.query(
-      `SELECT DISTINCT sc.id, sc.name, sc.description, sc.image
+      `SELECT sc.id, sc.name, sc.description, sc.image
        FROM service_categories sc
-       INNER JOIN services s ON s.category_id = sc.id
-       INNER JOIN service_providers sp ON sp.id = s.provider_id
-       INNER JOIN users u ON u.id = sp.user_id
        ORDER BY sc.id DESC`
     );
     return rows;
