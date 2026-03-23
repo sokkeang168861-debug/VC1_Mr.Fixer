@@ -1,10 +1,5 @@
 const FixerProfileModel = require("../models/fixerProfileModel");
-
-const toBase64Image = (buffer) => {
-  return buffer && Buffer.isBuffer(buffer)
-    ? `data:image/jpeg;base64,${buffer.toString("base64")}`
-    : null;
-};
+const { toImageDataUrl } = require("../utils/imageDataUrl");
 
 const getFixerProfile = async (db, user) => {
   const fixerId = user?.id;
@@ -37,7 +32,7 @@ const getFixerProfile = async (db, user) => {
     phone: fixer.phone || "",
     location: fixer.location || "",
     role: fixer.role || "fixer",
-    profile_img: toBase64Image(fixer.profile_img),
+    profile_img: toImageDataUrl(fixer.profile_img),
   };
 };
 
@@ -129,7 +124,7 @@ const updateFixerProfile = async (db, user, data, file) => {
       email: updatedFixer.email || "",
       phone: updatedFixer.phone || "",
       role: updatedFixer.role || "fixer",
-      profile_img: toBase64Image(updatedFixer.profile_img),
+      profile_img: toImageDataUrl(updatedFixer.profile_img),
     },
   };
 };

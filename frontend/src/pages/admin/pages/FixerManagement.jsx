@@ -38,6 +38,46 @@ const CategoryBadge = ({ category }) => {
   );
 };
 
+const normalizeFixer = (fixer) => {
+  const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    fixer.name || 'Fixer'
+  )}&background=E0E7FF&color=1F2937`;
+  const categoryLabel = Array.isArray(fixer.categories)
+    ? fixer.categories[0] || 'Unassigned'
+    : fixer.category || 'Unassigned';
+
+  return {
+    ...fixer,
+    category: categoryLabel,
+    categories: Array.isArray(fixer.categories)
+      ? fixer.categories
+      : fixer.category
+      ? [fixer.category]
+      : [],
+    categoryIds: Array.isArray(fixer.categoryIds) ? fixer.categoryIds : [],
+    fixerId:
+      fixer.fixerId ||
+      (fixer.providerId
+        ? `FX-${String(fixer.providerId).padStart(4, '0')}`
+        : `FX-${String(fixer.userId || '0').padStart(4, '0')}`),
+    jobs: fixer.totalBookings ?? fixer.jobs ?? 0,
+    rating: Number(fixer.rating ?? 0),
+    avatar: fixer.avatar || fallbackAvatar,
+    companyName: fixer.companyName || '',
+    location: fixer.location || '',
+    latitude:
+      fixer.latitude === null || fixer.latitude === undefined
+        ? ''
+        : String(fixer.latitude),
+    longitude:
+      fixer.longitude === null || fixer.longitude === undefined
+        ? ''
+        : String(fixer.longitude),
+    experience: fixer.experience || '',
+    bio: fixer.bio || '',
+  };
+};
+
 export default function App() {
   const [fixers, setFixers] = useState([]);
   const [categoriesData, setCategoriesData] = useState([]);
@@ -98,40 +138,6 @@ export default function App() {
 
   useEffect(() => {
     let isMounted = true;
-
-    const normalizeFixer = (fixer) => {
-      const fallbackAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        fixer.name || 'Fixer'
-      )}&background=E0E7FF&color=1F2937`;
-      const categoryLabel = Array.isArray(fixer.categories)
-        ? fixer.categories[0] || 'Unassigned'
-        : fixer.category || 'Unassigned';
-
-      return {
-        ...fixer,
-        category: categoryLabel,
-        categories: Array.isArray(fixer.categories)
-          ? fixer.categories
-          : fixer.category
-          ? [fixer.category]
-          : [],
-        categoryIds: Array.isArray(fixer.categoryIds)
-          ? fixer.categoryIds
-          : [],
-        fixerId:
-          fixer.fixerId ||
-          (fixer.providerId
-            ? `FX-${String(fixer.providerId).padStart(4, '0')}`
-            : `FX-${String(fixer.userId || '0').padStart(4, '0')}`),
-        jobs: fixer.totalBookings ?? fixer.jobs ?? 0,
-        rating: Number(fixer.rating ?? 0),
-        avatar: fixer.avatar || fallbackAvatar,
-        companyName: fixer.companyName || '',
-        location: fixer.location || '',
-        experience: fixer.experience || '',
-        bio: fixer.bio || '',
-      };
-    };
 
     const fetchFixers = async () => {
       try {
@@ -207,46 +213,86 @@ export default function App() {
     if (formMode === 'edit') {
       return upsertFixer(data);
     } else {
-      // create flow not implemented yet
+      return createFixer(data);
+    }
+  };
+
+  const buildFixerFormData = (payload = {}) => {
+    const formData = new FormData();
+    const textFields = [
+      'fullName',
+      'email',
+      'phone',
+      'companyName',
+      'location',
+      'latitude',
+      'longitude',
+      'experience',
+      'bio',
+    ];
+
+    textFields.forEach((field) => {
+      const value = payload[field];
+      if (value !== undefined && value !== null) {
+        formData.append(field, String(value));
+      }
+    });
+
+    if (Array.isArray(payload.categoryIds)) {
+      payload.categoryIds.forEach((id) => {
+        formData.append('categoryIds', String(id));
+      });
+    }
+
+    if (payload.profileImage instanceof File) {
+      formData.append('profile_img', payload.profileImage);
+    }
+
+    return formData;
+  };
+
+  const createFixer = async (payload) => {
+    const formData = buildFixerFormData(payload);
+
+    try {
+      setLoading(true);
+      setError(null);
+      const createRes = await httpClient.post('/admin/fixers', formData);
+      const generatedPassword = createRes.data?.data?.temporaryPassword;
+
+      const res = await httpClient.get('/admin/fixers');
+      const data = res.data?.data || [];
+      setFixers(data.map(normalizeFixer));
       setIsFormOpen(false);
+
+      if (generatedPassword) {
+        window.alert(
+          `Fixer created successfully.\nEmail: ${payload.email}\nTemporary password: ${generatedPassword}`
+        );
+      }
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to create fixer';
+      setError(message);
+      throw new Error(message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const upsertFixer = async (payload) => {
     if (!selectedFixer?.providerId) return;
-    const sanitized = Object.fromEntries(
-      Object.entries(payload).map(([k, v]) => [k, v === '' ? null : v])
-    );
+    const formData = buildFixerFormData(payload);
     try {
       setLoading(true);
-      await httpClient.put(`/admin/fixers/${selectedFixer.providerId}`, sanitized);
+      setError(null);
+      await httpClient.put(`/admin/fixers/${selectedFixer.providerId}`, formData);
       // refresh list
       const res = await httpClient.get('/admin/fixers');
       const data = res.data?.data || [];
-      const normalized = data.map((f) => ({
-        ...f,
-        category: Array.isArray(f.categories)
-          ? f.categories[0] || 'Unassigned'
-          : f.category || 'Unassigned',
-        categories: Array.isArray(f.categories)
-          ? f.categories
-          : f.category
-          ? [f.category]
-          : [],
-        fixerId:
-          f.fixerId ||
-          (f.providerId
-            ? `FX-${String(f.providerId).padStart(4, '0')}`
-            : `FX-${String(f.userId || '0').padStart(4, '0')}`),
-        jobs: f.totalBookings ?? f.jobs ?? 0,
-        rating: Number(f.rating ?? 0),
-        avatar:
-          f.avatar ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            f.name || 'Fixer'
-          )}&background=E0E7FF&color=1F2937`,
-      }));
-      setFixers(normalized);
+      setFixers(data.map(normalizeFixer));
       setIsFormOpen(false);
     } catch (err) {
       const message =
@@ -254,6 +300,7 @@ export default function App() {
         err.message ||
         'Failed to save fixer';
       setError(message);
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
@@ -271,6 +318,10 @@ export default function App() {
       setFixers((prev) =>
         prev.filter((f) => f.providerId !== fixer.providerId)
       );
+      if (selectedFixer?.providerId === fixer.providerId) {
+        setSelectedFixer(null);
+        setView('list');
+      }
     } catch (err) {
       const message =
         err.response?.data?.message ||
@@ -317,7 +368,7 @@ export default function App() {
 
                 {/* Search and Action Bar */}
                 <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-3xl shadow-sm border border-slate-50">
-                  <div className="flex items-center gap-4 flex-1 max-w-3xl">
+                  <div className="flex items-center gap-4 flex-1 max-w-4xl">
                     <div className="relative flex-1">
                       <Search
                         className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
@@ -333,7 +384,6 @@ export default function App() {
                     </div>
                     <div className="relative">
                       <div className="flex items-center gap-2 px-4 py-3 bg-slate-50 rounded-2xl text-sm font-medium text-slate-600">
-                        <ChevronDown size={16} className="text-slate-400" />
                         <select
                           value={categoryFilter}
                           onChange={(e) => setCategoryFilter(e.target.value)}
@@ -465,7 +515,7 @@ export default function App() {
                                   </button>
                                   <button
                                     onClick={(e) => handleDelete(e, fixer)}
-                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors "
                                   >
                                     <Trash2 size={16} />
                                   </button>
