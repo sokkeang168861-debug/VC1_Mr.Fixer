@@ -11,6 +11,19 @@ function normalizeScheduledAt(value) {
 }
 
 class BookingService {
+  static normalizeRating(value, fieldName) {
+    const parsedValue = Number(value);
+
+    if (!Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 5) {
+      throw {
+        status: 400,
+        message: `${fieldName} must be an integer between 1 and 5`,
+      };
+    }
+
+    return parsedValue;
+  }
+
   static async createBooking(db, user, body, files = []) {
     const customerId = user?.id;
     const role = String(user?.role || "").toLowerCase();
@@ -167,6 +180,54 @@ class BookingService {
     }
 
     return { id: Number(bookingId), status: "customer_reject" };
+  }
+
+  static async submitReview(db, user, bookingId, body) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can submit reviews" };
+    }
+
+    const normalizedBookingId = Number(bookingId);
+
+    if (!Number.isInteger(normalizedBookingId) || normalizedBookingId <= 0) {
+      throw { status: 400, message: "Invalid booking id" };
+    }
+
+    const comment =
+      typeof body?.comment === "string" ? body.comment.trim() : "";
+
+    return await BookingModel.createReview(db, {
+      booking_id: normalizedBookingId,
+      customer_id: customerId,
+      quality_rating: this.normalizeRating(
+        body?.quality_rating ?? body?.quality,
+        "quality_rating"
+      ),
+      speed_rating: this.normalizeRating(
+        body?.speed_rating ?? body?.speed,
+        "speed_rating"
+      ),
+      price_fairness_rating: this.normalizeRating(
+        body?.price_fairness_rating ?? body?.price_fairness_ratung ?? body?.price,
+        "price_fairness_rating"
+      ),
+      behavior_rating: this.normalizeRating(
+        body?.behavior_rating ?? body?.behavior,
+        "behavior_rating"
+      ),
+      overall_rating: this.normalizeRating(
+        body?.overall_rating ?? body?.overall,
+        "overall_rating"
+      ),
+      comment: comment || null,
+    });
   }
 }
 

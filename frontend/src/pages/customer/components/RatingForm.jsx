@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Star,
   Calendar,
@@ -17,7 +17,9 @@ const RatingForm = ({
   fixerName,
   fixerAvatar,
   date,
-  orderId
+  orderId,
+  initialReview,
+  readOnly = false,
 }) => {
 
   const [ratings, setRatings] = useState({
@@ -30,6 +32,23 @@ const RatingForm = ({
 
   const [comment, setComment] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => {
+    if (!initialReview) {
+      return;
+    }
+
+    setRatings({
+      quality: Number(initialReview.qualityRating || 0),
+      speed: Number(initialReview.speedRating || 0),
+      price: Number(initialReview.priceFairnessRating || 0),
+      behavior: Number(initialReview.behaviorRating || 0),
+      overall: Number(initialReview.overallRating || 0),
+    });
+    setComment(initialReview.comment || '');
+  }, [initialReview]);
 
   const categories = [
     { id: 'quality', label: 'QUALITY' },
@@ -45,11 +64,40 @@ const RatingForm = ({
     }));
   };
 
-  const handleSubmit = () => {
-    setIsSubmitted(true);
+  const handleSubmit = async () => {
+    if (readOnly) {
+      return;
+    }
 
-    if (onSubmit) {
-      onSubmit();
+    const hasMissingRating = Object.values(ratings).some((value) => value < 1);
+
+    if (hasMissingRating) {
+      setSubmitError('Please rate all categories before submitting.');
+      return;
+    }
+
+    setSubmitError('');
+    setIsSubmitting(true);
+
+    try {
+      if (onSubmit) {
+        await onSubmit({
+          quality_rating: ratings.quality,
+          speed_rating: ratings.speed,
+          price_fairness_rating: ratings.price,
+          behavior_rating: ratings.behavior,
+          overall_rating: ratings.overall,
+          comment,
+        });
+      }
+
+      setIsSubmitted(true);
+    } catch (error) {
+      setSubmitError(
+        error?.response?.data?.message || error?.message || 'Failed to submit review.'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -155,8 +203,10 @@ const RatingForm = ({
                   <div className="flex gap-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
+                        type="button"
                         key={star}
                         onClick={() => handleRating(cat.id, star)}
+                        disabled={readOnly}
                         className="p-0.5"
                         aria-label={`${cat.label} ${star} stars`}
                       >
@@ -184,8 +234,10 @@ const RatingForm = ({
               <div className="flex gap-2 mb-3">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
+                    type="button"
                     key={star}
                     onClick={() => handleRating('overall', star)}
+                    disabled={readOnly}
                     className="p-0.5"
                     aria-label={`Overall ${star} stars`}
                   >
@@ -206,17 +258,26 @@ const RatingForm = ({
                 }...`}
                 className="w-full min-h-24 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-100 resize-none"
                 value={comment}
+                disabled={readOnly}
                 onChange={(e) => setComment(e.target.value)}
               />
             </div>
+
+            {submitError ? (
+              <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                {submitError}
+              </div>
+            ) : null}
           </div>
 
           <div className="border-t bg-white p-5 sm:p-6">
             <button
-              onClick={handleSubmit}
-              className="w-full rounded-2xl bg-purple-600 py-4 text-sm font-extrabold tracking-widest text-white hover:bg-purple-700"
+              type="button"
+              onClick={readOnly ? onBack : handleSubmit}
+              disabled={isSubmitting}
+              className="w-full rounded-2xl bg-purple-600 py-4 text-sm font-extrabold tracking-widest text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-purple-300"
             >
-              SUBMIT
+              {readOnly ? 'BACK TO HISTORY' : isSubmitting ? 'SUBMITTING...' : 'SUBMIT'}
             </button>
           </div>
 

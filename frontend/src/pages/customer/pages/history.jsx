@@ -113,6 +113,18 @@ function mapHistoryItem(item) {
   const createdAt = item?.created_at ? new Date(item.created_at) : null;
   const categoryName = item?.category_name?.trim() || `Service #${item?.service_id ?? ""}`;
   const visual = getHistoryVisual(categoryName);
+  const review = item?.review
+    ? {
+        id: Number(item.review.id),
+        qualityRating: Number(item.review.quality_rating || 0),
+        speedRating: Number(item.review.speed_rating || 0),
+        priceFairnessRating: Number(item.review.price_fairness_rating || 0),
+        behaviorRating: Number(item.review.behavior_rating || 0),
+        overallRating: Number(item.review.overall_rating || 0),
+        comment: item.review.comment || "",
+        createdAt: item.review.created_at || null,
+      }
+    : null;
 
   return {
     id: String(item.booking_id),
@@ -134,6 +146,8 @@ function mapHistoryItem(item) {
     icon: visual.icon,
     iconBg: visual.iconBg,
     orderId: `#BK-${String(item.booking_id).padStart(5, "0")}`,
+    isReviewed: Boolean(item?.has_review || review),
+    review,
   };
 }
 
@@ -153,9 +167,6 @@ export default function CustomerHistoryPage() {
 
   useEffect(() => {
     let isMounted = true;
-
-    setLoading(true);
-    setLoadError("");
 
     httpClient
       .get("/user/bookings/history")
@@ -201,7 +212,10 @@ export default function CustomerHistoryPage() {
   }, []);
 
   const handleRateService = (service) => {
-    setSelectedService(service);
+    setSelectedService({
+      ...service,
+      reviewMode: service.isReviewed ? "view" : "edit",
+    });
     setCurrentView("rating");
   };
 
@@ -238,14 +252,6 @@ export default function CustomerHistoryPage() {
     ...new Set(historyItems.map((item) => item.category).filter(Boolean)),
   ];
 
-  const dateFilterLabel = selectedDate
-    ? selectedDate.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "All Dates";
-
   const handleSidebarChange = (tab) => {
     setShowFilterPopover(false);
     setShowDatePicker(false);
@@ -270,6 +276,59 @@ export default function CustomerHistoryPage() {
 
   const handleLogout = async () => {
     await logoutUser({ navigate, redirectTo: ROUTES.home });
+  };
+
+  const handleSubmitReview = async (payload) => {
+    if (!selectedService?.bookingId) {
+      throw new Error("Missing booking id");
+    }
+
+    const response = await httpClient.post(
+      `/user/bookings/${selectedService.bookingId}/review`,
+      payload
+    );
+
+    const createdReview = response?.data?.data?.review;
+
+    if (!createdReview) {
+      throw new Error("Review was saved but the response was incomplete.");
+    }
+
+    const normalizedReview = {
+      id: Number(createdReview.id),
+      qualityRating: Number(createdReview.quality_rating || 0),
+      speedRating: Number(createdReview.speed_rating || 0),
+      priceFairnessRating: Number(createdReview.price_fairness_rating || 0),
+      behaviorRating: Number(createdReview.behavior_rating || 0),
+      overallRating: Number(createdReview.overall_rating || 0),
+      comment: createdReview.comment || "",
+      createdAt: createdReview.created_at || null,
+    };
+
+    setHistoryItems((prev) =>
+      prev.map((item) =>
+        item.bookingId === selectedService.bookingId
+          ? {
+              ...item,
+              isReviewed: true,
+              review: normalizedReview,
+            }
+          : item
+      )
+    );
+
+    setSelectedService((prev) =>
+      prev
+        ? {
+            ...prev,
+            isReviewed: true,
+            review: normalizedReview,
+            reviewMode: "submitted",
+          }
+        : prev
+    );
+
+    return normalizedReview;
   };
 
   const renderHistoryBody = () => {
@@ -350,9 +409,13 @@ export default function CustomerHistoryPage() {
               <button
                 type="button"
                 onClick={() => handleRateService(item)}
-                className="hover:text-purple-700"
+                className={`${
+                  item.isReviewed
+                    ? "text-slate-500 hover:text-slate-700"
+                    : "hover:text-purple-700"
+                }`}
               >
-                Rate Service
+                {item.isReviewed ? "Reviewed" : "Rate Service"}
               </button>
               <button
                 type="button"
@@ -471,11 +534,14 @@ export default function CustomerHistoryPage() {
             {currentView === "rating" && selectedService && (
               <RatingForm
                 onBack={() => setCurrentView("history")}
+                onSubmit={handleSubmitReview}
                 serviceName={selectedService.service}
                 fixerName={selectedService.fixer.name}
                 fixerAvatar={selectedService.fixer.avatar}
                 date={selectedService.date}
                 orderId={selectedService.orderId}
+                initialReview={selectedService.review}
+                readOnly={selectedService.reviewMode === "view"}
               />
             )}
 

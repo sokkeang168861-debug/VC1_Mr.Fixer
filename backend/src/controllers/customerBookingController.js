@@ -16,8 +16,6 @@ class CustomerBookingController {
         req.files || []
       );
 
-      const bookingId = booking.id;
-
       // Get provider to notify
       const providerUserId =
         await CustomerBookingModel.getProviderUserIdByServiceId(
@@ -140,6 +138,28 @@ class CustomerBookingController {
     } catch (err) {
       res.status(err.status || 500).json({
         message: err.message || "Failed to reject booking",
+      });
+    }
+  }
+
+  async submitReview(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const result = await customerBookingService.submitReview(
+        db,
+        req.user,
+        req.params.id,
+        req.body
+      );
+
+      res.status(201).json({
+        message: "Review submitted successfully",
+        data: result,
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to submit review",
       });
     }
   }

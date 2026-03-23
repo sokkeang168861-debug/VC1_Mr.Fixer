@@ -51,5 +51,10 @@ router.post(
   protect,
   (req, res) => CustomerBookingController.rejectBooking(req, res)
 );
+router.post(
+  "/bookings/:id/review",
+  protect,
+  (req, res) => CustomerBookingController.submitReview(req, res)
+);
 
 module.exports = router;
