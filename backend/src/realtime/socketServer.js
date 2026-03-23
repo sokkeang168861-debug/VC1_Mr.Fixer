@@ -53,7 +53,16 @@ function emitBookingUpdated(io, userId, booking) {
   io.to(`user:${userId}`).emit("booking:updated", booking);
 }
 
+function emitNewBooking(io, userId, booking) {
+  if (!io || !userId || !booking) {
+    return;
+  }
+
+  io.to(`user:${userId}`).emit("booking:new", booking);
+}
+
 module.exports = {
   initSocketServer,
   emitBookingUpdated,
+  emitNewBooking,
 };

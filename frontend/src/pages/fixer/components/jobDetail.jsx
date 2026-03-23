@@ -11,72 +11,114 @@ import {
 import { motion as Motion } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import httpClient from '../../../api/httpClient';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { getFixerProposalRoute } from '@/config/routes';
 import { resolveUploadUrl } from '@/lib/assets';
-
-const mapContainerStyle = {
-  width: '100%',
-  height: '100%'
-};
 
 const defaultCenter = {
   lat: 11.5564, // Phnom Penh default
   lng: 104.9282
 };
 
+async function geocodeAddress(address) {
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    q: address,
+    limit: '1',
+  });
+
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+    headers: {
+      Accept: 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Geocoding failed');
+  }
+
+  const results = await response.json();
+  const match = Array.isArray(results) ? results[0] : null;
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    lat: Number(match.lat),
+    lng: Number(match.lon),
+  };
+}
+
+function getOpenStreetMapEmbedUrl({ lat, lng }) {
+  const delta = 0.01;
+  const left = lng - delta;
+  const right = lng + delta;
+  const top = lat + delta;
+  const bottom = lat - delta;
+
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lng}`;
+}
+
 const JobDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  console.log('JobDetails component loaded with ID:', id);
-  
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState('');
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: ['geometry', 'places']
-  });
+  const handleReject = async () => {
+    if (!rejectReason.trim()) {
+      alert('Please provide a reason for rejection.');
+      return;
+    }
+
+    try {
+      setRejecting(true);
+      const res = await httpClient.post(`/fixer/provider/requests/${id}/reject`, {
+        reason: rejectReason.trim()
+      });
+
+      if (res.data.success) {
+        alert('Job request rejected successfully.');
+        navigate('/dashboard/fixer/jobs');
+      } else {
+        alert('Failed to reject job request. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error rejecting job:', err);
+      alert('Failed to reject job request. Please try again.');
+    } finally {
+      setRejecting(false);
+      setShowRejectModal(false);
+      setRejectReason('');
+    }
+  };
 
   useEffect(() => {
     const fetchJobDetail = async () => {
       try {
-        console.log('Fetching job details for ID:', id);
         setLoading(true);
-        
-        // Use mock data for testing
-        const mockJob = {
-          booking_id: id,
-          customer_name: id === '8842' ? 'Michael Richardson' : 'Sarah Jenkins',
-          category_name: id === '8842' ? 'Plumbing Repair' : 'Electrical Work',
-          issue_description: id === '8842' ? 
-            'Kitchen sink is leaking significantly from the main pipe underneath. Water is pooling in the cabinet. Need urgent assistance.' :
-            'Several outlets in the living room have stopped working. No tripped breakers found. Need a professional to diagnose.',
-          service_address: id === '8842' ? '123 Main St, Phnom Penh' : '456 Oak Ave, Phnom Penh',
-          created_at: new Date().toISOString()
-        };
-        
-        console.log('Using mock job data:', mockJob);
-        setJob(mockJob);
-        
-        // Uncomment below when API is ready
-        /*
+        setError(null);
+
         const res = await httpClient.get(`/fixer/provider/requests/${id}`);
-        console.log('JobDetails API response:', res);
-        if (res.data.success) {
-          console.log('Job details fetched successfully:', res.data.data);
-          setJob(res.data.data);
+        const jobData = res.data?.success ? res.data.data : null;
+
+        if (jobData) {
+          setJob(jobData);
         } else {
-          console.log('Job not found in API response');
           setError('Job not found');
+          setJob(null);
         }
-        */
       } catch (err) {
         console.error('Error fetching job details:', err);
-        setError('Failed to load job details');
+        setError(err.response?.data?.message || 'Failed to load job details');
+        setJob(null);
       } finally {
         setLoading(false);
       }
@@ -86,19 +128,56 @@ const JobDetails = () => {
   }, [id]);
 
   useEffect(() => {
-    if (isLoaded && job?.service_address && window.google?.maps) {
-      const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode({ address: job.service_address }, (results, status) => {
-        if (status === 'OK' && results[0]) {
-          const location = results[0].geometry.location;
-          setMapCenter({
-            lat: location.lat(),
-            lng: location.lng()
-          });
-        }
-      });
+    if (!job) {
+      return;
     }
-  }, [isLoaded, job?.service_address]);
+
+    if (job.latitude && job.longitude) {
+      setMapCenter({
+        lat: Number(job.latitude),
+        lng: Number(job.longitude)
+      });
+      setMapError('');
+      return;
+    }
+
+    if (!job.service_address) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const resolveMapCenter = async () => {
+      try {
+        setMapLoading(true);
+        setMapError('');
+        const resolvedCenter = await geocodeAddress(job.service_address);
+
+        if (!cancelled && resolvedCenter) {
+          setMapCenter(resolvedCenter);
+          return;
+        }
+
+        if (!cancelled) {
+          setMapError('Unable to locate this address on the map.');
+        }
+      } catch {
+        if (!cancelled) {
+          setMapError('Unable to load the map for this address.');
+        }
+      } finally {
+        if (!cancelled) {
+          setMapLoading(false);
+        }
+      }
+    };
+
+    resolveMapCenter();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [job]);
 
   if (loading) {
     return (
@@ -203,7 +282,10 @@ const JobDetails = () => {
               <CheckCircle2 size={20} />
               Accept & Set Proposal
             </Link>
-            <button className="text-red-500 font-bold hover:text-red-600 px-8 py-4 transition-colors">
+            <button
+              onClick={() => setShowRejectModal(true)}
+              className="text-red-500 font-bold hover:text-red-600 px-8 py-4 transition-colors"
+            >
               Reject
             </button>
           </div>
@@ -230,29 +312,23 @@ const JobDetails = () => {
           {/* Location */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="h-48 bg-gray-100 relative">
-              {loadError ? (
+              {mapError ? (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-red-50 p-4 text-center">
                   <AlertTriangle className="text-red-500 mb-2" size={24} />
-                  <p className="text-xs text-red-600 font-bold">Maps API Error</p>
+                  <p className="text-xs text-red-600 font-bold">{mapError}</p>
                 </div>
-              ) : isLoaded ? (
-                <div className="w-full h-full relative">
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={mapCenter}
-                    zoom={15}
-                    options={{
-                      disableDefaultUI: true,
-                      zoomControl: true,
-                    }}
-                  >
-                    <Marker position={mapCenter} />
-                  </GoogleMap>
-                </div>
-              ) : (
+              ) : mapLoading ? (
                 <div className="w-full h-full flex items-center justify-center bg-slate-50">
                   <Loader2 className="animate-spin text-slate-300" size={24} />
                 </div>
+              ) : (
+                <iframe
+                  title={`Booking ${job.booking_id} location`}
+                  src={getOpenStreetMapEmbedUrl(mapCenter)}
+                  className="h-full w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
               )}
             </div>
             <div className="p-6">
@@ -270,6 +346,42 @@ const JobDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-[#1A1A1A] mb-4">Reject Job Request</h3>
+            <p className="text-gray-600 mb-4">Please provide a reason for rejecting this job request:</p>
+
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Enter rejection reason..."
+              className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-red-500"
+              rows={4}
+            />
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowRejectModal(false)}
+                className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={rejecting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={rejecting || !rejectReason.trim()}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {rejecting ? <Loader2 size={16} className="animate-spin" /> : null}
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Motion.div>
   );
 };

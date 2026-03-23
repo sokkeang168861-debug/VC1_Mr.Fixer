@@ -177,6 +177,17 @@ class CustomerBooking {
     return this.mapBookingRow(booking, proposalItems);
   }
 
+  static async getProviderUserIdByServiceId(db, serviceId) {
+    const [rows] = await db.query(
+      `SELECT sp.user_id
+       FROM services s
+       INNER JOIN service_providers sp ON sp.id = s.provider_id
+       WHERE s.id = ?`,
+      [serviceId]
+    );
+    return rows[0]?.user_id || null;
+  }
+
   static async confirmBookingByCustomer(db, bookingId, customerId) {
     const [result] = await db.query(
       `UPDATE bookings
