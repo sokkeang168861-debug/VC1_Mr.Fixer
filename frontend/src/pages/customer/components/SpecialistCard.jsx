@@ -33,7 +33,7 @@ export default function SpecialistCard({ specialist }) {
 
           <div className="flex items-center gap-1 text-orange-500 bg-orange-50 px-2 py-0.5 rounded-lg">
             <Star size={14} fill="currentColor" />
-            <span className="text-sm font-bold">5.0</span>
+            <span className="text-sm font-bold">{specialist.overall_rating}</span>
           </div>
         </div>
 

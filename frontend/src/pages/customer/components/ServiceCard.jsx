@@ -38,10 +38,6 @@ export default function ServiceCard({ service, onViewFixers }) {
           >
             VIEW PROVIDERS
           </button>
-
-          {/* <button className="px-4 py-2.5 rounded-xl bg-primary-light text-primary text-xs font-bold hover:bg-primary hover:text-white transition-all duration-200">
-            USE SERVICE
-          </button> */}
         </div>
       </div>
     </Motion.div>
