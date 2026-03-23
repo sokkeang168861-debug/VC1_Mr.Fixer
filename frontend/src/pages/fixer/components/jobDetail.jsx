@@ -11,7 +11,7 @@ import {
 import { motion as Motion } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import httpClient from '../../../api/httpClient';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, Marker } from '@react-google-maps/api';
 import { getFixerProposalRoute } from '@/config/routes';
 import { resolveUploadUrl } from '@/lib/assets';
 
@@ -28,25 +28,62 @@ const defaultCenter = {
 const JobDetails = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  console.log('JobDetails component loaded with ID:', id);
+  
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [mapCenter, setMapCenter] = useState(defaultCenter);
+  const [rejecting, setRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [showRejectModal, setShowRejectModal] = useState(false);
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: ['geometry', 'places']
-  });
+  // Google Maps loader
+  const isLoaded = window.google && window.google.maps;
+  const loadError = !import.meta.env.VITE_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_API_KEY === 'your_google_maps_key_here';
+
+  const handleReject = async () => {
+    if (!rejectReason.trim()) {
+      alert('Please provide a reason for rejection.');
+      return;
+    }
+
+    try {
+      setRejecting(true);
+      const res = await httpClient.post(`/fixer/provider/requests/${id}/reject`, {
+        reason: rejectReason.trim()
+      });
+
+      if (res.data.success) {
+        alert('Job request rejected successfully.');
+        navigate('/dashboard/fixer/jobs');
+      } else {
+        alert('Failed to reject job request. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error rejecting job:', err);
+      alert('Failed to reject job request. Please try again.');
+    } finally {
+      setRejecting(false);
+      setShowRejectModal(false);
+      setRejectReason('');
+    }
+  };
 
   useEffect(() => {
     const fetchJobDetail = async () => {
       try {
+        console.log('Fetching job details for ID:', id);
         setLoading(true);
+
         const res = await httpClient.get(`/fixer/provider/requests/${id}`);
-        if (res.data.success) {
-          setJob(res.data.data);
+        console.log('JobDetails API response:', res);
+
+        if (res.data) {
+          console.log('Job details fetched successfully:', res.data);
+          setJob(res.data);
         } else {
+          console.log('Job not found in API response');
           setError('Job not found');
         }
       } catch (err) {
@@ -90,7 +127,9 @@ const JobDetails = () => {
           {error || 'Job not found'}
         </div>
         <div className="mt-4">
-          <button onClick={() => navigate(-1)} className="text-primary font-bold">Go Back</button>
+          <button
+          onClick={() => navigate(-1)}
+          className="text-primary font-bold">Go Back</button>
         </div>
       </div>
     );
@@ -176,7 +215,10 @@ const JobDetails = () => {
               <CheckCircle2 size={20} />
               Accept & Set Proposal
             </Link>
-            <button className="text-red-500 font-bold hover:text-red-600 px-8 py-4 transition-colors">
+            <button
+              onClick={() => setShowRejectModal(true)}
+              className="text-red-500 font-bold hover:text-red-600 px-8 py-4 transition-colors"
+            >
               Reject
             </button>
           </div>
@@ -243,6 +285,42 @@ const JobDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Reject Modal */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold text-[#1A1A1A] mb-4">Reject Job Request</h3>
+            <p className="text-gray-600 mb-4">Please provide a reason for rejecting this job request:</p>
+
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="Enter rejection reason..."
+              className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-red-500"
+              rows={4}
+            />
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowRejectModal(false)}
+                className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={rejecting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={rejecting || !rejectReason.trim()}
+                className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {rejecting ? <Loader2 size={16} className="animate-spin" /> : null}
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Motion.div>
   );
 };

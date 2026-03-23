@@ -6,7 +6,7 @@ import SearchFilter from '../components/SearchFilter';
 import TransactionsSummary from '../components/TransactionsSummary';
 
 export default function ProfitPage() {
-  const [activeTab, setActiveTab] = useState('all');
+  // const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState('October');
   const [selectedYear, setSelectedYear] = useState('2023');

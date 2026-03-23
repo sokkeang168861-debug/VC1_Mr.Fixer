@@ -7,9 +7,30 @@ const upload = require("../middleware/upload");
 
 const { getUserStats } = require("../controllers/adminController");
 const ServiceCategoryController = require("../controllers/serviceCategoryController");
+const FixerManagementController = require("../controllers/fixerManagementController");
 
 // ---------- Admin Stats ----------
 router.get("/stats", protect, adminCheck, getUserStats);
+
+// ---------- Fixer Management ----------
+router.get(
+  "/fixers",
+  protect,
+  adminCheck,
+  FixerManagementController.getFixers
+);
+router.put(
+  "/fixers/:id",
+  protect,
+  adminCheck,
+  FixerManagementController.updateFixer
+);
+router.delete(
+  "/fixers/:id",
+  protect,
+  adminCheck,
+  FixerManagementController.deleteFixer
+);
 
 // ---------- Service Category  ----------
 router.post(

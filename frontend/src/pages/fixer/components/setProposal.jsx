@@ -61,15 +61,17 @@ const ServiceEstimate = () => {
 
     try {
       setSubmitting(true);
+
       const res = await httpClient.post(`/fixer/provider/requests/${id}/accept`, {
         items,
-        total,
-        message // message not stored in DB yet but kept for logic
+        total
       });
 
       if (res.data.success) {
         alert('Proposal submitted successfully!');
-        navigate(ROUTES.dashboardFixerJobs);
+        navigate('/dashboard/fixer/jobs/proposal-status');
+      } else {
+        alert('Failed to submit proposal. Please try again.');
       }
     } catch (err) {
       console.error('Error submitting proposal', err);

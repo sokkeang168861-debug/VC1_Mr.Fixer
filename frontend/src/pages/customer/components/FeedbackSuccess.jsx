@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { Check, Star, History } from 'lucide-react';
 
 const FeedbackSuccess = ({ onGoToHistory }) => {

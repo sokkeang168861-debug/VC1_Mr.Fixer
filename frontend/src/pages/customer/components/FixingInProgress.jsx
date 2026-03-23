@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { motion } from 'motion/react';
 import { Target } from 'lucide-react';
 
 const FixingInProgress = ({ onComplete }) => {

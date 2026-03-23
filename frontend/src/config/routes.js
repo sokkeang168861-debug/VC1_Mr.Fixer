@@ -21,7 +21,8 @@ export const ROUTES = {
   dashboardCustomerBooking: `${CUSTOMER_ROOT}/booking`,
   dashboardFixer: FIXER_ROOT,
   dashboardFixerJobs: `${FIXER_ROOT}/jobs`,
-  dashboardFixerProfit: `${FIXER_ROOT}/jobs/profit`,
+  dashboardFixerProfit: `${FIXER_ROOT}/profit`,
+  dashboardFixerNotifications: `${FIXER_ROOT}/notification`,
   dashboardFixerSettings: `${FIXER_ROOT}/settings`,
 };
 
@@ -38,3 +39,15 @@ export const ROLE_DASHBOARD_ROUTE = {
   customer: ROUTES.dashboardCustomer,
   fixer: ROUTES.dashboardFixer,
 };
+
+
+
+
+
+
+
+
+
+
+
+

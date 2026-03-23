@@ -66,7 +66,7 @@ class ProviderRequestController {
       const { items, total } = req.body;
       const provider_id = req.user.id;
 
-      const result = await ProviderRequestService.acceptAndSetProposal(
+      await ProviderRequestService.acceptAndSetProposal(
         db,
         id,
         provider_id,
@@ -83,6 +83,33 @@ class ProviderRequestController {
       res.status(500).json({
         success: false,
         message: "Failed to submit proposal",
+      });
+    }
+  }
+
+  static async rejectBooking(req, res) {
+    try {
+      const db = req.app.get("db");
+      const { id } = req.params;
+      const { reason } = req.body;
+      const provider_id = req.user.id;
+
+      const result = await ProviderRequestService.rejectBooking(
+        db,
+        id,
+        provider_id,
+        reason
+      );
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to reject booking",
       });
     }
   }

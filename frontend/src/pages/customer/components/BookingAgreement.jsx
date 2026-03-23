@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
 import { Zap, MapPin, Calendar, Clock, CheckCircle2, ShieldCheck, ArrowLeft, Info, Star } from 'lucide-react';
 
 const BookingAgreement = ({ onConfirm, onReject }) => {

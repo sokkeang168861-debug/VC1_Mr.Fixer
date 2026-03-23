@@ -19,6 +19,8 @@ module.exports = [
         process: "readonly",
         console: "readonly",
         Buffer: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
       },
     },
 

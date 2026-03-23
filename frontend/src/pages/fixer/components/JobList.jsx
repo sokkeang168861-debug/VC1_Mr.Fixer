@@ -9,8 +9,14 @@ import { Link } from 'react-router-dom';
 import { getFixerJobDetailRoute } from '@/config/routes';
 import { resolveUploadUrl } from '@/lib/assets';
 import httpClient from '../../../api/httpClient';
+import useWebSocket from '../../../hooks/useWebSocket';
+import { getTokenPayload } from '@/lib/auth';
 
-const JobCard = ({ job }) => (
+const JobCard = ({ job }) => {
+  const detailUrl = getFixerJobDetailRoute(job.booking_id);
+  console.log('JobCard URL for job', job.booking_id, ':', detailUrl);
+
+  return (
   <Motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -51,6 +57,17 @@ const JobCard = ({ job }) => (
               <p className="text-sm font-semibold text-[#1A1A1A]">{job.category_name}</p>
             </div>
           </div>
+          {job.urgent_level && (
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-red-50 rounded-lg text-red-400">
+                <Zap size={18} />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-0.5">Urgency</p>
+                <p className="text-sm font-semibold text-[#1A1A1A] capitalize">{job.urgent_level}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-[#F8F9FA] rounded-lg p-4">
@@ -63,39 +80,70 @@ const JobCard = ({ job }) => (
     </div>
 
     <Link
-      to={getFixerJobDetailRoute(job.booking_id)}
+      to={detailUrl}
       className="w-full bg-[#FF7A00] hover:bg-[#E66E00] text-white text-center block font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-orange-200"
     >
       View Detail
     </Link>
   </Motion.div>
-);
+  );
+};
 
 export default function JobList() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Get user ID from token
+  const tokenPayload = getTokenPayload();
+  const userId = tokenPayload?.id;
+
+  const { on, off } = useWebSocket(userId);
+
+  // Listen for booking missed events
   useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        setLoading(true);
-        const res = await httpClient.get('/fixer/provider/requests');
-        if (res.data.success) {
-          setJobs(res.data.data);
-        } else {
-          setError('Failed to load jobs');
-        }
-      } catch (err) {
-        console.error('Error fetching jobs:', err);
-        setError('Connection error. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
+    const handleBookingMissed = (data) => {
+      console.log('Booking missed:', data);
+      // Refresh the jobs list to remove the missed booking
+      fetchJobs();
     };
 
-    fetchJobs();
-  }, []);
+    on('booking_missed', handleBookingMissed);
+
+    return () => {
+      off('booking_missed', handleBookingMissed);
+    };
+  }, [on, off]);
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching jobs from /fixer/provider/requests...');
+
+      const res = await httpClient.get('/fixer/provider/requests');
+      console.log('API response:', res);
+
+      if (res.data && Array.isArray(res.data)) {
+        console.log('Fetched jobs:', res.data);
+        setJobs(res.data);
+      } else {
+        console.log('No jobs found');
+        setJobs([]);
+      }
+    } catch (err) {
+      console.error('Error fetching jobs:', err);
+      setError('Failed to load job requests. Please try again later.');
+      setJobs([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (userId) {
+      fetchJobs();
+    }
+  }, [userId]);
 
   return (
     <div className="max-w-5xl mx-auto">

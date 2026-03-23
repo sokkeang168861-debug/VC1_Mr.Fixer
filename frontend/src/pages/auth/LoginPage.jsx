@@ -29,7 +29,7 @@ export default function Login() {
     try {
       const res = await httpClient.post("/auth/login", { email, password });
       const { token, role } = res.data;
-
+      
       setToken(token);
       navigate(getDashboardByRole(role) || ROUTES.home);
     } catch (err) {
