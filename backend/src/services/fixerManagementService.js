@@ -1,6 +1,216 @@
 const FixerManagementModel = require("../models/fixerManagementModel");
+const bcrypt = require("bcrypt");
 
 class FixerManagementService {
+  static toOptionalString(value) {
+    if (value === undefined || value === null) return null;
+    const trimmed = String(value).trim();
+    return trimmed === "" ? null : trimmed;
+  }
+
+  static buildTemporaryPassword() {
+    const token = Math.random().toString(36).slice(-6);
+    return `Fixer@${token}1`;
+  }
+
+  static isLikelyConnectionResetError(error) {
+    const code = this.toOptionalString(error?.code) || "";
+    const message = this.toOptionalString(error?.message) || "";
+    const upperCode = code.toUpperCase();
+    const upperMessage = message.toUpperCase();
+
+    return (
+      upperCode === "ECONNRESET" ||
+      upperCode === "EPIPE" ||
+      upperCode === "PROTOCOL_CONNECTION_LOST" ||
+      upperCode === "ER_NET_PACKET_TOO_LARGE" ||
+      upperMessage.includes("ECONNRESET") ||
+      upperMessage.includes("PACKET TOO LARGE")
+    );
+  }
+
+  static parseCoordinateValue(value, name) {
+    const normalized = this.toOptionalString(value);
+    if (normalized === null) return null;
+
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed)) {
+      throw new Error(`${name} must be a valid number`);
+    }
+
+    return Number(parsed.toFixed(8));
+  }
+
+  static validateCoordinateRange(latitude, longitude) {
+    if (latitude < -90 || latitude > 90) {
+      throw new Error("Latitude must be between -90 and 90");
+    }
+    if (longitude < -180 || longitude > 180) {
+      throw new Error("Longitude must be between -180 and 180");
+    }
+  }
+
+  static async resolveCoordinates(payload = {}, fallbackLocation = null) {
+    const parsedLatitude = this.parseCoordinateValue(payload.latitude, "Latitude");
+    const parsedLongitude = this.parseCoordinateValue(
+      payload.longitude,
+      "Longitude"
+    );
+
+    const hasLatitude = parsedLatitude !== null;
+    const hasLongitude = parsedLongitude !== null;
+
+    if (hasLatitude !== hasLongitude) {
+      throw new Error("Latitude and longitude must be provided together");
+    }
+
+    if (hasLatitude && hasLongitude) {
+      this.validateCoordinateRange(parsedLatitude, parsedLongitude);
+      return { latitude: parsedLatitude, longitude: parsedLongitude };
+    }
+
+    return await this.geocodeLocation(fallbackLocation);
+  }
+
+  static extractCoordinatesFromText(locationText) {
+    const source = this.toOptionalString(locationText);
+    if (!source) return null;
+
+    const patterns = [
+      /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i,
+      /[?&](?:q|query|ll|sll)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i,
+      /(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/,
+    ];
+
+    for (const pattern of patterns) {
+      const match = source.match(pattern);
+      if (!match) continue;
+
+      const latitude = Number(match[1]);
+      const longitude = Number(match[2]);
+
+      if (
+        Number.isFinite(latitude) &&
+        Number.isFinite(longitude) &&
+        latitude >= -90 &&
+        latitude <= 90 &&
+        longitude >= -180 &&
+        longitude <= 180
+      ) {
+        return {
+          latitude: Number(latitude.toFixed(8)),
+          longitude: Number(longitude.toFixed(8)),
+        };
+      }
+    }
+
+    return null;
+  }
+
+  static async geocodeLocation(location) {
+    const normalizedLocation = this.toOptionalString(location);
+
+    if (!normalizedLocation) {
+      return { latitude: null, longitude: null };
+    }
+
+    const extracted = this.extractCoordinatesFromText(normalizedLocation);
+    if (extracted) {
+      return extracted;
+    }
+
+    if (typeof fetch !== "function") {
+      return { latitude: null, longitude: null };
+    }
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const params = new URLSearchParams({
+        format: "jsonv2",
+        q: normalizedLocation,
+        limit: "1",
+      });
+
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            "User-Agent": "MrFixer-Admin/1.0 (fixer-management-geocoding)",
+          },
+          signal: controller.signal,
+        }
+      );
+
+      if (!response.ok) {
+        return { latitude: null, longitude: null };
+      }
+
+      const results = await response.json();
+      const bestMatch = Array.isArray(results) ? results[0] : null;
+
+      const latitude = Number(bestMatch?.lat);
+      const longitude = Number(bestMatch?.lon);
+
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return { latitude: null, longitude: null };
+      }
+
+      return {
+        latitude: Number(latitude.toFixed(8)),
+        longitude: Number(longitude.toFixed(8)),
+      };
+    } catch (_error) {
+      return { latitude: null, longitude: null };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  static parseCategoryIds(rawCategoryIds) {
+    if (Array.isArray(rawCategoryIds)) {
+      return [
+        ...new Set(rawCategoryIds.map((id) => Number(id)).filter(Boolean)),
+      ];
+    }
+
+    if (
+      rawCategoryIds === undefined ||
+      rawCategoryIds === null ||
+      rawCategoryIds === ""
+    ) {
+      return [];
+    }
+
+    if (typeof rawCategoryIds === "string") {
+      const trimmed = rawCategoryIds.trim();
+      if (!trimmed) return [];
+
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return [...new Set(parsed.map((id) => Number(id)).filter(Boolean))];
+        }
+      } catch (_error) {
+        // Fallback to comma-separated parsing when the payload is plain string(s).
+      }
+
+      return [
+        ...new Set(
+          trimmed
+            .split(",")
+            .map((id) => Number(String(id).trim()))
+            .filter(Boolean)
+        ),
+      ];
+    }
+
+    return [];
+  }
+
   static async listFixers(db) {
     const records = await FixerManagementModel.getFixersWithStats(db);
 
@@ -19,42 +229,213 @@ class FixerManagementService {
       return {
         userId: item.userId,
         providerId: item.providerId,
-      fixerId,
-      name: item.fullName,
-      email: item.email,
-      phone: item.phone,
-      companyName: item.companyName,
-      location: item.location,
-      experience: item.experience,
-      bio: item.bio,
-      categories: categoriesArray,
-      categoryIds: Array.isArray(item.categoryIds) ? item.categoryIds : [],
-      totalBookings: item.totalBookings,
-      rating: item.overallRating,
-      avatar: item.avatar,
-    };
-  });
+        fixerId,
+        name: item.fullName,
+        email: item.email,
+        phone: item.phone,
+        companyName: item.companyName,
+        location: item.location,
+        latitude: item.latitude,
+        longitude: item.longitude,
+        experience: item.experience,
+        bio: item.bio,
+        categories: categoriesArray,
+        categoryIds: Array.isArray(item.categoryIds) ? item.categoryIds : [],
+        totalBookings: item.totalBookings,
+        rating: item.overallRating,
+        avatar: item.avatar,
+      };
+    });
   }
 
-  static async updateFixer(db, providerId, payload) {
+  static async createFixer(db, payload = {}, file = null) {
+    const fullName = this.toOptionalString(payload.fullName);
+    const email = this.toOptionalString(payload.email)?.toLowerCase();
+    const phone = this.toOptionalString(payload.phone);
+    const companyName = this.toOptionalString(payload.companyName);
+    const location = this.toOptionalString(payload.location);
+    const bio = this.toOptionalString(payload.bio);
+
+    if (!fullName || !email) {
+      throw new Error("Full name and email are required");
+    }
+
+    const experienceRaw = this.toOptionalString(payload.experience);
+    const experience =
+      experienceRaw === null ? null : Number.parseInt(experienceRaw, 10);
+
+    if (
+      experienceRaw !== null &&
+      (!Number.isFinite(experience) || Number.isNaN(experience) || experience < 0)
+    ) {
+      throw new Error("Experience must be a valid non-negative number");
+    }
+
+    const categoryIds = this.parseCategoryIds(payload.categoryIds);
+
+    const [existingRows] = await db.query(
+      "SELECT id FROM users WHERE email = ? LIMIT 1",
+      [email]
+    );
+    if (existingRows.length > 0) {
+      throw new Error("Email already exists");
+    }
+
+    const { latitude, longitude } = await this.resolveCoordinates(
+      payload,
+      location
+    );
+    const resolvedLocation =
+      location || (latitude !== null && longitude !== null
+        ? `${latitude}, ${longitude}`
+        : null);
+
+    const providedPassword = this.toOptionalString(payload.password);
+    const plainPassword = providedPassword || this.buildTemporaryPassword();
+
+    if (plainPassword.length < 6) {
+      throw new Error("Password must be at least 6 characters");
+    }
+
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+    const profileImg = file?.buffer || null;
+
+    const createPayload = {
+      fullName,
+      email,
+      phone,
+      profileImg,
+      hashedPassword,
+      companyName,
+      location: resolvedLocation,
+      latitude,
+      longitude,
+      experience,
+      bio,
+      categoryIds,
+    };
+
+    let result;
+    try {
+      result = await FixerManagementModel.createFixer(db, createPayload);
+    } catch (error) {
+      if (profileImg && this.isLikelyConnectionResetError(error)) {
+        throw new Error(
+          "Unable to save profile image. Please use a smaller image and try again"
+        );
+      }
+      throw error;
+    }
+
+    return {
+      ...result,
+      temporaryPassword: providedPassword ? null : plainPassword,
+    };
+  }
+
+  static async updateFixer(db, providerId, payload, file = null) {
     if (!providerId) {
       throw new Error("providerId is required");
     }
 
-    const categoryIds = Array.isArray(payload.categoryIds)
-      ? [...new Set(payload.categoryIds.map((id) => Number(id)).filter(Boolean))]
-      : [];
+    const categoryIds = this.parseCategoryIds(payload.categoryIds);
 
-    const result = await FixerManagementModel.updateFixer(db, providerId, {
-      fullName: payload.fullName,
-      email: payload.email,
-      phone: payload.phone,
-      companyName: payload.companyName,
-      location: payload.location,
-      experience: payload.experience,
-      bio: payload.bio,
-      categoryIds,
-    });
+    let providerRows = [];
+    try {
+      [providerRows] = await db.query(
+        "SELECT id, location, latitude, longitude FROM service_providers WHERE id = ? LIMIT 1",
+        [providerId]
+      );
+    } catch (error) {
+      if (error?.code !== "ER_BAD_FIELD_ERROR") {
+        throw error;
+      }
+
+      [providerRows] = await db.query(
+        "SELECT id, location FROM service_providers WHERE id = ? LIMIT 1",
+        [providerId]
+      );
+    }
+
+    if (providerRows.length === 0) {
+      return { found: false };
+    }
+
+    const nextLocation = this.toOptionalString(payload.location);
+    const currentLocation = this.toOptionalString(providerRows[0].location);
+    const currentLatitude =
+      providerRows[0].latitude === null || providerRows[0].latitude === undefined
+        ? null
+        : Number(providerRows[0].latitude);
+    const currentLongitude =
+      providerRows[0].longitude === null || providerRows[0].longitude === undefined
+        ? null
+        : Number(providerRows[0].longitude);
+
+    const coordinatePayload = {
+      latitude: payload.latitude,
+      longitude: payload.longitude,
+    };
+
+    const parsedLatitude = this.parseCoordinateValue(
+      coordinatePayload.latitude,
+      "Latitude"
+    );
+    const parsedLongitude = this.parseCoordinateValue(
+      coordinatePayload.longitude,
+      "Longitude"
+    );
+    const hasLatitude = parsedLatitude !== null;
+    const hasLongitude = parsedLongitude !== null;
+
+    if (hasLatitude !== hasLongitude) {
+      throw new Error("Latitude and longitude must be provided together");
+    }
+
+    let latitude = null;
+    let longitude = null;
+
+    if (hasLatitude && hasLongitude) {
+      this.validateCoordinateRange(parsedLatitude, parsedLongitude);
+      latitude = parsedLatitude;
+      longitude = parsedLongitude;
+    } else if (nextLocation && nextLocation !== currentLocation) {
+      const coordinates = await this.geocodeLocation(nextLocation);
+      latitude = coordinates.latitude;
+      longitude = coordinates.longitude;
+    } else {
+      latitude = currentLatitude;
+      longitude = currentLongitude;
+    }
+
+    const resolvedLocation =
+      nextLocation ||
+      currentLocation ||
+      (latitude !== null && longitude !== null ? `${latitude}, ${longitude}` : null);
+
+    let result;
+    try {
+      result = await FixerManagementModel.updateFixer(db, providerId, {
+        fullName: payload.fullName,
+        email: payload.email,
+        phone: payload.phone,
+        profileImg: file?.buffer || null,
+        companyName: payload.companyName,
+        location: resolvedLocation,
+        latitude,
+        longitude,
+        experience: payload.experience,
+        bio: payload.bio,
+        categoryIds,
+      });
+    } catch (error) {
+      if (file?.buffer && this.isLikelyConnectionResetError(error)) {
+        throw new Error(
+          "Unable to save profile image. Please use a smaller image and try again"
+        );
+      }
+      throw error;
+    }
 
     return result;
   }

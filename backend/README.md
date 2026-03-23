@@ -32,7 +32,7 @@ cp .env.example .env
 Open `.env` and fill in your values:
 
 ```env
-PORT=5000
+PORT=5001
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
@@ -40,6 +40,8 @@ DB_PASSWORD=your_db_password
 DB_NAME=mr_fixer_db
 JWT_SECRET=a_long_random_secret_string
 FRONTEND_URL=http://localhost:5173   # your frontend origin
+SEED_FIXER_EMAIL=fixer@mrfixer.com   # optional seed account
+SEED_CUSTOMER_EMAIL=customer@mrfixer.com   # optional seed account
 ```
 
 > **Tip:** Generate a strong JWT secret with:
@@ -74,7 +76,7 @@ npm run seed
 npm run dev
 ```
 
-The API will be available at `http://localhost:5000`.
+The API will be available at `http://localhost:5001`.
 
 ---
 
@@ -183,16 +185,15 @@ It covers:
 
 ---
 
-## Vercel deployment
+## Deployment
 
-**Quick deployment?** Follow [DEPLOYMENT_QUICKSTART.md](./DEPLOYMENT_QUICKSTART.md) (checklist format, ~25 min).
+Use the VPS deployment guide in the repository root:
 
-**Need detailed explanations?** See [DEPLOYMENT.md](./DEPLOYMENT.md) for the complete step-by-step guide covering:
-- Set up a cloud database (PlanetScale, AWS RDS, etc.)
-- Configure environment variables in Vercel
-- Run database migrations on the cloud server
-- GitHub Actions automation
-- Troubleshooting
+- `../DEPLOY_NGINX_PM2_DEV.md`
 
-**Key point:** Vercel has no persistent filesystem, so you need a cloud database (not `localhost`).
-Set your database credentials (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`) in Vercel's environment settings, then run migrations.
+It covers:
+
+- Nginx reverse proxy setup
+- PM2 backend process management
+- Frontend static hosting on the same server
+- Auto deployment when `dev` updates

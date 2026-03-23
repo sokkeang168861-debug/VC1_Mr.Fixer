@@ -13,6 +13,13 @@ const FixerManagementController = require("../controllers/fixerManagementControl
 router.get("/stats", protect, adminCheck, getUserStats);
 
 // ---------- Fixer Management ----------
+router.post(
+  "/fixers",
+  protect,
+  adminCheck,
+  upload.single("profile_img"),
+  FixerManagementController.createFixer
+);
 router.get(
   "/fixers",
   protect,
@@ -23,6 +30,7 @@ router.put(
   "/fixers/:id",
   protect,
   adminCheck,
+  upload.single("profile_img"),
   FixerManagementController.updateFixer
 );
 router.delete(
