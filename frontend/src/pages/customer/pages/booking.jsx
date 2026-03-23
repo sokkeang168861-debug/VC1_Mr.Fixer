@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+import { LoaderCircle, X } from "lucide-react";
 import { ROUTES } from "@/config/routes";
 import { logoutUser } from "@/lib/session";
+import { createAppSocket } from "@/lib/socket";
 import httpClient from "@/api/httpClient";
 import { Sidebar, Header } from "../components/navbar";
 import ProgressBar from "../components/ProgressBar";
@@ -25,6 +26,78 @@ export default function CustomerBooking() {
     const [bookingDraft, setBookingDraft] = useState(null);
     const [bookingError, setBookingError] = useState("");
     const [submittingBooking, setSubmittingBooking] = useState(false);
+    const [activeBooking, setActiveBooking] = useState(null);
+    const [loadingBooking, setLoadingBooking] = useState(true);
+    const [refreshingBooking, setRefreshingBooking] = useState(false);
+    const [confirmingBooking, setConfirmingBooking] = useState(false);
+    const [rejectingBooking, setRejectingBooking] = useState(false);
+
+    const syncStepWithBooking = useCallback((booking) => {
+        if (!booking) {
+            setCurrentStep((step) => (step >= 3 ? 1 : step));
+            return;
+        }
+
+        if (booking.status === "pending") {
+            setCurrentStep(3);
+            return;
+        }
+
+        if (booking.status === "fixer_accept") {
+            setCurrentStep(4);
+            return;
+        }
+
+        if (booking.status === "customer_accept") {
+            setCurrentStep(5);
+        }
+    }, []);
+
+    const loadLatestActiveBooking = useCallback(async ({ silent = false } = {}) => {
+        if (silent) {
+            setRefreshingBooking(true);
+        } else {
+            setLoadingBooking(true);
+        }
+
+        try {
+            const { data } = await httpClient.get("/user/bookings/latest-active");
+            const nextBooking = data?.booking ?? null;
+            setActiveBooking(nextBooking);
+            syncStepWithBooking(nextBooking);
+            setBookingError("");
+        } catch (error) {
+            console.error(error);
+            if (!silent) {
+                setBookingError(error.response?.data?.message || "Failed to load your current booking.");
+            }
+        } finally {
+            if (silent) {
+                setRefreshingBooking(false);
+            } else {
+                setLoadingBooking(false);
+            }
+        }
+    }, [syncStepWithBooking]);
+
+    useEffect(() => {
+        loadLatestActiveBooking();
+    }, [loadLatestActiveBooking]);
+
+    useEffect(() => {
+        const socket = createAppSocket();
+
+        socket.on("booking:updated", (booking) => {
+            setActiveBooking(booking);
+            syncStepWithBooking(booking);
+            setBookingError("");
+            setRefreshingBooking(false);
+        });
+
+        return () => {
+            socket.disconnect();
+        };
+    }, [syncStepWithBooking]);
 
     const handleLogout = async () => {
         await logoutUser({ navigate, redirectTo: ROUTES.home });
@@ -40,6 +113,7 @@ export default function CustomerBooking() {
         setBookingDraft(null);
         setBookingError("");
         setSubmittingBooking(false);
+        setActiveBooking(null);
         setCurrentStep(1);
     };
 
@@ -70,18 +144,69 @@ export default function CustomerBooking() {
                 formData.append("images", file);
             });
 
-            await httpClient.post("/user/bookings", formData, {
+            const { data } = await httpClient.post("/user/bookings", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
             });
 
-            setCurrentStep(3);
+            const nextBooking = {
+                id: data?.bookingId,
+                category_name: bookingDraft.categoryName,
+                issue_description: bookingDraft.issueDescription,
+                service_address: bookingDraft.serviceAddress,
+                status: "pending",
+            };
+            setActiveBooking(nextBooking);
+            syncStepWithBooking(nextBooking);
         } catch (error) {
             console.error(error);
             setBookingError(error.response?.data?.message || "Failed to create booking.");
         } finally {
             setSubmittingBooking(false);
+        }
+    };
+
+    const handleConfirmBooking = async () => {
+        if (!activeBooking?.id) {
+            return;
+        }
+
+        setConfirmingBooking(true);
+        setBookingError("");
+
+        try {
+            const { data } = await httpClient.post(`/user/bookings/${activeBooking.id}/confirm`);
+            const nextBooking = data?.booking ?? null;
+            setActiveBooking(nextBooking);
+            syncStepWithBooking(nextBooking);
+        } catch (error) {
+            console.error(error);
+            setBookingError(error.response?.data?.message || "Failed to confirm booking.");
+        } finally {
+            setConfirmingBooking(false);
+        }
+    };
+
+    const handleRejectBooking = async () => {
+        if (!activeBooking?.id) {
+            return;
+        }
+
+        setRejectingBooking(true);
+        setBookingError("");
+
+        try {
+            await httpClient.post(`/user/bookings/${activeBooking.id}/reject`);
+            setActiveBooking(null);
+            setBookingDraft(null);
+            setCurrentStep(1);
+            navigate(ROUTES.dashboardCustomer);
+        } catch (error) {
+            console.error(error);
+            setBookingError(error.response?.data?.message || "Failed to reject booking.");
+        } finally {
+            setRejectingBooking(false);
         }
     };
 
@@ -112,6 +237,31 @@ export default function CustomerBooking() {
         if (currentStep === 5 || currentStep === 6) return 4;
         return 5;
     };
+
+    if (loadingBooking) {
+        return (
+            <div className="flex h-screen flex-col overflow-hidden">
+                <Header />
+
+                <div className="flex flex-1 overflow-hidden">
+                    <Sidebar
+                        activeTab="booking"
+                        onChange={handleSidebarChange}
+                        onLogout={handleLogout}
+                        sticky={false}
+                        scrollNav={false}
+                    />
+
+                    <main className="flex flex-1 items-center justify-center p-10">
+                        <div className="flex items-center gap-3 rounded-2xl bg-white px-6 py-5 text-slate-500 shadow-sm">
+                            <LoaderCircle className="h-5 w-5 animate-spin" />
+                            <span>Loading your current booking...</span>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-screen flex-col overflow-hidden">
@@ -149,14 +299,27 @@ export default function CustomerBooking() {
                         {currentStep <= 7 && <ProgressBar currentStep={getProgressBarStep()} />}
 
                         <div className="mt-8">
-                            {currentStep === 1 && (
+                            {activeBooking?.status === "pending" ? (
+                                <WaitingConfirmation
+                                    booking={activeBooking}
+                                    refreshing={refreshingBooking}
+                                    onRefresh={() => loadLatestActiveBooking({ silent: true })}
+                                />
+                            ) : activeBooking?.status === "fixer_accept" ? (
+                                <BookingAgreement
+                                    booking={activeBooking}
+                                    submitting={confirmingBooking || rejectingBooking}
+                                    onConfirm={handleConfirmBooking}
+                                    onReject={handleRejectBooking}
+                                />
+                            ) : currentStep === 1 && (
                                 <BookingForm
                                     initialData={bookingDraft}
                                     onNext={handleBookingDraftNext}
                                 />
                             )}
 
-                            {currentStep === 2 && (
+                            {!activeBooking && currentStep === 2 && (
                                 <FindFixer
                                     bookingDraft={bookingDraft}
                                     error={bookingError}
@@ -165,38 +328,51 @@ export default function CustomerBooking() {
                                 />
                             )}
 
-                            {currentStep === 3 && (
-                                <WaitingConfirmation onConfirmed={() => setCurrentStep(4)} />
-                            )}
-
-                            {currentStep === 4 && (
-                                <BookingAgreement 
-                                    onConfirm={() => setCurrentStep(5)} 
-                                    onReject={() => setCurrentStep(2)} 
-                                />
-                            )}
-
-                            {currentStep === 5 && (
+                            {!activeBooking && currentStep === 5 && (
                                 <FixerArrival onArrived={() => setCurrentStep(6)} />
                             )}
 
-                            {currentStep === 6 && (
+                            {activeBooking?.status === "customer_accept" && currentStep === 5 && (
+                                <FixerArrival onArrived={() => setCurrentStep(6)} />
+                            )}
+
+                            {!activeBooking && currentStep === 6 && (
                                 <FixingInProgress onComplete={() => setCurrentStep(7)} />
                             )}
 
-                            {currentStep === 7 && (
+                            {activeBooking?.status === "customer_accept" && currentStep === 6 && (
+                                <FixingInProgress onComplete={() => setCurrentStep(7)} />
+                            )}
+
+                            {!activeBooking && currentStep === 7 && (
                                 <ServiceCompleted onPayment={() => setCurrentStep(8)} />
                             )}
 
-                            {currentStep === 8 && (
+                            {activeBooking?.status === "customer_accept" && currentStep === 7 && (
+                                <ServiceCompleted onPayment={() => setCurrentStep(8)} />
+                            )}
+
+                            {!activeBooking && currentStep === 8 && (
                                 <PaymentScreen onPaymentComplete={() => setCurrentStep(9)} />
                             )}
 
-                            {currentStep === 9 && (
+                            {activeBooking?.status === "customer_accept" && currentStep === 8 && (
+                                <PaymentScreen onPaymentComplete={() => setCurrentStep(9)} />
+                            )}
+
+                            {!activeBooking && currentStep === 9 && (
                                 <PaymentSuccess onSubmitReview={() => setCurrentStep(10)} />
                             )}
 
-                            {currentStep === 10 && (
+                            {activeBooking?.status === "customer_accept" && currentStep === 9 && (
+                                <PaymentSuccess onSubmitReview={() => setCurrentStep(10)} />
+                            )}
+
+                            {!activeBooking && currentStep === 10 && (
+                                <FeedbackSuccess onGoToHistory={() => navigate(ROUTES.dashboardCustomerHistory)} />
+                            )}
+
+                            {activeBooking?.status === "customer_accept" && currentStep === 10 && (
                                 <FeedbackSuccess onGoToHistory={() => navigate(ROUTES.dashboardCustomerHistory)} />
                             )}
                         </div>

@@ -17,9 +17,14 @@ function normalizeScheduledAt(value) {
 class BookingService {
   static async createBooking(db, user, body, files = []) {
     const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
 
     if (!customerId) {
       throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can create bookings" };
     }
 
     const {
@@ -66,6 +71,71 @@ class BookingService {
     };
 
     return await BookingModel.createBooking(db, payload, files);
+  }
+
+  static async getLatestActiveBooking(db, user) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can access bookings" };
+    }
+
+    return await BookingModel.getLatestActiveBookingByCustomerId(db, customerId);
+  }
+
+  static async confirmBooking(db, user, bookingId) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can confirm bookings" };
+    }
+
+    const result = await BookingModel.confirmBookingByCustomer(
+      db,
+      Number(bookingId),
+      customerId
+    );
+
+    if (!result?.affectedRows) {
+      throw { status: 404, message: "Booking not found or not ready for confirmation" };
+    }
+
+    return await BookingModel.getBookingDetailsById(db, Number(bookingId), customerId);
+  }
+
+  static async rejectBooking(db, user, bookingId) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can reject bookings" };
+    }
+
+    const result = await BookingModel.rejectBookingByCustomer(
+      db,
+      Number(bookingId),
+      customerId
+    );
+
+    if (!result?.affectedRows) {
+      throw { status: 404, message: "Booking not found or not ready for rejection" };
+    }
+
+    return { id: Number(bookingId), status: "customer_reject" };
   }
 }
 

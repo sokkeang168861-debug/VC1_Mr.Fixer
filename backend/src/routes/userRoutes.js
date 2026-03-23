@@ -20,5 +20,20 @@ router.post(
   upload.array("images", 3),
   (req, res) => CustomerBookingController.createBooking(req, res)
 );
+router.get(
+  "/bookings/latest-active",
+  protect,
+  (req, res) => CustomerBookingController.getLatestActiveBooking(req, res)
+);
+router.post(
+  "/bookings/:id/confirm",
+  protect,
+  (req, res) => CustomerBookingController.confirmBooking(req, res)
+);
+router.post(
+  "/bookings/:id/reject",
+  protect,
+  (req, res) => CustomerBookingController.rejectBooking(req, res)
+);
 
 module.exports = router;

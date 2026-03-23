@@ -203,6 +203,7 @@ const BookingForm = ({ onNext, initialData }) => {
 
     onNext?.({
       categoryId: Number(selectedCategory),
+      categoryName: categories.find((category) => category.id === selectedCategory)?.name || '',
       issueDescription: issueDescription.trim(),
       serviceAddress: serviceAddress.trim(),
       latitude: Number(latitude),
