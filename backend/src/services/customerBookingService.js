@@ -1,14 +1,10 @@
 const BookingModel = require("../models/customerBookingModel");
 
 function normalizeScheduledAt(value) {
-  if (!value) {
-    return null;
-  }
+  if (!value) return null;
 
   const normalized = String(value).trim();
-  if (!normalized) {
-    return null;
-  }
+  if (!normalized) return null;
 
   const withSpace = normalized.replace("T", " ");
   return withSpace.length === 16 ? `${withSpace}:00` : withSpace;
@@ -17,9 +13,14 @@ function normalizeScheduledAt(value) {
 class BookingService {
   static async createBooking(db, user, body, files = []) {
     const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
 
     if (!customerId) {
       throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can create bookings" };
     }
 
     const {
@@ -39,7 +40,14 @@ class BookingService {
       };
     }
 
-    if (latitude === undefined || latitude === null || latitude === "" || longitude === undefined || longitude === null || longitude === "") {
+    if (
+      latitude === undefined ||
+      latitude === null ||
+      latitude === "" ||
+      longitude === undefined ||
+      longitude === null ||
+      longitude === ""
+    ) {
       throw {
         status: 400,
         message: "Location (latitude & longitude) is required",
@@ -70,12 +78,95 @@ class BookingService {
 
   static async getCompletedHistory(db, user) {
     const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
 
     if (!customerId) {
       throw { status: 401, message: "Unauthorized" };
     }
 
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can access history" };
+    }
+
     return await BookingModel.getCompletedHistory(db, customerId);
+  }
+
+  static async getLatestActiveBooking(db, user) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can access bookings" };
+    }
+
+    return await BookingModel.getLatestActiveBookingByCustomerId(
+      db,
+      customerId
+    );
+  }
+
+  static async confirmBooking(db, user, bookingId) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can confirm bookings" };
+    }
+
+    const result = await BookingModel.confirmBookingByCustomer(
+      db,
+      Number(bookingId),
+      customerId
+    );
+
+    if (!result?.affectedRows) {
+      throw {
+        status: 404,
+        message: "Booking not found or not ready for confirmation",
+      };
+    }
+
+    return await BookingModel.getBookingDetailsById(
+      db,
+      Number(bookingId),
+      customerId
+    );
+  }
+
+  static async rejectBooking(db, user, bookingId) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can reject bookings" };
+    }
+
+    const result = await BookingModel.rejectBookingByCustomer(
+      db,
+      Number(bookingId),
+      customerId
+    );
+
+    if (!result?.affectedRows) {
+      throw {
+        status: 404,
+        message: "Booking not found or not ready for rejection",
+      };
+    }
+
+    return { id: Number(bookingId), status: "customer_reject" };
   }
 }
 

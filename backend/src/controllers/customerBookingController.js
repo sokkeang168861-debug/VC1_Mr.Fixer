@@ -1,15 +1,37 @@
 const customerBookingService = require("../services/customerBookingService.js");
+const { emitNewBooking } = require("../realtime/socketServer");
+const CustomerBookingModel = require("../models/customerBookingModel");
 
 class CustomerBookingController {
   async createBooking(req, res) {
     const db = req.app.get("db");
+    const io = req.app.get("io");
 
     try {
-      const result = await customerBookingService.createBooking(db, req.user, req.body, req.files || []);
+      // service already returns FULL booking
+      const booking = await customerBookingService.createBooking(
+        db,
+        req.user,
+        req.body,
+        req.files || []
+      );
+
+      const bookingId = booking.id;
+
+      // Get provider to notify
+      const providerUserId =
+        await CustomerBookingModel.getProviderUserIdByServiceId(
+          db,
+          booking.service_id
+        );
+
+      if (providerUserId) {
+        emitNewBooking(io, providerUserId, booking);
+      }
 
       res.status(201).json({
         message: "Booking created successfully",
-        bookingId: result.insertId,
+        data: booking,
       });
     } catch (err) {
       res.status(err.status || 500).json({
@@ -22,7 +44,10 @@ class CustomerBookingController {
     const db = req.app.get("db");
 
     try {
-      const bookings = await customerBookingService.getCompletedHistory(db, req.user);
+      const bookings = await customerBookingService.getCompletedHistory(
+        db,
+        req.user
+      );
 
       res.status(200).json({
         message: "Completed booking history fetched successfully",
@@ -31,6 +56,90 @@ class CustomerBookingController {
     } catch (err) {
       res.status(err.status || 500).json({
         message: err.message || "Failed to fetch booking history",
+      });
+    }
+  }
+
+  async getLatestActiveBooking(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const booking =
+        await customerBookingService.getLatestActiveBooking(
+          db,
+          req.user
+        );
+
+      res.json({ booking });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to load booking",
+      });
+    }
+  }
+
+  async confirmBooking(req, res) {
+    const db = req.app.get("db");
+    const io = req.app.get("io");
+
+    try {
+      const booking = await customerBookingService.confirmBooking(
+        db,
+        req.user,
+        req.params.id
+      );
+
+      // 🔥 notify provider in real-time
+      const providerUserId =
+        await CustomerBookingModel.getProviderUserIdByServiceId(
+          db,
+          booking.service_id
+        );
+
+      if (providerUserId) {
+        io.to(`user_${providerUserId}`).emit("booking_confirmed", booking);
+      }
+
+      res.json({
+        booking,
+        message: "Booking confirmed successfully",
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to confirm booking",
+      });
+    }
+  }
+
+  async rejectBooking(req, res) {
+    const db = req.app.get("db");
+    const io = req.app.get("io");
+
+    try {
+      const booking = await customerBookingService.rejectBooking(
+        db,
+        req.user,
+        req.params.id
+      );
+
+      // 🔥 notify provider
+      const providerUserId =
+        await CustomerBookingModel.getProviderUserIdByServiceId(
+          db,
+          req.body.service_id // ⚠️ may need adjustment if not passed
+        );
+
+      if (providerUserId) {
+        io.to(`user_${providerUserId}`).emit("booking_rejected", booking);
+      }
+
+      res.json({
+        booking,
+        message: "Booking rejected successfully",
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to reject booking",
       });
     }
   }

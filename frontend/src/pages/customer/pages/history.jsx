@@ -411,16 +411,6 @@ export default function CustomerHistoryPage() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowDatePicker(true)}
-                          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:border-purple-200 hover:text-purple-700"
-                        >
-                          <Calendar className="h-4 w-4" />
-                          {dateFilterLabel}
-                          <ChevronDown className="h-4 w-4 text-slate-400" />
-                        </button>
-
                         <div className="relative">
                           <button
                             type="button"

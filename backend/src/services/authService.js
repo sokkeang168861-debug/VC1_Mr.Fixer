@@ -97,10 +97,10 @@ const login = async (db, data) => {
 
 
 // ===============================CHANGE PASSWORD================================
-const changePassword = async (db, userEmail, data) => {
+const changePassword = async (db, userId, data) => {
   const { currentPassword, newPassword } = data || {};
 
-  if (!userEmail) {
+  if (!userId) {
     throw new Error("Not authenticated");
   }
 
@@ -115,7 +115,7 @@ const changePassword = async (db, userEmail, data) => {
     throw new Error("New password must be at least 6 characters");
   }
 
-  const user = await User.findByEmail(db, userEmail);
+  const user = await User.findAuthById(db, userId);
   if (!user) {
     throw new Error("User not found");
   }
@@ -125,8 +125,17 @@ const changePassword = async (db, userEmail, data) => {
     throw new Error("Current password is incorrect");
   }
 
+  const isSamePassword = await bcrypt.compare(String(newPassword), user.password);
+  if (isSamePassword) {
+    throw new Error("New password must be different from current password");
+  }
+
   const hashed = await bcrypt.hash(String(newPassword), 10);
-  await User.updatePasswordById(db, user.id, hashed);
+  const result = await User.updatePasswordById(db, user.id, hashed);
+
+  if (!result?.affectedRows) {
+    throw new Error("Failed to update password");
+  }
 
   return { message: "Password updated" };
 };
