@@ -1,6 +1,7 @@
 const express = require("express");
 const protect = require("../middleware/authMiddleware");
 const FixerDashboardController = require("../controllers/fixerDashboardController");
+const FixerProfitController = require("../controllers/fixerProfitController");
 const upload = require("../middleware/upload");
 const {
   getFixerProfile,
@@ -17,6 +18,9 @@ router.get("/homepage", protect, (req, res) =>
 );
 router.get("/summary-cards", protect, (req, res) =>
   FixerDashboardController.getSummaryCards(req, res)
+);
+router.get("/profit", protect, (req, res) =>
+  FixerProfitController.getProfitData(req, res)
 );
 router.get("/settings/profile", protect, getFixerProfile);
 router.put(

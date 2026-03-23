@@ -7,6 +7,7 @@ export default function SearchFilter({
   setSelectedMonth,
   selectedYear,
   setSelectedYear,
+  showSearch = true,
 }) {
   const months = [
     'January','February','March','April','May','June',
@@ -17,22 +18,21 @@ export default function SearchFilter({
 
   return (
     <section className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className={`flex flex-col gap-4 md:flex-row ${showSearch ? "" : "md:justify-end"}`}>
+        {showSearch ? (
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              placeholder="Search by Job ID or Client..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+        ) : null}
 
-        {/* Search */}
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Search by Job ID or Client..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-          />
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-4">
+        <div className="flex gap-4 md:ml-auto">
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
