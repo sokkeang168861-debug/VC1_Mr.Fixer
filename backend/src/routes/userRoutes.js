@@ -13,6 +13,11 @@ router.get("/currentUser", protect, getCurrentUser);
 
 router.get("/allCategories", ServiceCategoryController.getAvailableCategories);
 router.get("/providersEachCategory/:categoryId", ServiceCategoryController.getProvidersByCategory);
+router.get(
+  "/bookings/history",
+  protect,
+  (req, res) => CustomerBookingController.getCompletedHistory(req, res)
+);
 
 router.post(
   "/bookings",

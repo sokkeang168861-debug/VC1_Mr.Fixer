@@ -17,6 +17,23 @@ class CustomerBookingController {
       });
     }
   }
+
+  async getCompletedHistory(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const bookings = await customerBookingService.getCompletedHistory(db, req.user);
+
+      res.status(200).json({
+        message: "Completed booking history fetched successfully",
+        data: bookings,
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to fetch booking history",
+      });
+    }
+  }
 }
 
 module.exports = new CustomerBookingController();

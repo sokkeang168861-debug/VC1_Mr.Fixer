@@ -67,6 +67,16 @@ class BookingService {
 
     return await BookingModel.createBooking(db, payload, files);
   }
+
+  static async getCompletedHistory(db, user) {
+    const customerId = user?.id;
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    return await BookingModel.getCompletedHistory(db, customerId);
+  }
 }
 
 module.exports = BookingService;
