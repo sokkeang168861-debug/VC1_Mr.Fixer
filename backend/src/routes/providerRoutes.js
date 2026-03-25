@@ -1,6 +1,7 @@
 const express = require("express");
 const protect = require("../middleware/authMiddleware");
 const FixerDashboardController = require("../controllers/fixerDashboardController");
+const FixerProfitController = require("../controllers/fixerProfitController");
 const upload = require("../middleware/upload");
 const {
   getFixerProfile,
@@ -8,7 +9,7 @@ const {
   updateFixerLocation,
   updateFixerNotifications,
 } = require("../controllers/fixerProfileController");
-const ProviderRequestController = require("../controllers/bookingController");
+const FixerBookingController = require("../controllers/FixerBookingController");
 
 const router = express.Router();
 
@@ -17,6 +18,9 @@ router.get("/homepage", protect, (req, res) =>
 );
 router.get("/summary-cards", protect, (req, res) =>
   FixerDashboardController.getSummaryCards(req, res)
+);
+router.get("/profit", protect, (req, res) =>
+  FixerProfitController.getProfitData(req, res)
 );
 router.get("/settings/profile", protect, getFixerProfile);
 router.put(
@@ -31,16 +35,21 @@ router.put("/settings/notifications", protect, updateFixerNotifications);
 router.get(
   "/provider/requests",
   protect,
-  ProviderRequestController.getAllRequests
+  FixerBookingController.getAllRequests
 );
 router.get(
   "/provider/requests/:id",
   protect,
-  ProviderRequestController.getRequestById
+  FixerBookingController.getRequestById
 );
 router.post(
   "/provider/requests/:id/accept",
   protect,
-  ProviderRequestController.acceptAndSetProposal
+  FixerBookingController.acceptAndSetProposal
+);
+router.post(
+  "/provider/requests/:id/reject",
+  protect,
+  FixerBookingController.rejectBooking
 );
 module.exports = router;

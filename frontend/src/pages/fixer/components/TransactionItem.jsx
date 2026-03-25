@@ -1,51 +1,90 @@
-import React from 'react';
 import { User } from 'lucide-react';
 
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+});
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+const timeFormatter = new Intl.DateTimeFormat("en-US", {
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+function formatDate(value) {
+  if (!value) return "N/A";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "N/A";
+  }
+
+  return dateFormatter.format(date);
+}
+
+function formatTime(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return timeFormatter.format(date);
+}
+
 const TransactionItem = ({
-  jobId,
-  date,
-  time,
+  bookingId,
+  createdAt,
   userName,
   totalPaid,
+  serviceFee,
   commission,
-  netPayout
+  netPayout,
 }) => {
   return (
     <div className="border-b border-gray-100 last:border-b-0">
-      <div className="px-4 py-3 hover:bg-gray-50 transition-colors">
-        <div className="grid grid-cols-6 gap-4 items-center text-sm">
-          {/* Job ID */}
+      <div className="px-4 py-3 transition-colors hover:bg-gray-50">
+        <div className="grid grid-cols-6 items-center gap-4 text-sm">
           <div className="font-medium text-gray-900">
-            #{jobId}
+            #{bookingId}
           </div>
-          
-          {/* Date & Time */}
+
           <div>
-            <div className="text-sm font-semibold text-gray-900">{date}</div>
-            <div className="text-xs text-gray-500">{time}</div>
+            <div className="text-sm font-semibold text-gray-900">
+              {formatDate(createdAt)}
+            </div>
+            <div className="text-xs text-gray-500">{formatTime(createdAt)}</div>
           </div>
-          
-          {/* User */}
+
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-              <User className="w-3 h-3 text-gray-600" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200">
+              <User className="h-3 w-3 text-gray-600" />
             </div>
             <span className="text-gray-700">{userName}</span>
           </div>
-          
-          {/* Total Paid */}
-          <div className="font-medium text-gray-900">
-            ${totalPaid}
+
+          <div>
+            <div className="font-medium text-gray-900">
+              {currencyFormatter.format(Number(totalPaid || 0))}
+            </div>
+            <div className="text-xs text-gray-500">
+              Service fee: {currencyFormatter.format(Number(serviceFee || 0))}
+            </div>
           </div>
-          
-          {/* Commission */}
-          <div className="text-gray-600">
-            {commission}%
+
+          <div className="font-medium text-orange-600">
+            {currencyFormatter.format(Number(commission || 0))}
           </div>
-          
-          {/* Net Payout */}
+
           <div className="font-semibold text-gray-900">
-            ${netPayout}
+            {currencyFormatter.format(Number(netPayout || 0))}
           </div>
         </div>
       </div>

@@ -24,6 +24,11 @@ router.put("/location", protect, updateCustomerLocation);
 
 router.get("/allCategories", ServiceCategoryController.getAvailableCategories);
 router.get("/providersEachCategory/:categoryId", ServiceCategoryController.getProvidersByCategory);
+router.get(
+  "/bookings/history",
+  protect,
+  (req, res) => CustomerBookingController.getCompletedHistory(req, res)
+);
 
 router.post(
   "/bookings",
@@ -45,6 +50,11 @@ router.post(
   "/bookings/:id/reject",
   protect,
   (req, res) => CustomerBookingController.rejectBooking(req, res)
+);
+router.post(
+  "/bookings/:id/review",
+  protect,
+  (req, res) => CustomerBookingController.submitReview(req, res)
 );
 
 module.exports = router;

@@ -32,7 +32,6 @@ class FixerDashboardModel {
           SUM(
             COALESCE(
               payment_totals.payment_amount,
-              b.service_fee,
               receipt_totals.receipt_amount,
               proposal_totals.proposal_amount,
               0

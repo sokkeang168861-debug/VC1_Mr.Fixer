@@ -5,7 +5,10 @@ const protect = require("../middleware/authMiddleware");
 const adminCheck = require("../middleware/adminMiddleware");
 const upload = require("../middleware/upload");
 
-const { getUserStats } = require("../controllers/adminController");
+const {
+  getUserStats,
+  getTransactionLedger,
+} = require("../controllers/adminController");
 const {
   getAllUsers,
   getCustomerById,
@@ -21,6 +24,7 @@ router.get("/users", protect, adminCheck, getAllUsers);
 router.get("/users/:id", protect, adminCheck, getCustomerById);
 router.put("/users/:id", protect, adminCheck, updateCustomer);
 router.delete("/users/:id", protect, adminCheck, deleteCustomer);
+router.get("/transactions", protect, adminCheck, getTransactionLedger);
 
 // ---------- Fixer Management ----------
 router.post(
@@ -35,6 +39,12 @@ router.get(
   protect,
   adminCheck,
   FixerManagementController.getFixers
+);
+router.get(
+  "/fixers/:id/detail",
+  protect,
+  adminCheck,
+  FixerManagementController.getFixerDetail
 );
 router.put(
   "/fixers/:id",

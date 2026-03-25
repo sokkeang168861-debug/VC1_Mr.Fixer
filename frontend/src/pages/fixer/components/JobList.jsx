@@ -9,10 +9,10 @@ import { Link } from 'react-router-dom';
 import { getFixerJobDetailRoute } from '@/config/routes';
 import { resolveUploadUrl } from '@/lib/assets';
 import httpClient from '../../../api/httpClient';
+import { createAppSocket } from '@/lib/socket';
 
 const JobCard = ({ job }) => {
   const detailUrl = getFixerJobDetailRoute(job.booking_id);
-  console.log('JobCard URL for job', job.booking_id, ':', detailUrl);
   
   return (
   <Motion.div
@@ -81,66 +81,43 @@ export default function JobList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchJobs = async () => {
-      try {
-        setLoading(true);
-        console.log('Fetching jobs from /fixer/provider/requests...');
-        
-        // For now, always use mock data to test the UI
-        console.log('Using mock data for testing');
-        setJobs(getMockJobs());
-        
-        // Uncomment below when API is ready
-        /*
-        try {
-          const res = await httpClient.get('/fixer/provider/requests');
-          console.log('API response:', res);
-          console.log('Response data:', res.data);
-          if (res.data.success && res.data.data.length > 0) {
-            console.log('Fetched jobs:', res.data.data);
-            setJobs(res.data.data);
-          } else {
-            console.log('API returned no data, using mock data');
-            setJobs(getMockJobs());
-          }
-        } catch (apiErr) {
-          console.log('API failed, using mock data:', apiErr);
-          setJobs(getMockJobs());
-        }
-        */
-      } catch (err) {
-        console.error('Error fetching jobs:', err);
-        setError('Connection error. Please try again later.');
-      } finally {
-        setLoading(false);
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      const res = await httpClient.get('/fixer/provider/requests');
+      if (res.data.success) {
+        setJobs(res.data.data);
       }
-    };
-
-    fetchJobs();
-  }, []);
-
-  // Mock data for testing
-  const getMockJobs = () => [
-    {
-      booking_id: '8842',
-      created_at: new Date().toISOString(),
-      customer_name: 'Michael Richardson',
-      category_name: 'Plumbing Repair',
-      issue_description: 'Kitchen sink is leaking significantly from the main pipe underneath. Water is pooling in the cabinet. Need urgent assistance.',
-      service_address: '123 Main St, Phnom Penh',
-      issue_image: null
-    },
-    {
-      booking_id: '8843',
-      created_at: new Date(Date.now() - 15 * 60000).toISOString(),
-      customer_name: 'Sarah Jenkins',
-      category_name: 'Electrical Work',
-      issue_description: 'Several outlets in the living room have stopped working. No tripped breakers found. Need a professional to diagnose.',
-      service_address: '456 Oak Ave, Phnom Penh',
-      issue_image: null
+    } catch (err) {
+      console.error('Error fetching jobs:', err);
+      setError('Connection error. Please try again later.');
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchJobs();
+
+    const socket = createAppSocket();
+    socket.on('booking:new', (newBooking) => {
+      console.log('New booking received via socket:', newBooking);
+      setJobs((prevJobs) => [newBooking, ...prevJobs]);
+    });
+
+    socket.on('booking:updated', (updatedBooking) => {
+      console.log('Booking updated via socket:', updatedBooking);
+      // If the booking is no longer pending (e.g. accepted by this fixer or cancelled), 
+      // we might want to remove it from the requests list if it's there.
+      if (updatedBooking.status !== 'pending') {
+        setJobs((prevJobs) => prevJobs.filter(job => job.booking_id !== updatedBooking.id));
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   return (
     <div className="max-w-5xl mx-auto">
