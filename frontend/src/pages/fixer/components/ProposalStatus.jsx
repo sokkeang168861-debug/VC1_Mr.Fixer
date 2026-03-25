@@ -12,26 +12,29 @@ export default function ProposalStatus() {
 
     // Listen for booking updates
     socket.on("booking:updated", (booking) => {
-      console.log("Booking updated received in ProposalStatus:", booking);
+      console.log("Real-time booking update received:", booking.id, "Status:", booking.status);
       
-      // Ensure we only act on the booking we are waiting for
       if (String(booking.id) === String(bookingId)) {
         if (booking.status === "customer_accept") {
+          console.log("Customer accepted! Navigating to heading-to-customer...");
           navigate('/dashboard/fixer/jobs/heading-to-customer');
         } else if (booking.status === "customer_reject") {
+          console.log("Customer rejected! Navigating to proposal-rejected...");
           navigate('/dashboard/fixer/jobs/proposal-rejected');
         }
       }
     });
 
-    // Also listen for general booking updates if they use different event names
+    // Also listen for specific named events
     socket.on("booking_confirmed", (booking) => {
+      console.log("Booking confirmed event received:", booking.id);
       if (String(booking.id) === String(bookingId)) {
         navigate('/dashboard/fixer/jobs/heading-to-customer');
       }
     });
 
     socket.on("booking_rejected", (booking) => {
+      console.log("Booking rejected event received:", booking.id);
       if (String(booking.id) === String(bookingId)) {
         navigate('/dashboard/fixer/jobs/proposal-rejected');
       }

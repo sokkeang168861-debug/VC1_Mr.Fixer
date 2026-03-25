@@ -17,7 +17,7 @@ class FixerBookingModel {
       INNER JOIN service_categories sc ON sc.id = s.category_id
       INNER JOIN service_providers sp ON sp.id = s.provider_id
       LEFT JOIN issue_img ii ON ii.booking_id = b.id
-      WHERE b.status = 'pending' AND sp.user_id = ?
+      WHERE b.status IN ('pending', 'fixer_accept', 'customer_accept') AND sp.user_id = ?
       GROUP BY b.id
       ORDER BY b.id DESC
       LIMIT 50`,
@@ -68,6 +68,30 @@ class FixerBookingModel {
       .map((row) => `data:image/jpeg;base64,${row.image.toString("base64")}`);
 
     return booking;
+  }
+
+  static async getActiveJob(db, provider_user_id) {
+    const [rows] = await db.query(
+      `SELECT
+        b.id AS booking_id,
+        b.status,
+        b.service_id,
+        b.customer_id,
+        u.full_name AS customer_name,
+        sc.name AS category_name
+      FROM bookings b
+      INNER JOIN services s ON s.id = b.service_id
+      INNER JOIN service_providers sp ON sp.id = s.provider_id
+      INNER JOIN users u ON u.id = b.customer_id
+      INNER JOIN service_categories sc ON sc.id = s.category_id
+      WHERE sp.user_id = ? 
+        AND b.status IN ('fixer_accept', 'customer_accept', 'customer_reject', 'fixer_reject')
+      ORDER BY b.id DESC
+      LIMIT 1`,
+      [provider_user_id]
+    );
+
+    return rows[0] || null;
   }
 
   static async acceptAndSetProposal(db, booking_id, provider_id, items, total) {

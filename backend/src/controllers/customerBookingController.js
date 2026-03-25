@@ -138,8 +138,9 @@ class CustomerBookingController {
         );
 
       if (providerUserId) {
-        emitBookingUpdated(io, providerUserId, { ...booking, status: 'customer_reject' });
-        io.to(`user:${providerUserId}`).emit("booking_rejected", { ...booking, status: 'customer_reject' });
+        const payload = { ...booking, id: Number(req.params.id), status: 'customer_reject' };
+        emitBookingUpdated(io, providerUserId, payload);
+        io.to(`user:${providerUserId}`).emit("booking_rejected", payload);
       }
 
       res.json({

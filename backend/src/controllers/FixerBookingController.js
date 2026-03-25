@@ -29,6 +29,26 @@ class FixerBookingController {
     }
   }
 
+  static async getActiveJob(req, res) {
+    try {
+      const db = req.app.get("db");
+      const provider_user_id = req.user.id;
+
+      const activeJob = await FixerBookingService.getActiveJob(db, provider_user_id);
+
+      res.status(200).json({
+        success: true,
+        data: activeJob,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to fetch active job",
+      });
+    }
+  }
+
   static async getRequestById(req, res) {
     try {
       const db = req.app.get("db");

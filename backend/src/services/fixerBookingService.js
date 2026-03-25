@@ -12,6 +12,10 @@ class FixerBookingService {
     return request;
   }
 
+  static async getActiveJob(db, provider_user_id) {
+    return await FixerBookingModel.getActiveJob(db, provider_user_id);
+  }
+
   static async acceptAndSetProposal(db, booking_id, provider_id, items, total) {
     const result = await FixerBookingModel.acceptAndSetProposal(
       db,

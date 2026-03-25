@@ -38,6 +38,11 @@ router.get(
   FixerBookingController.getAllRequests
 );
 router.get(
+  "/provider/active-job",
+  protect,
+  FixerBookingController.getActiveJob
+);
+router.get(
   "/provider/requests/:id",
   protect,
   FixerBookingController.getRequestById
