@@ -222,6 +222,7 @@ export default function App() {
     const textFields = [
       'fullName',
       'email',
+      'password',
       'phone',
       'companyName',
       'location',
@@ -257,19 +258,12 @@ export default function App() {
     try {
       setLoading(true);
       setError(null);
-      const createRes = await httpClient.post('/admin/fixers', formData);
-      const generatedPassword = createRes.data?.data?.temporaryPassword;
+      await httpClient.post('/admin/fixers', formData);
 
       const res = await httpClient.get('/admin/fixers');
       const data = res.data?.data || [];
       setFixers(data.map(normalizeFixer));
       setIsFormOpen(false);
-
-      if (generatedPassword) {
-        window.alert(
-          `Fixer created successfully.\nEmail: ${payload.email}\nTemporary password: ${generatedPassword}`
-        );
-      }
     } catch (err) {
       const message =
         err.response?.data?.message ||

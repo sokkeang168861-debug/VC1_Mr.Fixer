@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Briefcase, X } from 'lucide-react';
+import { User, Briefcase, X, Eye, EyeOff } from 'lucide-react';
 import { motion as Motion } from 'motion/react';
 
 const IMAGE_MAX_DIMENSION = 1280;
@@ -8,6 +8,7 @@ const IMAGE_QUALITY = 0.82;
 const emptyForm = {
   fullName: '',
   email: '',
+  password: '',
   phone: '',
   companyName: '',
   latitude: '',
@@ -24,13 +25,16 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
   const [photoPreview, setPhotoPreview] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   const fileInputRef = useRef(null);
   const objectUrlRef = useRef('');
+  const isEditMode = title.toLowerCase().includes('edit');
 
   useEffect(() => {
     const next = {
       fullName: initialData?.name || initialData?.fullName || '',
       email: initialData?.email || '',
+      password: '',
       phone: initialData?.phone || '',
       companyName: initialData?.companyName || '',
       latitude:
@@ -55,6 +59,7 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
       objectUrlRef.current = '';
     }
     setPhotoPreview(initialData?.avatar || '');
+    setShowPassword(false);
   }, [initialData]);
 
   useEffect(() => {
@@ -85,6 +90,16 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
     setError(null);
     if (!form.fullName || !form.email) {
       setError('Full name and email are required');
+      return;
+    }
+
+    if (!isEditMode && !form.password.trim()) {
+      setError('Password is required');
+      return;
+    }
+
+    if (form.password.trim() && form.password.trim().length < 6) {
+      setError('Password must be at least 6 characters');
       return;
     }
 
@@ -289,6 +304,32 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
               />
             </div>
             <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                {isEditMode ? 'Set New Password' : 'Set Password'}
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder={
+                    isEditMode
+                      ? 'Leave blank to keep current password'
+                      : 'Enter at least 6 characters'
+                  }
+                  className="w-full px-5 py-3 pr-12 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                  value={form.password}
+                  onChange={(e) => updateField('password', e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Company name</label>
               <input 
                 type="text" 
@@ -397,7 +438,7 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
             onClick={handleSubmit}
             className="px-10 py-3 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all active:scale-95"
           >
-            {saving ? 'Saving...' : title.toLowerCase().includes('edit') ? 'Update' : 'Save'}
+            {saving ? 'Saving...' : isEditMode ? 'Update' : 'Save'}
           </button>
         </div>
       </Motion.div>

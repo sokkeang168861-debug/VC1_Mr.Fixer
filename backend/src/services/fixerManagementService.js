@@ -358,6 +358,7 @@ class FixerManagementService {
   static async createFixer(db, payload = {}, file = null) {
     const fullName = this.toOptionalString(payload.fullName);
     const email = this.toOptionalString(payload.email)?.toLowerCase();
+    const password = this.toOptionalString(payload.password);
     const phone = this.toOptionalString(payload.phone);
     const companyName = this.toOptionalString(payload.companyName);
     const location = this.toOptionalString(payload.location);
@@ -365,6 +366,10 @@ class FixerManagementService {
 
     if (!fullName || !email) {
       throw new Error("Full name and email are required");
+    }
+
+    if (!password) {
+      throw new Error("Password is required");
     }
 
     const experienceRaw = this.toOptionalString(payload.experience);
@@ -397,14 +402,11 @@ class FixerManagementService {
         ? `${latitude}, ${longitude}`
         : null);
 
-    const providedPassword = this.toOptionalString(payload.password);
-    const plainPassword = providedPassword || this.buildTemporaryPassword();
-
-    if (plainPassword.length < 6) {
+    if (password.length < 6) {
       throw new Error("Password must be at least 6 characters");
     }
 
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     const profileImg = file?.buffer || null;
 
     const createPayload = {
@@ -437,7 +439,6 @@ class FixerManagementService {
 
     return {
       ...result,
-      temporaryPassword: providedPassword ? null : plainPassword,
     };
   }
 
@@ -447,6 +448,11 @@ class FixerManagementService {
     }
 
     const categoryIds = this.parseCategoryIds(payload.categoryIds);
+    const nextPassword = this.toOptionalString(payload.password);
+
+    if (nextPassword && nextPassword.length < 6) {
+      throw new Error("Password must be at least 6 characters");
+    }
 
     let providerRows;
     try {
@@ -523,9 +529,14 @@ class FixerManagementService {
 
     let result;
     try {
+      const hashedPassword = nextPassword
+        ? await bcrypt.hash(nextPassword, 10)
+        : null;
+
       result = await FixerManagementModel.updateFixer(db, providerId, {
         fullName: payload.fullName,
         email: payload.email,
+        hashedPassword,
         phone: payload.phone,
         profileImg: file?.buffer || null,
         companyName: payload.companyName,

@@ -350,6 +350,7 @@ class FixerManagementModel {
     const {
       fullName,
       email,
+      hashedPassword,
       phone,
       profileImg,
       companyName,
@@ -383,11 +384,12 @@ class FixerManagementModel {
           UPDATE users
           SET full_name = COALESCE(?, full_name),
               email = COALESCE(?, email),
+              password = COALESCE(?, password),
               phone = COALESCE(?, phone),
               profile_img = COALESCE(?, profile_img)
           WHERE id = ?
         `,
-        [fullName, email, phone, profileImg, provider.user_id]
+        [fullName, email, hashedPassword, phone, profileImg, provider.user_id]
       );
 
       // Update provider info

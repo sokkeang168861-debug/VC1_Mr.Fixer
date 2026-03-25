@@ -20,6 +20,7 @@ class FixerManagementController {
 
       if (
         error.message === "Full name and email are required" ||
+        error.message === "Password is required" ||
         error.message === "Experience must be a valid non-negative number" ||
         error.message === "Password must be at least 6 characters" ||
         error.message === "Email already exists" ||
@@ -135,6 +136,7 @@ class FixerManagementController {
       console.error("Failed to update fixer:", error);
 
       if (
+        error.message === "Password must be at least 6 characters" ||
         error.message === "Latitude and longitude must be provided together" ||
         error.message ===
           "Unable to save profile image. Please use a smaller image and try again" ||
