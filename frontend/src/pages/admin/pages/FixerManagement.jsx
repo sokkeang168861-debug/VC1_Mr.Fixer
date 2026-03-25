@@ -289,7 +289,6 @@ export default function App() {
       setLoading(true);
       setError(null);
       await httpClient.put(`/admin/fixers/${selectedFixer.providerId}`, formData);
-      // refresh list
       const res = await httpClient.get('/admin/fixers');
       const data = res.data?.data || [];
       setFixers(data.map(normalizeFixer));

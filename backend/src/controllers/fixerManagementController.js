@@ -89,6 +89,29 @@ class FixerManagementController {
     }
   }
 
+  static async getFixerDetail(req, res) {
+    const db = req.app.get("db");
+    const { id } = req.params;
+
+    try {
+      const result = await FixerManagementService.getFixerDetail(db, Number(id));
+
+      if (!result.found) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Fixer not found" });
+      }
+
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      console.error("Failed to fetch fixer detail:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to load fixer details",
+      });
+    }
+  }
+
   static async updateFixer(req, res) {
     const db = req.app.get("db");
     const { id } = req.params;
@@ -107,9 +130,7 @@ class FixerManagementController {
           .json({ success: false, message: "Fixer not found" });
       }
 
-      res
-        .status(200)
-        .json({ success: true, message: "Fixer updated successfully" });
+      res.status(200).json({ success: true, message: "Fixer updated successfully" });
     } catch (error) {
       console.error("Failed to update fixer:", error);
 

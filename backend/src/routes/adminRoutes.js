@@ -26,6 +26,12 @@ router.get(
   adminCheck,
   FixerManagementController.getFixers
 );
+router.get(
+  "/fixers/:id/detail",
+  protect,
+  adminCheck,
+  FixerManagementController.getFixerDetail
+);
 router.put(
   "/fixers/:id",
   protect,

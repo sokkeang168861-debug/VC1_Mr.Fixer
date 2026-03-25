@@ -181,7 +181,7 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
       let processed = file;
       try {
         processed = await compressImage(file);
-      } catch (_error) {
+      } catch {
         processed = file;
       }
 
@@ -225,7 +225,6 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
             {error}
           </div>
         )}
-
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Photo Upload Section */}
           <div className="md:col-span-4">
