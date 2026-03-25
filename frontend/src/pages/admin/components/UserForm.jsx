@@ -4,18 +4,30 @@ import { X } from 'lucide-react';
 export default function UserForm({ user, onClose, onSave }) {
   const [form, setForm] = useState({
     id: user.id,
+    customerId: user.customerId || user.id,
     name: user.name,
     email: user.email,
     status: user.status,
   });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(form);
+    setError('');
+
+    try {
+      setSaving(true);
+      await onSave(form);
+    } catch (saveError) {
+      setError(saveError?.message || 'Failed to save user');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -29,6 +41,11 @@ export default function UserForm({ user, onClose, onSave }) {
         </button>
         <h3 className="text-xl font-bold mb-4">Edit User</h3>
         <form className="space-y-4" onSubmit={handleSubmit}>
+          {error ? (
+            <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-600">
+              {error}
+            </div>
+          ) : null}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Full Name</label>
             <input
@@ -72,9 +89,10 @@ export default function UserForm({ user, onClose, onSave }) {
             </button>
             <button
               type="submit"
+              disabled={saving}
               className="px-5 py-2 rounded-2xl bg-blue-600 text-white font-semibold hover:bg-blue-700 shadow-sm"
             >
-              Save
+              {saving ? 'Saving...' : 'Save'}
             </button>
           </div>
         </form>

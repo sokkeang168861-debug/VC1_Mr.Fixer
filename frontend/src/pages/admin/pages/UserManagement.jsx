@@ -1,66 +1,26 @@
-import React, { useMemo, useState } from 'react';
-import { Search, Edit2, Trash2, Users as UsersIcon } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Search, Edit2, Trash2 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import UserForm from '../components/UserForm';
+import httpClient from '@/api/httpClient';
 
-const initialUsers = [
-  {
-    id: 'u1',
-    name: 'Elena Rodriguez',
-    email: 'elena.rod@example.com',
-    bookings: 24,
-    status: 'active',
-    avatar: 'https://ui-avatars.com/api/?name=Elena+Rodriguez&background=f0f4ff&color=0f172a',
-  },
-  {
-    id: 'u2',
-    name: 'Marcus Chen',
-    email: 'm.chen@service.org',
-    bookings: 8,
-    status: 'active',
-    avatar: 'https://ui-avatars.com/api/?name=Marcus+Chen&background=fef2e5&color=0f172a',
-  },
-  {
-    id: 'u3',
-    name: 'David Smith',
-    email: 'david.s@mailbox.net',
-    bookings: 42,
-    status: 'suspended',
-    avatar: 'https://ui-avatars.com/api/?name=David+Smith&background=e5edff&color=0f172a',
-  },
-  {
-    id: 'u4',
-    name: 'Sarah Wilson',
-    email: 'swilson@fixerapp.com',
-    bookings: 12,
-    status: 'active',
-    avatar: 'https://ui-avatars.com/api/?name=Sarah+Wilson&background=dff7f0&color=0f172a',
-  },
-  {
-    id: 'u5',
-    name: 'Marcus Chen',
-    email: 'm.chen@service.org',
-    bookings: 8,
-    status: 'suspended',
-    avatar: 'https://ui-avatars.com/api/?name=Marcus+Chen&background=fef2e5&color=0f172a',
-  },
-  {
-    id: 'u6',
-    name: 'David Smith',
-    email: 'david.s@mailbox.net',
-    bookings: 42,
-    status: 'suspended',
-    avatar: 'https://ui-avatars.com/api/?name=David+Smith&background=e5edff&color=0f172a',
-  },
-  {
-    id: 'u7',
-    name: 'Sarah Wilson',
-    email: 'swilson@fixerapp.com',
-    bookings: 12,
-    status: 'active',
-    avatar: 'https://ui-avatars.com/api/?name=Sarah+Wilson&background=dff7f0&color=0f172a',
-  },
-];
+function buildAvatar(name) {
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(
+    name || 'User'
+  )}&background=f0f4ff&color=0f172a`;
+}
+
+function normalizeUser(user) {
+  return {
+    id: Number(user.id),
+    customerId: Number(user.customerId ?? user.customer_id ?? user.id),
+    name: user.fullName || user.full_name || 'Unknown User',
+    email: user.email || '',
+    bookings: Number(user.totalBookings ?? user.total_bookings ?? 0),
+    status: String(user.status || 'active').toLowerCase(),
+    avatar: user.avatar || buildAvatar(user.fullName || user.full_name),
+  };
+}
 
 const StatusBadge = ({ status }) => {
   const isActive = status === 'active';
@@ -77,29 +37,100 @@ const StatusBadge = ({ status }) => {
 
 export default function UserManagement() {
   const [search, setSearch] = useState('');
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const response = await httpClient.get('/admin/users');
+        const data = Array.isArray(response.data) ? response.data : [];
+
+        if (isMounted) {
+          setUsers(data.map(normalizeUser));
+        }
+      } catch (requestError) {
+        if (isMounted) {
+          setError(
+            requestError?.response?.data?.message ||
+              requestError?.message ||
+              'Failed to load users.'
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadUsers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const filteredUsers = useMemo(() => {
-    const query = search.toLowerCase();
+    const query = search.trim().toLowerCase();
+
     return users.filter(
       (user) =>
+        !query ||
         user.name.toLowerCase().includes(query) ||
         user.email.toLowerCase().includes(query)
     );
   }, [search, users]);
 
-  const handleDelete = (id) => {
-    const confirmed = window.confirm('Delete this user permanently? This action cannot be undone.');
+  const handleDelete = async (id) => {
+    const confirmed = window.confirm(
+      'Delete this user permanently? This action cannot be undone.'
+    );
     if (!confirmed) return;
-    setUsers((prev) => prev.filter((u) => u.id !== id));
+
+    try {
+      setError('');
+      await httpClient.delete(`/admin/users/${id}`);
+      setUsers((prev) => prev.filter((u) => u.id !== id));
+      if (editingUser?.id === id) {
+        setEditingUser(null);
+      }
+    } catch (requestError) {
+      setError(
+        requestError?.response?.data?.message ||
+          requestError?.message ||
+          'Failed to delete user.'
+      );
+    }
   };
 
-  const handleSave = (data) => {
-    setUsers((prev) =>
-      prev.map((u) => (u.id === data.id ? { ...u, ...data } : u))
-    );
-    setEditingUser(null);
+  const handleSave = async (data) => {
+    try {
+      setError('');
+      const response = await httpClient.put(`/admin/users/${data.id}`, {
+        fullName: data.name,
+        email: data.email,
+        status: data.status,
+      });
+      const updatedUser = normalizeUser(response.data?.data || data);
+
+      setUsers((prev) =>
+        prev.map((u) => (u.id === updatedUser.id ? { ...u, ...updatedUser } : u))
+      );
+      setEditingUser(null);
+    } catch (requestError) {
+      throw new Error(
+        requestError?.response?.data?.message ||
+          requestError?.message ||
+          'Failed to update user.'
+      );
+    }
   };
 
   return (
@@ -119,12 +150,13 @@ export default function UserManagement() {
             <section className="flex flex-wrap gap-4">
               <div className="bg-white border border-slate-100 rounded-3xl p-6 shadow-sm w-full sm:w-72">
                 <div className="flex items-center gap-4">
-                  
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                       Total Users
                     </p>
-                    <p className="text-3xl font-bold text-slate-900">1,248</p>
+                    <p className="text-3xl font-bold text-slate-900">
+                      {loading ? '...' : users.length.toLocaleString()}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -133,7 +165,10 @@ export default function UserManagement() {
             <section className="bg-white border border-slate-100 rounded-[2rem] shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-100">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 " size={18} />
+                  <Search
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 "
+                    size={18}
+                  />
                   <input
                     type="text"
                     placeholder="Search users by name or email..."
@@ -156,50 +191,74 @@ export default function UserManagement() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((user) => (
-                      <tr
-                        key={user.id}
-                        className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors"
-                      >
-                        <td className="px-6 py-5 align-middle">
-                          <div className="flex items-center gap-4">
-                            <img
-                              src={user.avatar}
-                              alt={user.name}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
-                              referrerPolicy="no-referrer"
-                            />
-                            <span className="font-semibold text-sm">{user.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5 text-sm text-slate-600 align-middle">{user.email}</td>
-                        <td className="px-6 py-5 text-center text-sm font-semibold text-slate-800 align-middle">
-                          {user.bookings}
-                        </td>
-                        <td className="px-6 py-5 text-center align-middle">
-                          <StatusBadge status={user.status} />
-                        </td>
-                        <td className="px-6 py-5 align-middle">
-                          <div className="flex items-center justify-center gap-3">
-                            <button
-                              onClick={() => setEditingUser(user)}
-                              className="p-2 text-[#1D75F7] hover:bg-blue-50 rounded-lg transition-colors"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(user.id)}
-                              className="p-2 text-[#E53935] hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
+                    {loading ? (
+                      <tr>
+                        <td
+                          className="px-6 py-6 text-center text-slate-500 text-sm"
+                          colSpan={5}
+                        >
+                          Loading users...
                         </td>
                       </tr>
-                    ))}
-                    {filteredUsers.length === 0 && (
+                    ) : error ? (
                       <tr>
-                        <td className="px-6 py-6 text-center text-slate-500 text-sm" colSpan={5}>
+                        <td
+                          className="px-6 py-6 text-center text-rose-600 text-sm font-semibold"
+                          colSpan={5}
+                        >
+                          {error}
+                        </td>
+                      </tr>
+                    ) : filteredUsers.length > 0 ? (
+                      filteredUsers.map((user) => (
+                        <tr
+                          key={user.id}
+                          className="border-t border-slate-100 hover:bg-slate-50/60 transition-colors"
+                        >
+                          <td className="px-6 py-5 align-middle">
+                            <div className="flex items-center gap-4">
+                              <img
+                                src={user.avatar}
+                                alt={user.name}
+                                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
+                                referrerPolicy="no-referrer"
+                              />
+                              <span className="font-semibold text-sm">{user.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-5 text-sm text-slate-600 align-middle">
+                            {user.email}
+                          </td>
+                          <td className="px-6 py-5 text-center text-sm font-semibold text-slate-800 align-middle">
+                            {user.bookings}
+                          </td>
+                          <td className="px-6 py-5 text-center align-middle">
+                            <StatusBadge status={user.status} />
+                          </td>
+                          <td className="px-6 py-5 align-middle">
+                            <div className="flex items-center justify-center gap-3">
+                              <button
+                                onClick={() => setEditingUser(user)}
+                                className="p-2 text-[#1D75F7] hover:bg-blue-50 rounded-lg transition-colors"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(user.id)}
+                                className="p-2 text-[#E53935] hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          className="px-6 py-6 text-center text-slate-500 text-sm"
+                          colSpan={5}
+                        >
                           No users match your search.
                         </td>
                       </tr>

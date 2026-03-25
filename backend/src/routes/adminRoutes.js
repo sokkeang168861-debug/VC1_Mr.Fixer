@@ -6,7 +6,12 @@ const adminCheck = require("../middleware/adminMiddleware");
 const upload = require("../middleware/upload");
 
 const { getUserStats } = require("../controllers/adminController");
-const { getAllUsers, getCustomerById } = require("../controllers/adminUsersController");
+const {
+  getAllUsers,
+  getCustomerById,
+  updateCustomer,
+  deleteCustomer,
+} = require("../controllers/adminUsersController");
 const ServiceCategoryController = require("../controllers/serviceCategoryController");
 const FixerManagementController = require("../controllers/fixerManagementController");
 
@@ -14,6 +19,8 @@ const FixerManagementController = require("../controllers/fixerManagementControl
 router.get("/stats", protect, adminCheck, getUserStats);
 router.get("/users", protect, adminCheck, getAllUsers);
 router.get("/users/:id", protect, adminCheck, getCustomerById);
+router.put("/users/:id", protect, adminCheck, updateCustomer);
+router.delete("/users/:id", protect, adminCheck, deleteCustomer);
 
 // ---------- Fixer Management ----------
 router.post(

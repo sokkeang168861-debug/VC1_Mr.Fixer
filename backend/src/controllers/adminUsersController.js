@@ -38,8 +38,44 @@ const getCustomerById = async (req, res) => {
   }
 };
 
+const updateCustomer = async (req, res) => {
+  const db = req.app.get("db");
+  try {
+    const { id } = req.params;
+    const updatedCustomer = await AdminUsersService.updateCustomer(
+      db,
+      Number(id),
+      req.body
+    );
+    res.json({
+      success: true,
+      message: "Customer updated successfully",
+      data: updatedCustomer,
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+};
+
+const deleteCustomer = async (req, res) => {
+  const db = req.app.get("db");
+  try {
+    const { id } = req.params;
+    const result = await AdminUsersService.deleteCustomer(db, Number(id));
+    res.json({
+      success: true,
+      message: "Customer deleted successfully",
+      data: result,
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getAllCustomers,
   getCustomerById,
+  updateCustomer,
+  deleteCustomer,
 };
