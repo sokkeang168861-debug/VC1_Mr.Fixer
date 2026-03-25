@@ -2,6 +2,8 @@ const FixerManagementModel = require("../models/fixerManagementModel");
 const bcrypt = require("bcrypt");
 
 class FixerManagementService {
+  static COMMISSION_RATE = 0.1;
+
   static toOptionalString(value) {
     if (value === undefined || value === null) return null;
     const trimmed = String(value).trim();
@@ -119,21 +121,21 @@ class FixerManagementService {
       return extracted;
     }
 
-    if (typeof fetch !== "function") {
+    if (typeof globalThis.fetch !== "function") {
       return { latitude: null, longitude: null };
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const controller = new globalThis.AbortController();
+    const timeout = globalThis.setTimeout(() => controller.abort(), 10000);
 
     try {
-      const params = new URLSearchParams({
+      const params = new globalThis.URLSearchParams({
         format: "jsonv2",
         q: normalizedLocation,
         limit: "1",
       });
 
-      const response = await fetch(
+      const response = await globalThis.fetch(
         `https://nominatim.openstreetmap.org/search?${params.toString()}`,
         {
           method: "GET",
@@ -166,7 +168,7 @@ class FixerManagementService {
     } catch (_error) {
       return { latitude: null, longitude: null };
     } finally {
-      clearTimeout(timeout);
+      globalThis.clearTimeout(timeout);
     }
   }
 
@@ -214,43 +216,149 @@ class FixerManagementService {
   static async listFixers(db) {
     const records = await FixerManagementModel.getFixersWithStats(db);
 
-    return records.map((item) => {
-      const categoriesArray = item.categories
-        ? item.categories
-            .split(",")
-            .map((c) => c.trim())
-            .filter(Boolean)
-        : [];
+    return records.map((item) => this.formatFixerRecord(item));
+  }
 
-      const fixerId = item.providerId
-        ? `FX-${String(item.providerId).padStart(4, "0")}`
-        : `FX-${String(item.userId || "0000").padStart(4, "0")}`;
+  static roundMoney(value) {
+    return Number((Number(value || 0) + Number.EPSILON).toFixed(2));
+  }
+
+  static formatFixerRecord(item) {
+    const categoriesArray = item.categories
+      ? item.categories
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean)
+      : [];
+
+    const fixerId = item.providerId
+      ? `FX-${String(item.providerId).padStart(4, "0")}`
+      : `FX-${String(item.userId || "0000").padStart(4, "0")}`;
+
+    return {
+      userId: item.userId,
+      providerId: item.providerId,
+      fixerId,
+      name: item.fullName,
+      email: item.email,
+      phone: item.phone,
+      companyName: item.companyName,
+      location: item.location,
+      latitude: item.latitude,
+      longitude: item.longitude,
+      experience: item.experience,
+      bio: item.bio,
+      categories: categoriesArray,
+      categoryIds: Array.isArray(item.categoryIds) ? item.categoryIds : [],
+      totalBookings: item.totalBookings,
+      rating: item.overallRating,
+      avatar: item.avatar,
+    };
+  }
+
+  static buildReviewInitials(name) {
+    return String(name || "")
+      .trim()
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || "")
+      .join("");
+  }
+
+  static async getFixerDetail(db, providerId) {
+    if (!providerId || !Number.isInteger(Number(providerId))) {
+      throw new Error("providerId is required");
+    }
+
+    const numericProviderId = Number(providerId);
+
+    const [record, reviewSummary, reviews, transactions] = await Promise.all([
+      FixerManagementModel.getFixerDetailByProviderId(db, numericProviderId),
+      FixerManagementModel.getFixerReviewSummary(db, numericProviderId),
+      FixerManagementModel.getFixerReviews(db, numericProviderId),
+      FixerManagementModel.getFixerTransactions(db, numericProviderId),
+    ]);
+
+    if (!record) {
+      return { found: false };
+    }
+
+    const profile = this.formatFixerRecord(record);
+    const totalReviews = Number(reviewSummary.total_reviews || 0);
+    const overallRatingValue =
+      totalReviews > 0
+        ? Number(reviewSummary.overall_rating || 0)
+        : Number(profile.rating || 0);
+    const detailedRatings = [
+      {
+        key: "quality_of_work",
+        label: "Quality of Work",
+        value: Number(reviewSummary.quality_rating || 0),
+      },
+      {
+        key: "speed_of_service",
+        label: "Speed of Service",
+        value: Number(reviewSummary.speed_rating || 0),
+      },
+      {
+        key: "price_fairness",
+        label: "Price Fairness",
+        value: Number(reviewSummary.price_fairness_rating || 0),
+      },
+      {
+        key: "professional_behavior",
+        label: "Professional Behavior",
+        value: Number(reviewSummary.behavior_rating || 0),
+      },
+    ].map((item) => ({
+      ...item,
+      outOf: 5,
+      percentage: Number(((item.value / 5) * 100).toFixed(0)),
+    }));
+
+    const normalizedReviews = reviews.map((item) => ({
+      id: item.id,
+      name: item.customer_name || "Unknown Customer",
+      rating: Number(item.overall_rating || 0),
+      comment: item.comment || "",
+      createdAt: item.created_at,
+      initials: this.buildReviewInitials(item.customer_name) || "CU",
+    }));
+
+    const normalizedTransactions = transactions.map((item) => {
+      const totalPaid = this.roundMoney(item.amount_paid);
+      const commission = this.roundMoney(
+        totalPaid * this.COMMISSION_RATE
+      );
 
       return {
-        userId: item.userId,
-        providerId: item.providerId,
-        fixerId,
-        name: item.fullName,
-        email: item.email,
-        phone: item.phone,
-        companyName: item.companyName,
-        location: item.location,
-        latitude: item.latitude,
-        longitude: item.longitude,
-        experience: item.experience,
-        bio: item.bio,
-        categories: categoriesArray,
-        categoryIds: Array.isArray(item.categoryIds) ? item.categoryIds : [],
-        totalBookings: item.totalBookings,
-        rating: item.overallRating,
-        avatar: item.avatar,
+        booking_id: Number(item.booking_id),
+        created_at: item.created_at,
+        paid_at: item.latest_paid_at,
+        total_paid: totalPaid,
+        commission,
+        net_payout: this.roundMoney(totalPaid - commission),
       };
     });
+
+    return {
+      found: true,
+      profile,
+      overallRating: {
+        value: overallRatingValue,
+        outOf: 5,
+        totalRatings: totalReviews,
+      },
+      detailedRatings,
+      reviews: normalizedReviews,
+      transactions: normalizedTransactions,
+    };
   }
 
   static async createFixer(db, payload = {}, file = null) {
     const fullName = this.toOptionalString(payload.fullName);
     const email = this.toOptionalString(payload.email)?.toLowerCase();
+    const password = this.toOptionalString(payload.password);
     const phone = this.toOptionalString(payload.phone);
     const companyName = this.toOptionalString(payload.companyName);
     const location = this.toOptionalString(payload.location);
@@ -258,6 +366,10 @@ class FixerManagementService {
 
     if (!fullName || !email) {
       throw new Error("Full name and email are required");
+    }
+
+    if (!password) {
+      throw new Error("Password is required");
     }
 
     const experienceRaw = this.toOptionalString(payload.experience);
@@ -290,14 +402,11 @@ class FixerManagementService {
         ? `${latitude}, ${longitude}`
         : null);
 
-    const providedPassword = this.toOptionalString(payload.password);
-    const plainPassword = providedPassword || this.buildTemporaryPassword();
-
-    if (plainPassword.length < 6) {
+    if (password.length < 6) {
       throw new Error("Password must be at least 6 characters");
     }
 
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     const profileImg = file?.buffer || null;
 
     const createPayload = {
@@ -321,7 +430,8 @@ class FixerManagementService {
     } catch (error) {
       if (profileImg && this.isLikelyConnectionResetError(error)) {
         throw new Error(
-          "Unable to save profile image. Please use a smaller image and try again"
+          "Unable to save profile image. Please use a smaller image and try again",
+          { cause: error }
         );
       }
       throw error;
@@ -329,7 +439,6 @@ class FixerManagementService {
 
     return {
       ...result,
-      temporaryPassword: providedPassword ? null : plainPassword,
     };
   }
 
@@ -339,8 +448,13 @@ class FixerManagementService {
     }
 
     const categoryIds = this.parseCategoryIds(payload.categoryIds);
+    const nextPassword = this.toOptionalString(payload.password);
 
-    let providerRows = [];
+    if (nextPassword && nextPassword.length < 6) {
+      throw new Error("Password must be at least 6 characters");
+    }
+
+    let providerRows;
     try {
       [providerRows] = await db.query(
         "SELECT id, location, latitude, longitude FROM service_providers WHERE id = ? LIMIT 1",
@@ -392,8 +506,8 @@ class FixerManagementService {
       throw new Error("Latitude and longitude must be provided together");
     }
 
-    let latitude = null;
-    let longitude = null;
+    let latitude;
+    let longitude;
 
     if (hasLatitude && hasLongitude) {
       this.validateCoordinateRange(parsedLatitude, parsedLongitude);
@@ -415,9 +529,14 @@ class FixerManagementService {
 
     let result;
     try {
+      const hashedPassword = nextPassword
+        ? await bcrypt.hash(nextPassword, 10)
+        : null;
+
       result = await FixerManagementModel.updateFixer(db, providerId, {
         fullName: payload.fullName,
         email: payload.email,
+        hashedPassword,
         phone: payload.phone,
         profileImg: file?.buffer || null,
         companyName: payload.companyName,
@@ -431,7 +550,8 @@ class FixerManagementService {
     } catch (error) {
       if (file?.buffer && this.isLikelyConnectionResetError(error)) {
         throw new Error(
-          "Unable to save profile image. Please use a smaller image and try again"
+          "Unable to save profile image. Please use a smaller image and try again",
+          { cause: error }
         );
       }
       throw error;

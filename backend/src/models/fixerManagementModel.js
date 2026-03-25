@@ -103,6 +103,173 @@ class FixerManagementModel {
     }));
   }
 
+  static async getFixerDetailByProviderId(db, providerId) {
+    const hasCoordinateColumns = await this.providerCoordinateColumnsExist(db);
+    const coordinateSelection = hasCoordinateColumns
+      ? "sp.latitude, sp.longitude,"
+      : "NULL AS latitude, NULL AS longitude,";
+
+    const [rows] = await db.query(
+      `
+        SELECT
+          u.id AS user_id,
+          sp.id AS provider_id,
+          u.full_name,
+          u.email,
+          u.phone,
+          u.profile_img,
+          sp.company_name,
+          sp.location,
+          ${coordinateSelection}
+          sp.experience,
+          sp.bio,
+          COALESCE(cat.categories, '') AS categories,
+          COALESCE(cat.category_ids, '') AS category_ids,
+          COALESCE(stats.total_bookings, 0) AS total_bookings,
+          COALESCE(stats.avg_rating, sp.overall_rating, 0) AS overall_rating
+        FROM service_providers sp
+        INNER JOIN users u ON u.id = sp.user_id
+        LEFT JOIN (
+          SELECT
+            s.provider_id,
+            GROUP_CONCAT(DISTINCT sc.name ORDER BY sc.name SEPARATOR ', ') AS categories,
+            GROUP_CONCAT(DISTINCT sc.id ORDER BY sc.id SEPARATOR ',') AS category_ids
+          FROM services s
+          LEFT JOIN service_categories sc ON sc.id = s.category_id
+          GROUP BY s.provider_id
+        ) AS cat ON cat.provider_id = sp.id
+        LEFT JOIN (
+          SELECT
+            s.provider_id,
+            COUNT(DISTINCT b.id) AS total_bookings,
+            ROUND(AVG(r.overall_rating), 1) AS avg_rating
+          FROM services s
+          LEFT JOIN bookings b
+            ON b.service_id = s.id
+           AND b.status = 'complete'
+          LEFT JOIN reviews r ON r.booking_id = b.id
+          GROUP BY s.provider_id
+        ) AS stats ON stats.provider_id = sp.id
+        WHERE sp.id = ?
+        LIMIT 1
+      `,
+      [providerId]
+    );
+
+    const row = rows[0];
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      userId: row.user_id,
+      providerId: row.provider_id,
+      fullName: row.full_name,
+      email: row.email,
+      phone: row.phone,
+      companyName: row.company_name,
+      location: row.location,
+      latitude:
+        row.latitude === null || row.latitude === undefined
+          ? null
+          : Number(row.latitude),
+      longitude:
+        row.longitude === null || row.longitude === undefined
+          ? null
+          : Number(row.longitude),
+      experience: row.experience,
+      bio: row.bio,
+      categories: row.categories,
+      categoryIds: (row.category_ids || "")
+        .split(",")
+        .map((id) => Number(id))
+        .filter(Boolean),
+      totalBookings: Number(row.total_bookings || 0),
+      overallRating:
+        row.overall_rating === null || row.overall_rating === undefined
+          ? 0
+          : Number(row.overall_rating),
+      avatar:
+        row.profile_img && Buffer.isBuffer(row.profile_img)
+          ? `data:image/jpeg;base64,${row.profile_img.toString("base64")}`
+          : null,
+    };
+  }
+
+  static async getFixerReviewSummary(db, providerId) {
+    const [rows] = await db.query(
+      `SELECT
+        COALESCE(ROUND(AVG(r.quality_rating), 1), 0) AS quality_rating,
+        COALESCE(ROUND(AVG(r.speed_rating), 1), 0) AS speed_rating,
+        COALESCE(ROUND(AVG(r.price_fairness_rating), 1), 0) AS price_fairness_rating,
+        COALESCE(ROUND(AVG(r.behavior_rating), 1), 0) AS behavior_rating,
+        COALESCE(ROUND(AVG(r.overall_rating), 1), 0) AS overall_rating,
+        COUNT(r.id) AS total_reviews
+      FROM reviews r
+      INNER JOIN bookings b ON b.id = r.booking_id
+      INNER JOIN services s ON s.id = b.service_id
+      WHERE s.provider_id = ?`,
+      [providerId]
+    );
+
+    return rows[0] || {
+      quality_rating: 0,
+      speed_rating: 0,
+      price_fairness_rating: 0,
+      behavior_rating: 0,
+      overall_rating: 0,
+      total_reviews: 0,
+    };
+  }
+
+  static async getFixerReviews(db, providerId) {
+    const [rows] = await db.query(
+      `SELECT
+        r.id,
+        r.overall_rating,
+        r.comment,
+        r.created_at,
+        u.full_name AS customer_name
+      FROM reviews r
+      INNER JOIN bookings b ON b.id = r.booking_id
+      INNER JOIN services s ON s.id = b.service_id
+      INNER JOIN users u ON u.id = b.customer_id
+      WHERE s.provider_id = ?
+      ORDER BY r.created_at DESC`,
+      [providerId]
+    );
+
+    return rows;
+  }
+
+  static async getFixerTransactions(db, providerId) {
+    const [rows] = await db.query(
+      `SELECT
+        b.id AS booking_id,
+        b.created_at,
+        COALESCE(payment_totals.amount_paid, 0) AS amount_paid,
+        payment_totals.latest_paid_at
+      FROM bookings b
+      INNER JOIN services s ON s.id = b.service_id
+      LEFT JOIN (
+        SELECT
+          booking_id,
+          SUM(amount) AS amount_paid,
+          MAX(COALESCE(paid_at, created_at)) AS latest_paid_at
+        FROM payments
+        WHERE status IS NULL OR LOWER(status) IN ('paid', 'success', 'completed')
+        GROUP BY booking_id
+      ) AS payment_totals ON payment_totals.booking_id = b.id
+      WHERE s.provider_id = ?
+        AND LOWER(b.status) = 'complete'
+      ORDER BY COALESCE(payment_totals.latest_paid_at, b.created_at) DESC, b.id DESC`,
+      [providerId]
+    );
+
+    return rows;
+  }
+
   static async createFixer(db, payload) {
     const {
       fullName,
@@ -183,6 +350,7 @@ class FixerManagementModel {
     const {
       fullName,
       email,
+      hashedPassword,
       phone,
       profileImg,
       companyName,
@@ -216,11 +384,12 @@ class FixerManagementModel {
           UPDATE users
           SET full_name = COALESCE(?, full_name),
               email = COALESCE(?, email),
+              password = COALESCE(?, password),
               phone = COALESCE(?, phone),
               profile_img = COALESCE(?, profile_img)
           WHERE id = ?
         `,
-        [fullName, email, phone, profileImg, provider.user_id]
+        [fullName, email, hashedPassword, phone, profileImg, provider.user_id]
       );
 
       // Update provider info
