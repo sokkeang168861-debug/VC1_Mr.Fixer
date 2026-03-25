@@ -5,12 +5,16 @@ const protect = require("../middleware/authMiddleware");
 const adminCheck = require("../middleware/adminMiddleware");
 const upload = require("../middleware/upload");
 
-const { getUserStats } = require("../controllers/adminController");
+const {
+  getUserStats,
+  getTransactionLedger,
+} = require("../controllers/adminController");
 const ServiceCategoryController = require("../controllers/serviceCategoryController");
 const FixerManagementController = require("../controllers/fixerManagementController");
 
 // ---------- Admin Stats ----------
 router.get("/stats", protect, adminCheck, getUserStats);
+router.get("/transactions", protect, adminCheck, getTransactionLedger);
 
 // ---------- Fixer Management ----------
 router.post(

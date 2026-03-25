@@ -172,7 +172,7 @@ const FixerDetail = ({ fixer, onBack, onEdit }) => {
                 onClick={() => setActiveTab('all')}
                 className={`pb-4 text-sm font-bold transition-all ${activeTab === 'all' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                All Transactions
+                All Job
               </button>
               {/* <button 
                 onClick={() => setActiveTab('summary')}

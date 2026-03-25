@@ -4,6 +4,78 @@ class Admin {
     return results;
   }
 
+  static async getTransactionLedger(db, filters = {}) {
+    const whereClauses = ["LOWER(b.status) = 'complete'"];
+    const params = [];
+    const month = Number(filters.month);
+    const year = Number(filters.year);
+    const search = String(filters.search || "").trim();
+
+    if (Number.isInteger(month) && month >= 1 && month <= 12) {
+      whereClauses.push(
+        "MONTH(COALESCE(payment_totals.latest_paid_at, b.created_at)) = ?"
+      );
+      params.push(month);
+    }
+
+    if (Number.isInteger(year) && year >= 2000 && year <= 9999) {
+      whereClauses.push(
+        "YEAR(COALESCE(payment_totals.latest_paid_at, b.created_at)) = ?"
+      );
+      params.push(year);
+    }
+
+    if (search) {
+      const searchLike = `%${search}%`;
+      whereClauses.push(`(
+        CAST(b.id AS CHAR) LIKE ?
+        OR customer.full_name LIKE ?
+        OR fixer.full_name LIKE ?
+        OR COALESCE(sp.company_name, '') LIKE ?
+        OR COALESCE(payment_totals.transaction_ids, '') LIKE ?
+      )`);
+      params.push(
+        searchLike,
+        searchLike,
+        searchLike,
+        searchLike,
+        searchLike
+      );
+    }
+
+    return this.query(
+      db,
+      `SELECT
+         b.id AS booking_id,
+         b.status AS booking_status,
+         b.created_at,
+         COALESCE(b.service_fee, 0) AS service_fee,
+         customer.full_name AS customer_name,
+         fixer.full_name AS fixer_name,
+         sp.company_name AS fixer_company_name,
+         COALESCE(payment_totals.amount_paid, 0) AS amount_paid,
+         payment_totals.latest_paid_at
+       FROM bookings b
+       INNER JOIN users customer ON customer.id = b.customer_id
+       INNER JOIN services s ON s.id = b.service_id
+       INNER JOIN service_providers sp ON sp.id = s.provider_id
+       INNER JOIN users fixer ON fixer.id = sp.user_id
+       LEFT JOIN (
+         SELECT
+           booking_id,
+           SUM(amount) AS amount_paid,
+           MAX(COALESCE(paid_at, created_at)) AS latest_paid_at,
+           GROUP_CONCAT(COALESCE(transaction_id, '') SEPARATOR ',') AS transaction_ids
+         FROM payments
+         WHERE status IS NULL OR LOWER(status) IN ('paid', 'success', 'completed')
+         GROUP BY booking_id
+       ) AS payment_totals ON payment_totals.booking_id = b.id
+       WHERE ${whereClauses.join(" AND ")}
+       ORDER BY COALESCE(payment_totals.latest_paid_at, b.created_at) DESC, b.id DESC`,
+      params
+    );
+  }
+
   static async getUserStats(db, options = {}) {
     const year = Number(options.year) || new Date().getFullYear();
     const userStatsRows = await this.query(
