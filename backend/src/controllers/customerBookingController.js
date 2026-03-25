@@ -1,6 +1,7 @@
 const customerBookingService = require("../services/customerBookingService.js");
-const { emitNewBooking } = require("../realtime/socketServer");
+const { emitNewBooking, emitBookingUpdated } = require("../realtime/socketServer");
 const CustomerBookingModel = require("../models/customerBookingModel");
+const bookingTimeoutService = require("../services/bookingTimeoutService");
 
 class CustomerBookingController {
   async createBooking(req, res) {
@@ -25,6 +26,11 @@ class CustomerBookingController {
 
       if (providerUserId) {
         emitNewBooking(io, providerUserId, booking);
+      }
+
+      // Start 3-minute timeout for the fixer to accept/reject
+      if (booking && booking.id) {
+        bookingTimeoutService.startTimeout(db, io, booking.id);
       }
 
       res.status(201).json({
@@ -87,7 +93,7 @@ class CustomerBookingController {
         req.params.id
       );
 
-      // 🔥 notify provider in real-time
+      // notify provider in real-time
       const providerUserId =
         await CustomerBookingModel.getProviderUserIdByServiceId(
           db,
@@ -95,7 +101,8 @@ class CustomerBookingController {
         );
 
       if (providerUserId) {
-        io.to(`user_${providerUserId}`).emit("booking_confirmed", booking);
+        emitBookingUpdated(io, providerUserId, booking);
+        io.to(`user:${providerUserId}`).emit("booking_confirmed", booking);
       }
 
       res.json({
@@ -114,25 +121,29 @@ class CustomerBookingController {
     const io = req.app.get("io");
 
     try {
-      const booking = await customerBookingService.rejectBooking(
+      const result = await customerBookingService.rejectBooking(
         db,
         req.user,
         req.params.id
       );
 
-      // 🔥 notify provider
+      // We need the full booking to know the service_id for providerUserId
+      const booking = await CustomerBookingModel.getBookingDetailsById(db, req.params.id);
+
+      // notify provider
       const providerUserId =
         await CustomerBookingModel.getProviderUserIdByServiceId(
           db,
-          req.body.service_id // ⚠️ may need adjustment if not passed
+          booking?.service_id || req.body.service_id
         );
 
       if (providerUserId) {
-        io.to(`user_${providerUserId}`).emit("booking_rejected", booking);
+        emitBookingUpdated(io, providerUserId, { ...booking, status: 'customer_reject' });
+        io.to(`user:${providerUserId}`).emit("booking_rejected", { ...booking, status: 'customer_reject' });
       }
 
       res.json({
-        booking,
+        booking: { ...booking, status: 'customer_reject' },
         message: "Booking rejected successfully",
       });
     } catch (err) {

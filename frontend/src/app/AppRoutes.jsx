@@ -34,6 +34,7 @@ const NavigationMap = lazy(() => import("../pages/fixer/components/NavigationMap
 const CreateInvoice = lazy(() => import("../pages/fixer/components/CreateInvoice"));
 const ExpressCheckout = lazy(() => import("../pages/fixer/components/ExpressCheckout"));
 const JobCompleted = lazy(() => import("../pages/fixer/components/JobCompleted"));
+const ProposalRejected = lazy(() => import("../pages/fixer/components/ProposalRejected"));
 
 const AdminDashboard = lazy(() => import("../pages/admin/pages/index"));
 const ServiceCategories = lazy(() => import("../pages/admin/pages/ServiceCategories"));
@@ -184,13 +185,14 @@ function InnerRoutes() {
               <Route index element={<JobList />} />
               <Route path=":id" element={<JobDetail />} />
               <Route path=":id/set-proposal" element={<SetProposal />} />
-              <Route path="proposal-status" element={<ProposalStatus />} />
+              <Route path="proposal-status/:id" element={<ProposalStatus />} />
               <Route path="heading-to-customer" element={<HeadingToCustomer />} />
               <Route path="arrived-status" element={<ArrivedStatus />} />
               <Route path="navigation-map" element={<NavigationMap />} />
               <Route path="create-invoice" element={<CreateInvoice />} />
               <Route path="express-checkout" element={<ExpressCheckout />} />
               <Route path="job-completed" element={<JobCompleted />} />
+              <Route path="proposal-rejected" element={<ProposalRejected />} />
             </Route>
             <Route
               path={ROUTES.dashboardFixerProfit}

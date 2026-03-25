@@ -421,7 +421,7 @@ class CustomerBooking {
        SET status = 'customer_reject'
        WHERE id = ?
          AND customer_id = ?
-         AND status = 'fixer_accept'`,
+         AND status IN ('pending', 'fixer_accept')`,
       [bookingId, customerId]
     );
 

@@ -1,5 +1,5 @@
 const FixerBookingModel = require("../models/fixerBookingModel");
-// const bookingTimeoutService = require("./bookingTimeoutService");
+const bookingTimeoutService = require("./bookingTimeoutService");
 
 class FixerBookingService {
   static async getAllRequests(db, provider_id) {
@@ -22,7 +22,7 @@ class FixerBookingService {
     );
 
     // Clear the timeout since the booking was accepted
-    // bookingTimeoutService.clearTimeout(booking_id);
+    bookingTimeoutService.clearTimeout(Number(booking_id));
 
     return result;
   }
@@ -48,7 +48,7 @@ class FixerBookingService {
       await connection.commit();
 
       // Clear the timeout since the booking was rejected
-      // bookingTimeoutService.clearTimeout(booking_id);
+      bookingTimeoutService.clearTimeout(Number(booking_id));
 
       return { message: "Booking rejected successfully" };
     } catch (error) {

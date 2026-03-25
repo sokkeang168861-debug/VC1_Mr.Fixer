@@ -72,8 +72,8 @@ const ServiceEstimate = () => {
 
       if (res.data.success) {
         alert('Proposal submitted successfully!');
-        // Navigate to proposal status or back to jobs
-        navigate('/dashboard/fixer/jobs/proposal-status');
+        // Navigate to proposal status with the booking ID
+        navigate(`/dashboard/fixer/jobs/proposal-status/${id}`);
       }
     } catch (err) {
       console.error('Error submitting proposal', err);

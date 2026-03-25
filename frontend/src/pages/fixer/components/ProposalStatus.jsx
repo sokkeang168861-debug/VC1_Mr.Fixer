@@ -1,16 +1,46 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Check, Clock } from 'lucide-react';
+import { createAppSocket } from "@/lib/socket";
 
 export default function ProposalStatus() {
   const navigate = useNavigate();
+  const { id: bookingId } = useParams();
   
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigate('/dashboard/fixer/jobs/heading-to-customer');
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [navigate]);
+    const socket = createAppSocket();
+
+    // Listen for booking updates
+    socket.on("booking:updated", (booking) => {
+      console.log("Booking updated received in ProposalStatus:", booking);
+      
+      // Ensure we only act on the booking we are waiting for
+      if (String(booking.id) === String(bookingId)) {
+        if (booking.status === "customer_accept") {
+          navigate('/dashboard/fixer/jobs/heading-to-customer');
+        } else if (booking.status === "customer_reject") {
+          navigate('/dashboard/fixer/jobs/proposal-rejected');
+        }
+      }
+    });
+
+    // Also listen for general booking updates if they use different event names
+    socket.on("booking_confirmed", (booking) => {
+      if (String(booking.id) === String(bookingId)) {
+        navigate('/dashboard/fixer/jobs/heading-to-customer');
+      }
+    });
+
+    socket.on("booking_rejected", (booking) => {
+      if (String(booking.id) === String(bookingId)) {
+        navigate('/dashboard/fixer/jobs/proposal-rejected');
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [navigate, bookingId]);
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 flex flex-col items-center justify-center min-h-[calc(100vh-100px)]">
