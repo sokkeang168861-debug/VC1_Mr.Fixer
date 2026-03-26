@@ -10,6 +10,7 @@
     "lint:fix": "eslint src/ --fix",
     "knex": "knex --knexfile knexfile.js",
     "migrate": "npm run knex -- migrate:latest",
+    "setup:db": "npm run migrate && npm run seed",
     "migrate:make": "npm run knex -- migrate:make",
     "migrate:rollback": "npm run knex -- migrate:rollback",
     "seed": "npm run knex -- seed:run",

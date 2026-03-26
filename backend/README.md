@@ -70,6 +70,19 @@ npm run migrate
 npm run seed
 ```
 
+This now adds:
+
+- an admin user
+- a fixer user and customer user
+- demo categories and services
+- completed bookings with payments so the admin transaction ledger shows real records
+
+Default demo logins:
+
+- `admin@mrfixer.com` / `secret123`
+- `fixer@mrfixer.com` / `secret123`
+- `customer@mrfixer.com` / `secret123`
+
 ### 6. Start the development server
 
 ```bash
@@ -90,6 +103,7 @@ The API will be available at `http://localhost:5001`.
 | `npm run lint:fix` | Auto-fix formatting and common issues |
 | `npm run knex -- <command>` | Run any Knex CLI command |
 | `npm run migrate` | Run pending database migrations |
+| `npm run setup:db` | Run migrations and seed demo data in one step |
 | `npm run migrate:make <name>` | Create a new migration file |
 | `npm run migrate:rollback` | Roll back the latest migration batch |
 | `npm run seed` | Run all Knex seed files |

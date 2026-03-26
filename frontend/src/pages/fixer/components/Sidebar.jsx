@@ -22,7 +22,7 @@ export default function Sidebar({ className = "" }) {
     { name: "Home", icon: Home, path: ROUTES.dashboardFixer },
     { name: "Jobs", icon: BriefcaseBusiness, path: ROUTES.dashboardFixerJobs },
     { name: "Profit", icon: TrendingUp, path: ROUTES.dashboardFixerProfit },
-    { name: "Notifications", icon: Bell, path: ROUTES.dashboardFixerNotifications },
+    // { name: "Notifications", icon: Bell, path: ROUTES.dashboardFixerNotifications },
     { name: "Settings", icon: Settings, path: ROUTES.dashboardFixerSettings },
   ];
 
