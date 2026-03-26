@@ -11,6 +11,7 @@ import { motion as Motion } from 'motion/react';
 import { ROUTES } from '@/config/routes';
 import { useNavigate, useParams } from 'react-router-dom';
 import httpClient from '../../../api/httpClient';
+import { setActiveFixerBookingId } from '@/pages/fixer/lib/activeBooking';
 
 const ServiceEstimate = () => {
   const navigate = useNavigate();
@@ -72,8 +73,11 @@ const ServiceEstimate = () => {
 
       if (res.data.success) {
         alert('Proposal submitted successfully!');
+        setActiveFixerBookingId(id);
         // Navigate to proposal status or back to jobs
-        navigate('/dashboard/fixer/jobs/proposal-status');
+        navigate('/dashboard/fixer/jobs/proposal-status', {
+          state: { bookingId: Number(id) },
+        });
       }
     } catch (err) {
       console.error('Error submitting proposal', err);

@@ -129,6 +129,38 @@ class FixerBookingController {
       });
     }
   }
+
+  static async markArrived(req, res) {
+    try {
+      const db = req.app.get("db");
+      const io = req.app.get("io");
+      const { id } = req.params;
+      const provider_id = req.user.id;
+
+      const result = await FixerBookingService.markArrived(
+        db,
+        id,
+        provider_id
+      );
+
+      const booking = await CustomerBookingModel.getBookingDetailsById(db, Number(id));
+      if (booking) {
+        emitBookingUpdated(io, booking.customer_id, booking);
+      }
+
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        booking,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(error.status || 500).json({
+        success: false,
+        message: error.message || "Failed to mark booking as arrived",
+      });
+    }
+  }
 }
 
 module.exports = FixerBookingController;

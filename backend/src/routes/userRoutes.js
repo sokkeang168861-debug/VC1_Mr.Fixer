@@ -29,6 +29,26 @@ router.get(
   protect,
   (req, res) => CustomerBookingController.getCompletedHistory(req, res)
 );
+router.get(
+  "/bookings/:id/receipt",
+  protect,
+  (req, res) => CustomerBookingController.getReceiptDetails(req, res)
+);
+router.post(
+  "/bookings/:id/payments",
+  protect,
+  (req, res) => CustomerBookingController.createPendingPayment(req, res)
+);
+router.get(
+  "/bookings/:id/payments/latest",
+  protect,
+  (req, res) => CustomerBookingController.getLatestPayment(req, res)
+);
+router.post(
+  "/bookings/:id/payments/complete",
+  protect,
+  (req, res) => CustomerBookingController.completeLatestPayment(req, res)
+);
 
 router.post(
   "/bookings",
@@ -40,6 +60,11 @@ router.get(
   "/bookings/latest-active",
   protect,
   (req, res) => CustomerBookingController.getLatestActiveBooking(req, res)
+);
+router.put(
+  "/bookings/:id/location",
+  protect,
+  (req, res) => CustomerBookingController.updateBookingLocation(req, res)
 );
 router.post(
   "/bookings/:id/confirm",

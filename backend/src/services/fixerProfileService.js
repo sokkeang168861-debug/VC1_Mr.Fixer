@@ -1,6 +1,26 @@
 const FixerProfileModel = require("../models/fixerProfileModel");
 const { toImageDataUrl } = require("../utils/imageDataUrl");
 
+const normalizeCoordinate = (value, fieldName) => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null || value === "") {
+    return null;
+  }
+
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    const error = new Error(`${fieldName} must be a valid number`);
+    error.status = 400;
+    throw error;
+  }
+
+  return numericValue;
+};
+
 const getFixerProfile = async (db, user) => {
   const fixerId = user?.id;
   const role = String(user?.role || "").toLowerCase();
@@ -31,6 +51,14 @@ const getFixerProfile = async (db, user) => {
     email: fixer.email || "",
     phone: fixer.phone || "",
     location: fixer.location || "",
+    latitude:
+      fixer.latitude !== null && fixer.latitude !== undefined
+        ? Number(fixer.latitude)
+        : null,
+    longitude:
+      fixer.longitude !== null && fixer.longitude !== undefined
+        ? Number(fixer.longitude)
+        : null,
     role: fixer.role || "fixer",
     profile_img: toImageDataUrl(fixer.profile_img),
   };
@@ -131,10 +159,22 @@ const updateFixerProfile = async (db, user, data, file) => {
 
 const updateFixerLocation = async (db, user, data) => {
   const fixerId = validateFixerAccess(user);
-  const location = String(data?.location || "").trim();
+  const rawLocation =
+    typeof data?.location === "string" ? data.location.trim() : "";
+  const latitude = normalizeCoordinate(data?.latitude, "latitude");
+  const longitude = normalizeCoordinate(data?.longitude, "longitude");
 
-  if (!location) {
-    const error = new Error("Location is required");
+  if (!rawLocation && latitude === undefined && longitude === undefined) {
+    const error = new Error("Location or coordinates are required");
+    error.status = 400;
+    throw error;
+  }
+
+  if (
+    (latitude === undefined && longitude !== undefined) ||
+    (latitude !== undefined && longitude === undefined)
+  ) {
+    const error = new Error("Latitude and longitude must be provided together");
     error.status = 400;
     throw error;
   }
@@ -148,11 +188,15 @@ const updateFixerLocation = async (db, user, data) => {
 
   if (fixer.service_provider_id) {
     await FixerProfileModel.updateServiceProviderByUserId(db, fixerId, {
-      location,
+      ...(rawLocation ? { location: rawLocation } : {}),
+      ...(latitude !== undefined ? { latitude } : {}),
+      ...(longitude !== undefined ? { longitude } : {}),
     });
   } else {
     await FixerProfileModel.createServiceProviderByUserId(db, fixerId, {
-      location,
+      location: rawLocation || null,
+      latitude,
+      longitude,
     });
   }
 
@@ -161,6 +205,14 @@ const updateFixerLocation = async (db, user, data) => {
   return {
     message: "Fixer location updated successfully",
     location: updatedFixer?.location || "",
+    latitude:
+      updatedFixer?.latitude !== null && updatedFixer?.latitude !== undefined
+        ? Number(updatedFixer.latitude)
+        : null,
+    longitude:
+      updatedFixer?.longitude !== null && updatedFixer?.longitude !== undefined
+        ? Number(updatedFixer.longitude)
+        : null,
   };
 };
 

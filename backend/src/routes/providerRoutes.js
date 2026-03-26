@@ -52,4 +52,9 @@ router.post(
   protect,
   FixerBookingController.rejectBooking
 );
+router.post(
+  "/provider/requests/:id/arrived",
+  protect,
+  FixerBookingController.markArrived
+);
 module.exports = router;

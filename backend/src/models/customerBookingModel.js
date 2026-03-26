@@ -7,6 +7,14 @@ class CustomerBooking {
       customer_id: row.customer_id,
       service_id: row.service_id,
       service_address: row.service_address,
+      latitude:
+        row.latitude !== null && row.latitude !== undefined
+          ? Number(row.latitude)
+          : null,
+      longitude:
+        row.longitude !== null && row.longitude !== undefined
+          ? Number(row.longitude)
+          : null,
       issue_description: row.issue_description,
       urgent_level: row.urgent_level,
       status: row.status,
@@ -20,6 +28,16 @@ class CustomerBooking {
       fixer_name: row.fixer_name || "",
       fixer_email: row.fixer_email || "",
       fixer_phone: row.fixer_phone || "",
+      fixer_company_name: row.fixer_company_name || "",
+      provider_location: row.provider_location || "",
+      provider_latitude:
+        row.provider_latitude !== null && row.provider_latitude !== undefined
+          ? Number(row.provider_latitude)
+          : null,
+      provider_longitude:
+        row.provider_longitude !== null && row.provider_longitude !== undefined
+          ? Number(row.provider_longitude)
+          : null,
       proposal_items: proposalItems.map((item) => ({
         id: item.id,
         name: item.name,
@@ -28,6 +46,54 @@ class CustomerBooking {
             ? Number(item.price)
             : 0,
       })),
+    };
+  }
+
+  static formatReceiptRecord(row, items = []) {
+    if (!row) return null;
+
+    const normalizedItems = items.map((item) => ({
+      id: Number(item.id),
+      name: item.name || "Receipt item",
+      price:
+        item.price !== null && item.price !== undefined
+          ? Number(item.price)
+          : 0,
+    }));
+
+    const receiptTotal = normalizedItems.reduce(
+      (sum, item) => sum + Number(item.price || 0),
+      0
+    );
+
+    const amountPaid =
+      row.amount_paid !== null && row.amount_paid !== undefined
+        ? Number(row.amount_paid)
+        : receiptTotal;
+
+    let fixerAvatar = row.fixer_avatar || null;
+    if (fixerAvatar && Buffer.isBuffer(fixerAvatar)) {
+      fixerAvatar = `data:image/jpeg;base64,${fixerAvatar.toString("base64")}`;
+    }
+
+    return {
+      bookingId: Number(row.booking_id),
+      serviceId: Number(row.service_id),
+      service: row.category_name || `Service #${row.service_id}`,
+      status: String(row.status || "complete")
+        .replace(/^complete$/i, "Completed")
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase()),
+      date: row.receipt_date || row.created_at,
+      orderId: `#BK-${String(row.booking_id).padStart(5, "0")}`,
+      amount: amountPaid,
+      receiptTotal,
+      items: normalizedItems,
+      fixer: {
+        name: row.fixer_name || "Assigned Fixer",
+        companyName: row.fixer_company_name || "",
+        avatar: fixerAvatar,
+      },
     };
   }
 
@@ -154,6 +220,328 @@ class CustomerBooking {
 
       return historyItem;
     });
+  }
+
+  static async getReceiptDetailsByBookingId(db, bookingId, customerId) {
+    const [rows] = await db.query(
+      `SELECT
+        b.id AS booking_id,
+        b.service_id,
+        b.status,
+        b.created_at,
+        sc.name AS category_name,
+        fixer.full_name AS fixer_name,
+        fixer.profile_img AS fixer_avatar,
+        sp.company_name AS fixer_company_name,
+        COALESCE(
+          payment_totals.amount_paid,
+          receipt_totals.receipt_amount,
+          b.service_fee,
+          0
+        ) AS amount_paid,
+        COALESCE(payment_totals.latest_paid_at, b.created_at) AS receipt_date
+      FROM bookings b
+      INNER JOIN services s ON s.id = b.service_id
+      INNER JOIN service_categories sc ON sc.id = s.category_id
+      INNER JOIN service_providers sp ON sp.id = s.provider_id
+      INNER JOIN users fixer ON fixer.id = sp.user_id
+      LEFT JOIN (
+        SELECT
+          booking_id,
+          SUM(amount) AS amount_paid,
+          MAX(COALESCE(paid_at, created_at)) AS latest_paid_at
+        FROM payments
+        WHERE status IS NULL OR LOWER(status) IN ('paid', 'success', 'completed')
+        GROUP BY booking_id
+      ) AS payment_totals ON payment_totals.booking_id = b.id
+      LEFT JOIN (
+        SELECT booking_id, SUM(price) AS receipt_amount
+        FROM receipt
+        GROUP BY booking_id
+      ) AS receipt_totals ON receipt_totals.booking_id = b.id
+      WHERE b.id = ?
+        AND b.customer_id = ?
+        AND LOWER(b.status) = 'complete'
+      LIMIT 1`,
+      [bookingId, customerId]
+    );
+
+    const booking = rows[0];
+    if (!booking) return null;
+
+    const [receiptItems] = await db.query(
+      `SELECT id, name, price
+       FROM receipt
+       WHERE booking_id = ?
+       ORDER BY id ASC`,
+      [bookingId]
+    );
+
+    return this.formatReceiptRecord(booking, receiptItems);
+  }
+
+  static async createPendingPaymentByBookingId(db, bookingId, customerId) {
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      const [bookingRows] = await connection.query(
+        `SELECT
+          b.id,
+          b.customer_id,
+          b.status,
+          COALESCE(receipt_totals.receipt_amount, b.service_fee, 0) AS payment_amount
+        FROM bookings b
+        LEFT JOIN (
+          SELECT booking_id, SUM(price) AS receipt_amount
+          FROM receipt
+          GROUP BY booking_id
+        ) AS receipt_totals ON receipt_totals.booking_id = b.id
+        WHERE b.id = ?
+          AND b.customer_id = ?
+        LIMIT 1
+        FOR UPDATE`,
+        [bookingId, customerId]
+      );
+
+      const booking = bookingRows[0];
+
+      if (!booking) {
+        const error = new Error("Booking not found");
+        error.status = 404;
+        throw error;
+      }
+
+      if (String(booking.status || "").toLowerCase() !== "complete") {
+        const error = new Error("Payment can only be started after the booking is complete");
+        error.status = 400;
+        throw error;
+      }
+
+      const [pendingRows] = await connection.query(
+        `SELECT
+          id,
+          booking_id,
+          amount,
+          payment_method,
+          status,
+          transaction_id,
+          paid_at,
+          created_at
+        FROM payments
+        WHERE booking_id = ?
+          AND LOWER(status) = 'pending'
+        ORDER BY id DESC
+        LIMIT 1
+        FOR UPDATE`,
+        [bookingId]
+      );
+
+      if (pendingRows[0]) {
+        await connection.commit();
+        return pendingRows[0];
+      }
+
+      const amount =
+        booking.payment_amount !== null && booking.payment_amount !== undefined
+          ? Number(booking.payment_amount)
+          : 0;
+
+      const transactionId = `PENDING-${bookingId}-${Date.now()}`;
+
+      const [insertResult] = await connection.query(
+        `INSERT INTO payments (
+          booking_id,
+          amount,
+          payment_method,
+          status,
+          transaction_id,
+          paid_at,
+          created_at
+        ) VALUES (?, ?, ?, 'pending', ?, NULL, NOW())`,
+        [bookingId, amount, null, transactionId]
+      );
+
+      const [paymentRows] = await connection.query(
+        `SELECT
+          id,
+          booking_id,
+          amount,
+          payment_method,
+          status,
+          transaction_id,
+          paid_at,
+          created_at
+        FROM payments
+        WHERE id = ?
+        LIMIT 1`,
+        [insertResult.insertId]
+      );
+
+      await connection.commit();
+      return paymentRows[0] || null;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async getLatestPaymentByBookingId(db, bookingId, customerId) {
+    const [bookingRows] = await db.query(
+      `SELECT id
+       FROM bookings
+       WHERE id = ?
+         AND customer_id = ?
+       LIMIT 1`,
+      [bookingId, customerId]
+    );
+
+    if (!bookingRows[0]) {
+      return null;
+    }
+
+    const [paymentRows] = await db.query(
+      `SELECT
+        id,
+        booking_id,
+        amount,
+        payment_method,
+        status,
+        transaction_id,
+        paid_at,
+        created_at
+      FROM payments
+      WHERE booking_id = ?
+      ORDER BY id DESC
+      LIMIT 1`,
+      [bookingId]
+    );
+
+    const payment = paymentRows[0];
+    if (!payment) return null;
+
+    return {
+      id: Number(payment.id),
+      booking_id: Number(payment.booking_id),
+      amount:
+        payment.amount !== null && payment.amount !== undefined
+          ? Number(payment.amount)
+          : 0,
+      payment_method: payment.payment_method || null,
+      status: payment.status || 'pending',
+      transaction_id: payment.transaction_id || null,
+      paid_at: payment.paid_at || null,
+      created_at: payment.created_at || null,
+    };
+  }
+
+  static async completeLatestPaymentByBookingId(db, bookingId, customerId) {
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    try {
+      const [bookingRows] = await connection.query(
+        `SELECT id
+         FROM bookings
+         WHERE id = ?
+           AND customer_id = ?
+         LIMIT 1
+         FOR UPDATE`,
+        [bookingId, customerId]
+      );
+
+      if (!bookingRows[0]) {
+        const error = new Error("Booking not found");
+        error.status = 404;
+        throw error;
+      }
+
+      const [paymentRows] = await connection.query(
+        `SELECT
+          id,
+          booking_id,
+          amount,
+          payment_method,
+          status,
+          transaction_id,
+          paid_at,
+          created_at
+        FROM payments
+        WHERE booking_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+        FOR UPDATE`,
+        [bookingId]
+      );
+
+      const latestPayment = paymentRows[0];
+
+      if (!latestPayment) {
+        const error = new Error("Payment not found");
+        error.status = 404;
+        throw error;
+      }
+
+      const normalizedStatus = String(latestPayment.status || "").toLowerCase();
+
+      if (!["success", "paid", "completed"].includes(normalizedStatus)) {
+        const error = new Error("Payment must be successful before it can be completed");
+        error.status = 400;
+        throw error;
+      }
+
+      if (normalizedStatus !== "completed") {
+        await connection.query(
+          `UPDATE payments
+           SET status = 'completed',
+               paid_at = COALESCE(paid_at, NOW())
+           WHERE id = ?`,
+          [latestPayment.id]
+        );
+      }
+
+      const [updatedRows] = await connection.query(
+        `SELECT
+          id,
+          booking_id,
+          amount,
+          payment_method,
+          status,
+          transaction_id,
+          paid_at,
+          created_at
+        FROM payments
+        WHERE id = ?
+        LIMIT 1`,
+        [latestPayment.id]
+      );
+
+      await connection.commit();
+
+      const payment = updatedRows[0];
+      return payment
+        ? {
+            id: Number(payment.id),
+            booking_id: Number(payment.booking_id),
+            amount:
+              payment.amount !== null && payment.amount !== undefined
+                ? Number(payment.amount)
+                : 0,
+            payment_method: payment.payment_method || null,
+            status: payment.status || "completed",
+            transaction_id: payment.transaction_id || null,
+            paid_at: payment.paid_at || null,
+            created_at: payment.created_at || null,
+          }
+        : null;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 
   static async createReview(db, payload) {
@@ -305,7 +693,7 @@ class CustomerBooking {
   static async getLatestActiveBookingByCustomerId(
     db,
     customerId,
-    statuses = ["pending", "fixer_accept", "customer_accept"]
+    statuses = ["pending", "fixer_accept", "customer_accept", "arrived", "complete"]
   ) {
     const placeholders = statuses.map(() => "?").join(", ");
 
@@ -315,6 +703,8 @@ class CustomerBooking {
         b.customer_id,
         b.service_id,
         b.service_address,
+        b.latitude,
+        b.longitude,
         b.issue_description,
         b.urgent_level,
         b.status,
@@ -324,7 +714,11 @@ class CustomerBooking {
         sc.name AS category_name,
         fixer.full_name AS fixer_name,
         fixer.email AS fixer_email,
-        fixer.phone AS fixer_phone
+        fixer.phone AS fixer_phone,
+        sp.company_name AS fixer_company_name,
+        sp.location AS provider_location,
+        sp.latitude AS provider_latitude,
+        sp.longitude AS provider_longitude
        FROM bookings b
        INNER JOIN services s ON s.id = b.service_id
        INNER JOIN service_categories sc ON sc.id = s.category_id
@@ -355,6 +749,8 @@ class CustomerBooking {
         b.customer_id,
         b.service_id,
         b.service_address,
+        b.latitude,
+        b.longitude,
         b.issue_description,
         b.urgent_level,
         b.status,
@@ -364,7 +760,11 @@ class CustomerBooking {
         sc.name AS category_name,
         fixer.full_name AS fixer_name,
         fixer.email AS fixer_email,
-        fixer.phone AS fixer_phone
+        fixer.phone AS fixer_phone,
+        sp.company_name AS fixer_company_name,
+        sp.location AS provider_location,
+        sp.latitude AS provider_latitude,
+        sp.longitude AS provider_longitude
        FROM bookings b
        INNER JOIN services s ON s.id = b.service_id
        INNER JOIN service_categories sc ON sc.id = s.category_id
@@ -423,6 +823,29 @@ class CustomerBooking {
          AND customer_id = ?
          AND status = 'fixer_accept'`,
       [bookingId, customerId]
+    );
+
+    return result;
+  }
+
+  static async updateBookingLocationByCustomer(db, bookingId, customerId, payload) {
+    const fields = ["latitude = ?", "longitude = ?"];
+    const values = [payload.latitude, payload.longitude];
+
+    if (Object.prototype.hasOwnProperty.call(payload, "service_address")) {
+      fields.push("service_address = ?");
+      values.push(payload.service_address);
+    }
+
+    values.push(bookingId, customerId);
+
+    const [result] = await db.query(
+      `UPDATE bookings
+       SET ${fields.join(", ")}
+       WHERE id = ?
+         AND customer_id = ?
+         AND status IN ('pending', 'fixer_accept', 'customer_accept', 'arrived')`,
+      values
     );
 
     return result;

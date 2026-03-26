@@ -1,16 +1,25 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Check, Clock } from 'lucide-react';
+import { getActiveFixerBookingId, setActiveFixerBookingId } from '@/pages/fixer/lib/activeBooking';
 
 export default function ProposalStatus() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const bookingId = location.state?.bookingId || getActiveFixerBookingId();
   
   useEffect(() => {
+    if (bookingId) {
+      setActiveFixerBookingId(bookingId);
+    }
+
     const timer = setTimeout(() => {
-      navigate('/dashboard/fixer/jobs/heading-to-customer');
+      navigate('/dashboard/fixer/jobs/heading-to-customer', {
+        state: bookingId ? { bookingId } : undefined,
+      });
     }, 5000);
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [bookingId, navigate]);
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8 flex flex-col items-center justify-center min-h-[calc(100vh-100px)]">

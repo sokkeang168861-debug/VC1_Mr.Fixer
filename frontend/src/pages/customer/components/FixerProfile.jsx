@@ -165,7 +165,7 @@ const FixerProfile = ({
                 <MapPin className="h-5 w-5 text-white" />
               </div>
               <div className="mt-4 w-[340px] max-w-[90vw] rounded-full bg-white/90 px-5 py-3 text-center text-[11px] font-bold text-slate-800 shadow-xl backdrop-blur">
-                452 Valencia St, San Francisco, CA 94103
+                Street 271, Phnom Penh, Cambodia
               </div>
             </div>
           </div>

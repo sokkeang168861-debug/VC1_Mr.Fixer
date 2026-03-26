@@ -58,6 +58,22 @@ class FixerBookingService {
       connection.release();
     }
   }
+
+  static async markArrived(db, booking_id, provider_id) {
+    const result = await FixerBookingModel.markArrived(
+      db,
+      booking_id,
+      provider_id
+    );
+
+    if (result.affectedRows === 0) {
+      const error = new Error("Booking is not ready to be marked as arrived.");
+      error.status = 400;
+      throw error;
+    }
+
+    return { message: "Booking marked as arrived successfully" };
+  }
 }
 
 module.exports = FixerBookingService;

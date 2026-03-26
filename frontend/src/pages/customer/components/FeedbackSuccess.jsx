@@ -1,8 +1,21 @@
 import React from 'react';
-import { motion } from 'motion/react';
+import { motion as Motion } from 'motion/react';
 import { Check, Star, History } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/config/routes';
 
 const FeedbackSuccess = ({ onGoToHistory }) => {
+  const navigate = useNavigate();
+
+  const handleGoToHistory = () => {
+    if (typeof onGoToHistory === 'function') {
+      onGoToHistory();
+      return;
+    }
+
+    navigate(ROUTES.dashboardCustomerHistory);
+  };
+
   return (
     <div className="max-w-4xl mx-auto min-h-[600px] flex items-center justify-center">
       <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-16 w-full text-center flex flex-col items-center">
@@ -15,14 +28,14 @@ const FeedbackSuccess = ({ onGoToHistory }) => {
           </div>
           
           {/* Floating Star Badge */}
-          <motion.div 
+          <Motion.div 
             initial={{ scale: 0, rotate: -20 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", delay: 0.3 }}
             className="absolute -top-2 -right-2 w-12 h-12 bg-amber-400 rounded-full border-4 border-white flex items-center justify-center text-white shadow-lg z-20"
           >
             <Star className="w-6 h-6 fill-white" />
-          </motion.div>
+          </Motion.div>
 
           {/* Glow Effect */}
           <div className="absolute inset-0 bg-violet-400 blur-[60px] opacity-20 rounded-full -z-0 scale-150" />
@@ -37,7 +50,8 @@ const FeedbackSuccess = ({ onGoToHistory }) => {
         </p>
 
         <button 
-          onClick={onGoToHistory}
+          type="button"
+          onClick={handleGoToHistory}
           className="flex items-center gap-3 px-10 py-5 bg-white border-2 border-violet-100 rounded-2xl text-violet-600 font-bold text-lg hover:bg-violet-50 transition-all shadow-sm"
         >
           <History className="w-6 h-6" />

@@ -6,11 +6,19 @@ exports.up = async function(knex) {
   const hasTable = await knex.schema.hasTable('service_providers');
   if (!hasTable) return;
 
-  await knex.raw(`
-    ALTER TABLE service_providers
-    ADD COLUMN IF NOT EXISTS latitude DECIMAL(10, 8) NULL,
-    ADD COLUMN IF NOT EXISTS longitude DECIMAL(11, 8) NULL
-  `);
+  const hasLatitude = await knex.schema.hasColumn('service_providers', 'latitude');
+  if (!hasLatitude) {
+    await knex.schema.alterTable('service_providers', table => {
+      table.decimal('latitude', 10, 8).nullable();
+    });
+  }
+
+  const hasLongitude = await knex.schema.hasColumn('service_providers', 'longitude');
+  if (!hasLongitude) {
+    await knex.schema.alterTable('service_providers', table => {
+      table.decimal('longitude', 11, 8).nullable();
+    });
+  }
 };
 
 /**
@@ -21,9 +29,17 @@ exports.down = async function(knex) {
   const hasTable = await knex.schema.hasTable('service_providers');
   if (!hasTable) return;
 
-  await knex.raw(`
-    ALTER TABLE service_providers
-    DROP COLUMN IF EXISTS latitude,
-    DROP COLUMN IF EXISTS longitude
-  `);
+  const hasLatitude = await knex.schema.hasColumn('service_providers', 'latitude');
+  if (hasLatitude) {
+    await knex.schema.alterTable('service_providers', table => {
+      table.dropColumn('latitude');
+    });
+  }
+
+  const hasLongitude = await knex.schema.hasColumn('service_providers', 'longitude');
+  if (hasLongitude) {
+    await knex.schema.alterTable('service_providers', table => {
+      table.dropColumn('longitude');
+    });
+  }
 };

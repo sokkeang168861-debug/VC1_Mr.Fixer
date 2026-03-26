@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { QrCode } from 'lucide-react';
 
 const PaymentProgressBar = ({ currentStep }) => {
@@ -43,14 +43,14 @@ const PaymentProgressBar = ({ currentStep }) => {
   );
 };
 
-const PaymentScreen = ({ onPaymentComplete }) => {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onPaymentComplete();
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [onPaymentComplete]);
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(Number(amount || 0));
+}
 
+const PaymentScreen = ({ payment, refreshing = false }) => {
   return (
     <div className="max-w-5xl mx-auto">
       <PaymentProgressBar currentStep={2} />
@@ -69,12 +69,23 @@ const PaymentScreen = ({ onPaymentComplete }) => {
 
         {/* QR Code Section */}
         <div className="flex-1 flex items-center justify-center p-20">
-          <div className="p-8 bg-white rounded-[32px] border-2 border-slate-50 shadow-inner">
+          <div className="p-8 bg-white rounded-[32px] border-2 border-slate-50 shadow-inner text-center">
             <img 
               src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=MRFIXER-PAYMENT-MF88291" 
               alt="Payment QR Code"
               className="w-64 h-64 opacity-90"
             />
+            <p className="mt-6 text-sm font-semibold text-slate-800">
+              Payment Status: {String(payment?.status || 'pending').toUpperCase()}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              {refreshing
+                ? 'Checking payment status...'
+                : 'This screen will continue to the success page when the payment status becomes success.'}
+            </p>
+            <p className="mt-3 text-sm text-slate-700">
+              Amount: {formatCurrency(payment?.amount)}
+            </p>
           </div>
         </div>
       </div>

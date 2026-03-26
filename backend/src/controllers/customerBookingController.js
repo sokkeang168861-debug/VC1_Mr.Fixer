@@ -58,6 +58,90 @@ class CustomerBookingController {
     }
   }
 
+  async getReceiptDetails(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const receipt = await customerBookingService.getReceiptDetails(
+        db,
+        req.user,
+        req.params.id
+      );
+
+      res.status(200).json({
+        message: "Receipt fetched successfully",
+        data: receipt,
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to fetch receipt",
+      });
+    }
+  }
+
+  async createPendingPayment(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const payment = await customerBookingService.createPendingPayment(
+        db,
+        req.user,
+        req.params.id
+      );
+
+      res.status(201).json({
+        message: "Pending payment created successfully",
+        data: payment,
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to create payment",
+      });
+    }
+  }
+
+  async getLatestPayment(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const payment = await customerBookingService.getLatestPayment(
+        db,
+        req.user,
+        req.params.id
+      );
+
+      res.status(200).json({
+        message: "Payment fetched successfully",
+        data: payment,
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to fetch payment",
+      });
+    }
+  }
+
+  async completeLatestPayment(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const payment = await customerBookingService.completeLatestPayment(
+        db,
+        req.user,
+        req.params.id
+      );
+
+      res.status(200).json({
+        message: "Payment completed successfully",
+        data: payment,
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to complete payment",
+      });
+    }
+  }
+
   async getLatestActiveBooking(req, res) {
     const db = req.app.get("db");
 
@@ -160,6 +244,28 @@ class CustomerBookingController {
     } catch (err) {
       res.status(err.status || 500).json({
         message: err.message || "Failed to submit review",
+      });
+    }
+  }
+
+  async updateBookingLocation(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const booking = await customerBookingService.updateBookingLocation(
+        db,
+        req.user,
+        req.params.id,
+        req.body
+      );
+
+      res.json({
+        message: "Booking location updated successfully",
+        booking,
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to update booking location",
       });
     }
   }

@@ -10,6 +10,19 @@ function normalizeScheduledAt(value) {
   return withSpace.length === 16 ? `${withSpace}:00` : withSpace;
 }
 
+function normalizeCoordinate(value, fieldName) {
+  const parsedValue = Number(value);
+
+  if (!Number.isFinite(parsedValue)) {
+    throw {
+      status: 400,
+      message: `${fieldName} must be a valid number`,
+    };
+  }
+
+  return parsedValue;
+}
+
 class BookingService {
   static normalizeRating(value, fieldName) {
     const parsedValue = Number(value);
@@ -104,6 +117,118 @@ class BookingService {
     return await BookingModel.getCompletedHistory(db, customerId);
   }
 
+  static async getReceiptDetails(db, user, bookingId) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can access receipts" };
+    }
+
+    const normalizedBookingId = Number(bookingId);
+
+    if (!Number.isInteger(normalizedBookingId) || normalizedBookingId <= 0) {
+      throw { status: 400, message: "Invalid booking id" };
+    }
+
+    const receipt = await BookingModel.getReceiptDetailsByBookingId(
+      db,
+      normalizedBookingId,
+      customerId
+    );
+
+    if (!receipt) {
+      throw { status: 404, message: "Receipt not found" };
+    }
+
+    return receipt;
+  }
+
+  static async createPendingPayment(db, user, bookingId) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can create payments" };
+    }
+
+    const normalizedBookingId = Number(bookingId);
+
+    if (!Number.isInteger(normalizedBookingId) || normalizedBookingId <= 0) {
+      throw { status: 400, message: "Invalid booking id" };
+    }
+
+    return await BookingModel.createPendingPaymentByBookingId(
+      db,
+      normalizedBookingId,
+      customerId
+    );
+  }
+
+  static async getLatestPayment(db, user, bookingId) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can access payments" };
+    }
+
+    const normalizedBookingId = Number(bookingId);
+
+    if (!Number.isInteger(normalizedBookingId) || normalizedBookingId <= 0) {
+      throw { status: 400, message: "Invalid booking id" };
+    }
+
+    const payment = await BookingModel.getLatestPaymentByBookingId(
+      db,
+      normalizedBookingId,
+      customerId
+    );
+
+    if (!payment) {
+      throw { status: 404, message: "Payment not found" };
+    }
+
+    return payment;
+  }
+
+  static async completeLatestPayment(db, user, bookingId) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can complete payments" };
+    }
+
+    const normalizedBookingId = Number(bookingId);
+
+    if (!Number.isInteger(normalizedBookingId) || normalizedBookingId <= 0) {
+      throw { status: 400, message: "Invalid booking id" };
+    }
+
+    return await BookingModel.completeLatestPaymentByBookingId(
+      db,
+      normalizedBookingId,
+      customerId
+    );
+  }
+
   static async getLatestActiveBooking(db, user) {
     const customerId = user?.id;
     const role = String(user?.role || "").toLowerCase();
@@ -180,6 +305,58 @@ class BookingService {
     }
 
     return { id: Number(bookingId), status: "customer_reject" };
+  }
+
+  static async updateBookingLocation(db, user, bookingId, body) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can update booking location" };
+    }
+
+    const normalizedBookingId = Number(bookingId);
+
+    if (!Number.isInteger(normalizedBookingId) || normalizedBookingId <= 0) {
+      throw { status: 400, message: "Invalid booking id" };
+    }
+
+    const latitude = normalizeCoordinate(body?.latitude, "latitude");
+    const longitude = normalizeCoordinate(body?.longitude, "longitude");
+    const serviceAddress =
+      typeof body?.service_address === "string" && body.service_address.trim()
+        ? body.service_address.trim()
+        : undefined;
+
+    const result = await BookingModel.updateBookingLocationByCustomer(
+      db,
+      normalizedBookingId,
+      customerId,
+      {
+        latitude,
+        longitude,
+        ...(serviceAddress !== undefined
+          ? { service_address: serviceAddress }
+          : {}),
+      }
+    );
+
+    if (!result?.affectedRows) {
+      throw {
+        status: 404,
+        message: "Active booking not found",
+      };
+    }
+
+    return await BookingModel.getBookingDetailsById(
+      db,
+      normalizedBookingId,
+      customerId
+    );
   }
 
   static async submitReview(db, user, bookingId, body) {

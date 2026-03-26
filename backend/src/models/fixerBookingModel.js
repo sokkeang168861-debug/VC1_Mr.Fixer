@@ -42,16 +42,23 @@ class FixerBookingModel {
         b.latitude,
         b.longitude,
         b.urgent_level,
+        b.service_fee,
+        b.status,
         b.created_at,
-        u.full_name AS customer_name,
-        u.phone AS customer_phone,
-        u.email AS customer_email,
-        sp.location AS provider_location
+        customer.full_name AS customer_name,
+        customer.phone AS customer_phone,
+        customer.email AS customer_email,
+        fixer.full_name AS fixer_name,
+        sp.company_name AS fixer_company_name,
+        sp.location AS provider_location,
+        sp.latitude AS provider_latitude,
+        sp.longitude AS provider_longitude
       FROM bookings b
-      INNER JOIN users u ON u.id = b.customer_id
+      INNER JOIN users customer ON customer.id = b.customer_id
       INNER JOIN services s ON s.id = b.service_id
       INNER JOIN service_categories sc ON sc.id = s.category_id
       INNER JOIN service_providers sp ON sp.id = s.provider_id
+      INNER JOIN users fixer ON fixer.id = sp.user_id
       WHERE b.id = ? AND sp.user_id = ?`,
       [booking_id, provider_id]
     );
@@ -105,6 +112,21 @@ class FixerBookingModel {
     } finally {
       connection.release();
     }
+  }
+
+  static async markArrived(db, booking_id, provider_id) {
+    const [result] = await db.query(
+      `UPDATE bookings b
+       INNER JOIN services s ON s.id = b.service_id
+       INNER JOIN service_providers sp ON sp.id = s.provider_id
+       SET b.status = 'arrived'
+       WHERE b.id = ?
+         AND sp.user_id = ?
+         AND b.status = 'customer_accept'`,
+      [booking_id, provider_id]
+    );
+
+    return result;
   }
 }
 

@@ -1,172 +1,216 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Phone, Map as MapIcon, Navigation, Plus, Minus, Compass, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { useMemo, useState } from "react";
+import { AlertTriangle, Loader2, MapPin, Navigation, Phone, Wallet } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import httpClient from "@/api/httpClient";
+import RouteMapPanel from "@/pages/fixer/components/RouteMapPanel";
+import useActiveFixerBooking from "@/pages/fixer/hooks/useActiveFixerBooking";
+import useLiveLocationSync from "@/hooks/useLiveLocationSync";
 
 export default function HeadingToCustomer() {
   const navigate = useNavigate();
-  return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-gray-100">
-      {/* Map Background Placeholder */}
-      <div className="absolute inset-0 z-0">
-        <img 
-          src="https://picsum.photos/seed/sf-map/1200/800" 
-          alt="Map" 
-          className="w-full h-full object-cover grayscale opacity-60"
-          referrerPolicy="no-referrer"
-        />
-        {/* Overlaying a simplified map graphic or just keeping the image */}
-        <div className="absolute inset-0 bg-white/20 pointer-events-none" />
-        
-        {/* Route Line (Simplified SVG) */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none z-10">
-          <path 
-            d="M 600 500 Q 700 450 800 550" 
-            stroke="#FF7A1F" 
-            strokeWidth="4" 
-            strokeDasharray="8 8" 
-            fill="none" 
-          />
-          {/* Vehicle Icon on Path */}
-          <g transform="translate(700, 475)">
-            <rect x="-10" y="-6" width="20" height="12" rx="2" fill="#FF7A1F" />
-            <circle cx="6" cy="6" r="2" fill="black" />
-            <circle cx="-6" cy="6" r="2" fill="black" />
-          </g>
-        </svg>
+  const [focusedTarget, setFocusedTarget] = useState("route");
+  const [markingArrived, setMarkingArrived] = useState(false);
+  const { bookingId, job, loading, error } = useActiveFixerBooking();
+  const { currentPosition, locationError } = useLiveLocationSync({
+    enabled: Boolean(bookingId),
+    onLocationChange: async (nextPoint) => {
+      if (!bookingId) {
+        return;
+      }
 
-        {/* Destination Marker */}
-        <div className="absolute left-[600px] top-[500px] -translate-x-1/2 -translate-y-1/2 z-20">
-          <div className="w-12 h-12 bg-[#FF7A1F]/20 rounded-full flex items-center justify-center animate-pulse">
-            <div className="w-6 h-6 bg-white rounded-full border-4 border-[#FF7A1F]" />
-          </div>
-        </div>
+      await httpClient.put("/fixer/settings/location", {
+        location: job?.provider_location || job?.fixer_company_name || "Fixer live location",
+        latitude: nextPoint.latitude,
+        longitude: nextPoint.longitude,
+      });
+    },
+  });
+
+  const displayJob = useMemo(() => {
+    if (!job || !currentPosition) {
+      return job;
+    }
+
+    return {
+      ...job,
+      provider_latitude: currentPosition.latitude,
+      provider_longitude: currentPosition.longitude,
+    };
+  }, [currentPosition, job]);
+
+  const handleArrived = async () => {
+    if (!bookingId || markingArrived) {
+      return;
+    }
+
+    try {
+      setMarkingArrived(true);
+      await httpClient.post(`/fixer/provider/requests/${bookingId}/arrived`);
+      navigate("/dashboard/fixer/jobs/arrived-status", {
+        state: { bookingId },
+      });
+    } catch (requestError) {
+      console.error(requestError);
+      window.alert(
+        requestError?.response?.data?.message ||
+          "Failed to mark this booking as arrived."
+      );
+    } finally {
+      setMarkingArrived(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <Loader2 className="animate-spin text-[#FF7A1F]" size={36} />
       </div>
+    );
+  }
 
-      {/* Floating UI Elements */}
-      <div className="relative z-30 p-6 flex-1 flex flex-col pointer-events-none">
-        <div className="flex justify-between items-start">
-          {/* Left: Heading Status Card */}
-          <div className="w-80 bg-white rounded-2xl shadow-xl overflow-hidden pointer-events-auto">
-            <div className="bg-[#FF7A1F] p-4 flex items-center gap-3 text-white font-bold text-sm uppercase tracking-wider">
-              <Navigation size={18} className="rotate-45" />
-              <span>Heading to Customer</span>  
-            </div>
-            <div className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-[#D1D5DB] rounded-full flex items-center justify-center overflow-hidden">
-                  <img src="https://i.pravatar.cc/150?u=sarah" alt="Sarah" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-800">Sarah Jenkins</h4>
-                  <p className="text-xs text-gray-400">124 Willow Lane, Apt 4B</p>
-                </div>
-              </div>
-              <button className="p-2 text-gray-300 hover:text-[#FF7A1F] transition-colors">
-                <MapIcon size={20} />
-              </button>
-            </div>
-          </div>
+  if (error || !job) {
+    return (
+      <div className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+        <p className="text-sm font-semibold text-rose-700">
+          {error || "Unable to load active booking."}
+        </p>
+      </div>
+    );
+  }
 
-          {/* Right: Contact & Summary Card */}
-          <div className="w-80 bg-white rounded-2xl shadow-xl p-6 space-y-6 pointer-events-auto">
-            <div>
-              <h4 className="font-bold text-gray-800 mb-1">Contact Customer</h4>
-              <p className="text-xs text-gray-400">Coordination & access instructions</p>
-            </div>
-            
-            <button className="w-full bg-[#FF7A1F] hover:bg-[#E66D1C] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all">
-              <Phone size={18} fill="white" />
-              <span>Call Customer</span>
-            </button>
+  return (
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[#FF7A1F]">
+            Heading To Customer
+          </p>
+          <h1 className="mt-3 text-3xl font-black text-slate-900">
+            {displayJob.customer_name}
+          </h1>
+          <p className="mt-2 text-sm text-slate-500">
+            {displayJob.service_address || "Customer location"}
+          </p>
 
-           
-
-            <div className="border-t border-gray-50 pt-6">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="font-bold text-gray-800">Job Summary</h4>
-                <span className="bg-[#FFF9F0] text-[#FF7A1F] text-[10px] font-bold px-2 py-1 rounded uppercase">Standard</span>
-              </div>
-              
-              <div className="bg-[#F9FAFB] rounded-xl p-4 space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-[10px] uppercase font-bold text-gray-300 mb-1">Est. Earnings</p>
-                    <p className="text-xl font-bold text-[#FF7A1F]">$124.50</p>
-                  </div>
-                  <div className="text-gray-300">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="2" y="5" width="20" height="14" rx="2" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </div>
-                </div>
-                
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-gray-300 mb-1">Issue Description</p>
-                  <p className="text-xs text-gray-600 leading-relaxed italic">
-                    "Kitchen sink is leaking significantly from the P-trap. Water has started pooling under the cabinets. Needs immediate attention."
-                  </p>
-                </div>
-
-                <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-                  <p className="text-[10px] uppercase font-bold text-gray-300">Order ID</p>
-                  <p className="text-[10px] font-bold text-gray-800">#FIX-88421</p>
-                </div>
-              </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                Assigned Fixer
+              </p>
+              <p className="mt-2 text-lg font-bold text-slate-900">
+                {displayJob.fixer_name || displayJob.fixer_company_name || "Fixer"}
+              </p>
+              <p className="text-sm text-slate-500">
+                {displayJob.fixer_company_name || displayJob.provider_location || "On route"}
+              </p>
             </div>
 
-            <button 
-               onClick={() => navigate('/dashboard/fixer/jobs/navigation-map')}
-              className="w-full border border-[#FF7A1F] text-[#FF7A1F] font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#FFF9F0] transition-all"
-            >
-              <Navigation size={18} className="rotate-45" />
-              <span>Open Navigation</span>
-            </button>
+            <div className="rounded-2xl bg-slate-50 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                Customer Contact
+              </p>
+              <a
+                href={displayJob.customer_phone ? `tel:${displayJob.customer_phone}` : undefined}
+                className="mt-2 inline-flex items-center gap-2 text-lg font-bold text-[#7C3AED]"
+              >
+                <Phone size={18} />
+                {displayJob.customer_phone || "No phone"}
+              </a>
+              <p className="text-sm text-slate-500">{displayJob.customer_email || ""}</p>
+            </div>
           </div>
         </div>
 
-        {/* Map Controls (Bottom Left) */}
-        <div className="mt-auto space-y-2 pointer-events-auto">
-          <div className="flex flex-col bg-white rounded-lg shadow-lg overflow-hidden w-10">
-            <button className="p-2.5 hover:bg-gray-50 border-b border-gray-100 text-gray-400"><Plus size={20} /></button>
-            <button className="p-2.5 hover:bg-gray-50 text-gray-400"><Minus size={20} /></button>
+        <div className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">
+            Job Snapshot
+          </p>
+          <div className="mt-5 space-y-4">
+            <button
+              type="button"
+              onClick={() => setFocusedTarget("customer")}
+              className={`flex w-full items-start gap-3 rounded-2xl p-4 text-left transition ${
+                focusedTarget === "customer"
+                  ? "bg-orange-100 ring-1 ring-orange-300"
+                  : "bg-[#FFF7ED] hover:bg-orange-50"
+              }`}
+            >
+              <MapPin className="mt-0.5 text-[#FF7A1F]" size={18} />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Customer Live Location</p>
+                <p className="text-xs text-slate-500">
+                  {displayJob.service_address || "Customer GPS location is active"}
+                </p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFocusedTarget("fixer")}
+              className={`flex w-full items-start gap-3 rounded-2xl p-4 text-left transition ${
+                focusedTarget === "fixer"
+                  ? "bg-cyan-50 ring-1 ring-cyan-300"
+                  : "bg-slate-50 hover:bg-slate-100"
+              }`}
+            >
+              <Navigation className="mt-0.5 rotate-45 text-slate-700" size={18} />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Fixer Live GPS</p>
+                <p className="text-xs text-slate-500">
+                  {currentPosition
+                    ? "Sharing your current location in real time."
+                    : "Waiting for your device location."}
+                </p>
+              </div>
+            </button>
+
+            <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+              <Wallet className="mt-0.5 text-emerald-600" size={18} />
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Current Estimate</p>
+                <p className="text-xs text-slate-500">
+                  ${Number(displayJob.service_fee || 0).toFixed(2)} for booking #{bookingId}
+                </p>
+              </div>
+            </div>
           </div>
-          <button className="p-2.5 bg-white rounded-lg shadow-lg text-[#FF7A1F] w-10 flex items-center justify-center">
-            <Compass size={20} />
+
+          {locationError ? (
+            <div className="mt-4 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+              <span>{locationError}</span>
+            </div>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={() =>
+              navigate("/dashboard/fixer/jobs/navigation-map", {
+                state: { bookingId },
+              })
+            }
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF7A1F] px-5 py-4 text-sm font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-[#E66D1C]"
+          >
+            <Navigation size={18} className="rotate-45" />
+            Open Navigation Map
           </button>
         </div>
       </div>
 
-      {/* Bottom Status Bar */}
-      <div className="bg-white border-t border-gray-100 p-4 px-8 flex items-center justify-between z-40">
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#FFF5ED] rounded-xl flex items-center justify-center text-[#FF7A1F]">
-              <TrendingUp size={20} />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase font-bold text-gray-300">Current Status</p>
-              <p className="font-bold text-gray-800">On My Way</p>
-            </div>
-          </div>
-          
-          <div className="w-64">
-            <div className="flex justify-between items-center mb-1.5">
-              <p className="text-[10px] uppercase font-bold text-gray-300">Distance Remaining</p>
-              <p className="text-[10px] font-bold text-[#FF7A1F]">2.4 mi • 12 min</p>
-            </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-[#FF7A1F] w-3/4 rounded-full" />
-            </div>
-          </div>
-        </div>
+      <RouteMapPanel
+        job={displayJob}
+        heightClass="h-[520px]"
+        focusedTarget={focusedTarget}
+      />
 
-        <button 
-          onClick={() => navigate('/dashboard/fixer/jobs/arrived-status')}
-          className="bg-[#FF7A1F] hover:bg-[#E66D1C] text-white font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-[#FF7A1F]/20 pointer-events-auto"
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={handleArrived}
+          disabled={markingArrived}
+          className="rounded-2xl bg-slate-900 px-8 py-4 text-sm font-bold text-white transition hover:bg-slate-800"
         >
-          <CheckCircle2 size={20} />
-          <span>I Have Arrived</span>
+          {markingArrived ? "Updating..." : "I Have Arrived"}
         </button>
       </div>
     </div>

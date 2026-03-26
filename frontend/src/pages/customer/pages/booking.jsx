@@ -31,6 +31,12 @@ export default function CustomerBooking() {
     const [refreshingBooking, setRefreshingBooking] = useState(false);
     const [confirmingBooking, setConfirmingBooking] = useState(false);
     const [rejectingBooking, setRejectingBooking] = useState(false);
+    const [receiptDetails, setReceiptDetails] = useState(null);
+    const [loadingReceipt, setLoadingReceipt] = useState(false);
+    const [creatingPayment, setCreatingPayment] = useState(false);
+    const [paymentDetails, setPaymentDetails] = useState(null);
+    const [loadingPayment, setLoadingPayment] = useState(false);
+    const [completingPayment, setCompletingPayment] = useState(false);
 
     const syncStepWithBooking = useCallback((booking) => {
         if (!booking) {
@@ -49,7 +55,17 @@ export default function CustomerBooking() {
         }
 
         if (booking.status === "customer_accept") {
-            setCurrentStep(5);
+            setCurrentStep((step) => (step < 5 ? 5 : step));
+            return;
+        }
+
+        if (booking.status === "arrived") {
+            setCurrentStep((step) => (step < 6 ? 6 : step));
+            return;
+        }
+
+        if (booking.status === "complete") {
+            setCurrentStep((step) => (step < 7 ? 7 : step));
         }
     }, []);
 
@@ -85,6 +101,20 @@ export default function CustomerBooking() {
     }, [loadLatestActiveBooking]);
 
     useEffect(() => {
+        if (!activeBooking?.id) {
+            return undefined;
+        }
+
+        const intervalId = window.setInterval(() => {
+            loadLatestActiveBooking({ silent: true });
+        }, 10000);
+
+        return () => {
+            window.clearInterval(intervalId);
+        };
+    }, [activeBooking?.id, loadLatestActiveBooking]);
+
+    useEffect(() => {
         const socket = createAppSocket();
 
         socket.on("booking:updated", (booking) => {
@@ -98,6 +128,123 @@ export default function CustomerBooking() {
             socket.disconnect();
         };
     }, [syncStepWithBooking]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        if (activeBooking?.status !== "complete" || !activeBooking?.id) {
+            setReceiptDetails(null);
+            setLoadingReceipt(false);
+            return undefined;
+        }
+
+        setLoadingReceipt(true);
+
+        httpClient
+            .get(`/user/bookings/${activeBooking.id}/receipt`)
+            .then((response) => {
+                if (!isMounted) {
+                    return;
+                }
+
+                setReceiptDetails(response?.data?.data ?? null);
+            })
+            .catch((error) => {
+                if (!isMounted) {
+                    return;
+                }
+
+                console.error(error);
+                setReceiptDetails(null);
+            })
+            .finally(() => {
+                if (isMounted) {
+                    setLoadingReceipt(false);
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [activeBooking?.id, activeBooking?.status]);
+
+    const loadLatestPayment = useCallback(async ({ silent = false } = {}) => {
+        if (!activeBooking?.id || activeBooking?.status !== "complete") {
+            setPaymentDetails(null);
+            setLoadingPayment(false);
+            return null;
+        }
+
+        if (!silent) {
+            setLoadingPayment(true);
+        }
+
+        try {
+            const response = await httpClient.get(`/user/bookings/${activeBooking.id}/payments/latest`);
+            const payment = response?.data?.data ?? null;
+            setPaymentDetails(payment);
+            return payment;
+        } catch (error) {
+            console.error(error);
+            if (!silent) {
+                setBookingError(error.response?.data?.message || "Failed to load payment.");
+            }
+            return null;
+        } finally {
+            if (!silent) {
+                setLoadingPayment(false);
+            }
+        }
+    }, [activeBooking?.id, activeBooking?.status]);
+
+    useEffect(() => {
+        const bookingStatus = String(activeBooking?.status || '').toLowerCase();
+        const paymentStatus = String(paymentDetails?.status || '').toLowerCase();
+
+        if (bookingStatus !== 'complete') {
+            return;
+        }
+
+        if (['success', 'paid'].includes(paymentStatus)) {
+            setCurrentStep((step) => (step < 9 ? 9 : step));
+            return;
+        }
+
+        if (paymentStatus === 'pending') {
+            setCurrentStep((step) => (step < 8 ? 8 : step));
+        }
+    }, [activeBooking?.status, paymentDetails?.status]);
+
+    useEffect(() => {
+        const bookingStatus = String(activeBooking?.status || '').toLowerCase();
+        const paymentStatus = String(paymentDetails?.status || '').toLowerCase();
+
+        if (bookingStatus === 'complete' && paymentStatus === 'completed' && currentStep < 10) {
+            setActiveBooking(null);
+            setReceiptDetails(null);
+            setPaymentDetails(null);
+            setBookingError('');
+            setCurrentStep(1);
+        }
+    }, [activeBooking?.status, currentStep, paymentDetails?.status]);
+
+    useEffect(() => {
+        let intervalId;
+
+        if (activeBooking?.status === "complete" && activeBooking?.id) {
+            loadLatestPayment();
+
+            intervalId = window.setInterval(() => {
+                loadLatestPayment({ silent: true });
+            }, 5000);
+        }
+
+        return () => {
+            if (intervalId) {
+                window.clearInterval(intervalId);
+            }
+        };
+    }, [activeBooking?.id, activeBooking?.status, currentStep, loadLatestPayment]);
 
     const handleLogout = async () => {
         await logoutUser({ navigate, redirectTo: ROUTES.home });
@@ -229,6 +376,81 @@ export default function CustomerBooking() {
         }
     };
 
+    const handleGoToPayment = useCallback(async () => {
+        if (!activeBooking?.id || creatingPayment) {
+            return;
+        }
+
+        try {
+            setCreatingPayment(true);
+            setBookingError("");
+
+            await httpClient.post(`/user/bookings/${activeBooking.id}/payments`);
+            await loadLatestPayment();
+            setCurrentStep(8);
+        } catch (error) {
+            console.error(error);
+            setBookingError(error.response?.data?.message || "Failed to start payment.");
+        } finally {
+            setCreatingPayment(false);
+        }
+    }, [activeBooking?.id, creatingPayment, loadLatestPayment]);
+
+    const handleCompletePayment = useCallback(async () => {
+        if (!activeBooking?.id || completingPayment) {
+            return;
+        }
+
+        try {
+            setCompletingPayment(true);
+            setBookingError("");
+
+            const response = await httpClient.post(`/user/bookings/${activeBooking.id}/payments/complete`);
+            const payment = response?.data?.data ?? null;
+            setPaymentDetails(payment);
+        } catch (error) {
+            console.error(error);
+            setBookingError(error.response?.data?.message || "Failed to complete payment.");
+        } finally {
+            setCompletingPayment(false);
+        }
+    }, [activeBooking?.id, completingPayment]);
+
+    const handleSubmitReview = useCallback(async (payload) => {
+        if (!activeBooking?.id) {
+            throw new Error('Missing booking id');
+        }
+
+        setBookingError('');
+
+        await httpClient.post(`/user/bookings/${activeBooking.id}/review`, payload);
+
+        const normalizedPaymentStatus = String(paymentDetails?.status || '').toLowerCase();
+
+        if (normalizedPaymentStatus !== 'completed') {
+            try {
+                const response = await httpClient.post(
+                    `/user/bookings/${activeBooking.id}/payments/complete`
+                );
+                setPaymentDetails(response?.data?.data ?? paymentDetails);
+            } catch (paymentError) {
+                console.error(paymentError);
+                setBookingError(
+                    paymentError.response?.data?.message ||
+                    'Review submitted, but failed to complete payment.'
+                );
+            }
+        }
+
+        setCurrentStep(10);
+    }, [activeBooking?.id, paymentDetails]);
+
+    const isCompletedServiceFlow = activeBooking?.status === "complete";
+    const activeFixerName =
+        activeBooking?.fixer_name ||
+        activeBooking?.fixer_company_name ||
+        "Your fixer";
+
     // Calculate progress bar step
     const getProgressBarStep = () => {
         if (currentStep === 1) return 1;
@@ -298,6 +520,12 @@ export default function CustomerBooking() {
 
                         {currentStep <= 7 && <ProgressBar currentStep={getProgressBarStep()} />}
 
+                        {bookingError ? (
+                            <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+                                {bookingError}
+                            </div>
+                        ) : null}
+
                         <div className="mt-8">
                             {activeBooking?.status === "pending" ? (
                                 <WaitingConfirmation
@@ -329,50 +557,66 @@ export default function CustomerBooking() {
                             )}
 
                             {!activeBooking && currentStep === 5 && (
-                                <FixerArrival onArrived={() => setCurrentStep(6)} />
+                                <FixerArrival booking={bookingDraft} onArrived={() => setCurrentStep(6)} />
                             )}
 
                             {activeBooking?.status === "customer_accept" && currentStep === 5 && (
-                                <FixerArrival onArrived={() => setCurrentStep(6)} />
+                                <FixerArrival booking={activeBooking} onArrived={() => setCurrentStep(6)} />
                             )}
 
                             {!activeBooking && currentStep === 6 && (
                                 <FixingInProgress onComplete={() => setCurrentStep(7)} />
                             )}
 
-                            {activeBooking?.status === "customer_accept" && currentStep === 6 && (
-                                <FixingInProgress onComplete={() => setCurrentStep(7)} />
+                            {activeBooking?.status === "arrived" && currentStep === 6 && (
+                                <FixingInProgress fixerName={activeFixerName} />
                             )}
 
                             {!activeBooking && currentStep === 7 && (
-                                <ServiceCompleted onPayment={() => setCurrentStep(8)} />
+                                <ServiceCompleted onPayment={handleGoToPayment} />
                             )}
 
-                            {activeBooking?.status === "customer_accept" && currentStep === 7 && (
-                                <ServiceCompleted onPayment={() => setCurrentStep(8)} />
+                            {isCompletedServiceFlow && currentStep === 7 && (
+                                <ServiceCompleted
+                                    onPayment={handleGoToPayment}
+                                    receipt={receiptDetails}
+                                    loading={loadingReceipt}
+                                    booking={activeBooking}
+                                    submittingPayment={creatingPayment}
+                                />
                             )}
 
                             {!activeBooking && currentStep === 8 && (
                                 <PaymentScreen onPaymentComplete={() => setCurrentStep(9)} />
                             )}
 
-                            {activeBooking?.status === "customer_accept" && currentStep === 8 && (
-                                <PaymentScreen onPaymentComplete={() => setCurrentStep(9)} />
+                            {isCompletedServiceFlow && currentStep === 8 && (
+                                <PaymentScreen
+                                    payment={paymentDetails}
+                                    refreshing={loadingPayment}
+                                />
                             )}
 
                             {!activeBooking && currentStep === 9 && (
                                 <PaymentSuccess onSubmitReview={() => setCurrentStep(10)} />
                             )}
 
-                            {activeBooking?.status === "customer_accept" && currentStep === 9 && (
-                                <PaymentSuccess onSubmitReview={() => setCurrentStep(10)} />
+                            {isCompletedServiceFlow && currentStep === 9 && (
+                                <PaymentSuccess
+                                    onSubmitReview={handleSubmitReview}
+                                    onDone={handleCompletePayment}
+                                    booking={activeBooking}
+                                    receipt={receiptDetails}
+                                    payment={paymentDetails}
+                                    completingPayment={completingPayment}
+                                />
                             )}
 
                             {!activeBooking && currentStep === 10 && (
                                 <FeedbackSuccess onGoToHistory={() => navigate(ROUTES.dashboardCustomerHistory)} />
                             )}
 
-                            {activeBooking?.status === "customer_accept" && currentStep === 10 && (
+                            {isCompletedServiceFlow && currentStep === 10 && (
                                 <FeedbackSuccess onGoToHistory={() => navigate(ROUTES.dashboardCustomerHistory)} />
                             )}
                         </div>

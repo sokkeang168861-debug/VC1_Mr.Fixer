@@ -9,7 +9,9 @@ class FixerProfileModel {
         u.role,
         u.profile_img,
         sp.id AS service_provider_id,
-        sp.location
+        sp.location,
+        sp.latitude,
+        sp.longitude
        FROM users u
        LEFT JOIN service_providers sp ON sp.user_id = u.id
        WHERE u.id = ? AND LOWER(u.role) = 'fixer'
@@ -70,6 +72,16 @@ class FixerProfileModel {
       values.push(payload.location);
     }
 
+    if (Object.prototype.hasOwnProperty.call(payload, "latitude")) {
+      fields.push("latitude = ?");
+      values.push(payload.latitude);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, "longitude")) {
+      fields.push("longitude = ?");
+      values.push(payload.longitude);
+    }
+
     if (fields.length === 0) {
       return null;
     }
@@ -88,9 +100,14 @@ class FixerProfileModel {
 
   static async createServiceProviderByUserId(db, fixerId, payload) {
     const [result] = await db.query(
-      `INSERT INTO service_providers (user_id, location)
-       VALUES (?, ?)`,
-      [fixerId, payload.location]
+      `INSERT INTO service_providers (user_id, location, latitude, longitude)
+       VALUES (?, ?, ?, ?)`,
+      [
+        fixerId,
+        payload.location || null,
+        payload.latitude ?? null,
+        payload.longitude ?? null,
+      ]
     );
 
     return result;
