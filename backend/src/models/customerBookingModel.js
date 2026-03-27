@@ -97,6 +97,23 @@ class CustomerBooking {
     };
   }
 
+  static serializePayment(payment, fallbackStatus = "pending") {
+    if (!payment) return null;
+
+    return {
+      id: Number(payment.id),
+      booking_id: Number(payment.booking_id),
+      amount:
+        payment.amount !== null && payment.amount !== undefined
+          ? Number(payment.amount)
+          : 0,
+      status: payment.status || fallbackStatus,
+      transaction_id: payment.transaction_id || null,
+      paid_at: payment.paid_at || null,
+      created_at: payment.created_at || null,
+    };
+  }
+
   static async createBooking(db, payload, files = []) {
     const connection = await db.getConnection();
     await connection.beginTransaction();
@@ -323,7 +340,6 @@ class CustomerBooking {
           id,
           booking_id,
           amount,
-          payment_method,
           status,
           transaction_id,
           paid_at,
@@ -353,13 +369,12 @@ class CustomerBooking {
         `INSERT INTO payments (
           booking_id,
           amount,
-          payment_method,
           status,
           transaction_id,
           paid_at,
           created_at
-        ) VALUES (?, ?, ?, 'pending', ?, NULL, NOW())`,
-        [bookingId, amount, null, transactionId]
+        ) VALUES (?, ?, 'pending', ?, NULL, NOW())`,
+        [bookingId, amount, transactionId]
       );
 
       const [paymentRows] = await connection.query(
@@ -367,7 +382,6 @@ class CustomerBooking {
           id,
           booking_id,
           amount,
-          payment_method,
           status,
           transaction_id,
           paid_at,
@@ -379,7 +393,7 @@ class CustomerBooking {
       );
 
       await connection.commit();
-      return paymentRows[0] || null;
+      return this.serializePayment(paymentRows[0]);
     } catch (error) {
       await connection.rollback();
       throw error;
@@ -407,7 +421,6 @@ class CustomerBooking {
         id,
         booking_id,
         amount,
-        payment_method,
         status,
         transaction_id,
         paid_at,
@@ -420,21 +433,7 @@ class CustomerBooking {
     );
 
     const payment = paymentRows[0];
-    if (!payment) return null;
-
-    return {
-      id: Number(payment.id),
-      booking_id: Number(payment.booking_id),
-      amount:
-        payment.amount !== null && payment.amount !== undefined
-          ? Number(payment.amount)
-          : 0,
-      payment_method: payment.payment_method || null,
-      status: payment.status || 'pending',
-      transaction_id: payment.transaction_id || null,
-      paid_at: payment.paid_at || null,
-      created_at: payment.created_at || null,
-    };
+    return this.serializePayment(payment, "pending");
   }
 
   static async completeLatestPaymentByBookingId(db, bookingId, customerId) {
@@ -463,7 +462,6 @@ class CustomerBooking {
           id,
           booking_id,
           amount,
-          payment_method,
           status,
           transaction_id,
           paid_at,
@@ -507,7 +505,6 @@ class CustomerBooking {
           id,
           booking_id,
           amount,
-          payment_method,
           status,
           transaction_id,
           paid_at,
@@ -521,21 +518,7 @@ class CustomerBooking {
       await connection.commit();
 
       const payment = updatedRows[0];
-      return payment
-        ? {
-            id: Number(payment.id),
-            booking_id: Number(payment.booking_id),
-            amount:
-              payment.amount !== null && payment.amount !== undefined
-                ? Number(payment.amount)
-                : 0,
-            payment_method: payment.payment_method || null,
-            status: payment.status || "completed",
-            transaction_id: payment.transaction_id || null,
-            paid_at: payment.paid_at || null,
-            created_at: payment.created_at || null,
-          }
-        : null;
+      return this.serializePayment(payment, "completed");
     } catch (error) {
       await connection.rollback();
       throw error;
@@ -849,6 +832,101 @@ class CustomerBooking {
     );
 
     return result;
+  }
+
+  static async getFixerProfileBaseByBookingId(db, bookingId, customerId) {
+    const [rows] = await db.query(
+      `SELECT
+        b.id AS booking_id,
+        u.id AS fixer_user_id,
+        sp.id AS provider_id,
+        u.full_name,
+        u.email,
+        u.phone,
+        u.profile_img,
+        sp.company_name,
+        sp.bio,
+        sp.location,
+        sp.latitude,
+        sp.longitude,
+        sp.experience,
+        sp.is_verified,
+        sp.speed_rating,
+        sp.quality_rating,
+        sp.price_fairness_rating,
+        sp.behavior_rating,
+        sp.overall_rating
+       FROM bookings b
+       INNER JOIN services s ON s.id = b.service_id
+       INNER JOIN service_providers sp ON sp.id = s.provider_id
+       INNER JOIN users u ON u.id = sp.user_id
+       WHERE b.id = ?
+         AND b.customer_id = ?
+       LIMIT 1`,
+      [bookingId, customerId]
+    );
+
+    return rows[0] || null;
+  }
+
+  static async getFixerCategoriesByProviderId(db, providerId) {
+    const [rows] = await db.query(
+      `SELECT DISTINCT sc.name
+       FROM services s
+       INNER JOIN service_categories sc ON sc.id = s.category_id
+       WHERE s.provider_id = ?
+       ORDER BY sc.name ASC`,
+      [providerId]
+    );
+
+    return rows.map((row) => row.name).filter(Boolean);
+  }
+
+  static async getFixerBookingStatsByProviderId(db, providerId) {
+    const [rows] = await db.query(
+      `SELECT
+        COUNT(DISTINCT b.id) AS total_bookings,
+        COUNT(DISTINCT CASE
+          WHEN b.status IN ('fixer_accept', 'customer_accept', 'arrived', 'complete')
+          THEN b.id
+        END) AS accepted_bookings,
+        COUNT(DISTINCT CASE
+          WHEN b.status = 'complete'
+          THEN b.id
+        END) AS completed_jobs
+       FROM bookings b
+       INNER JOIN services s ON s.id = b.service_id
+       WHERE s.provider_id = ?`,
+      [providerId]
+    );
+
+    return rows[0] || {
+      total_bookings: 0,
+      accepted_bookings: 0,
+      completed_jobs: 0,
+    };
+  }
+
+  static async getFixerReviewsByProviderId(db, providerId, limit = 6) {
+    const safeLimit = Math.max(Number(limit) || 0, 0);
+    const [rows] = await db.query(
+      `SELECT
+        r.id,
+        r.overall_rating,
+        r.comment,
+        r.created_at,
+        u.full_name AS customer_name
+       FROM reviews r
+       INNER JOIN bookings b ON b.id = r.booking_id
+       INNER JOIN services s ON s.id = b.service_id
+       INNER JOIN users u ON u.id = b.customer_id
+       WHERE s.provider_id = ?
+       ORDER BY r.created_at DESC
+       LIMIT ?`,
+      [providerId, safeLimit]
+    );
+
+    return rows;
   }
 }
 

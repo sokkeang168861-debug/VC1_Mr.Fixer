@@ -244,10 +244,10 @@ export default function CustomerDashboard({ initialPage = "services" }) {
   const sidebarTab = currentPage === "specialists" ? "services" : currentPage;
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-50">
       <Header />
 
-      <div className="flex flex-1 ">
+      <div className="mt-16 flex min-h-0 flex-1 overflow-hidden">
         <Sidebar
           activeTab={sidebarTab}
           onChange={(tab) => {
@@ -268,9 +268,10 @@ export default function CustomerDashboard({ initialPage = "services" }) {
             }
           }}
           onLogout={handleLogout}
+          fixed
         />
 
-        <main className="flex-1 min-h-0 overflow-y-auto p-8">
+        <main className="ml-64 flex-1 min-h-0 overflow-y-auto p-8">
           <AnimatePresence mode="wait">{renderPage()}</AnimatePresence>
         </main>
       </div>

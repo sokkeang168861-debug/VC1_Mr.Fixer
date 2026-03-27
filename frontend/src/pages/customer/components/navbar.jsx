@@ -12,6 +12,7 @@ export const Sidebar = ({
   onLogout,
   sticky = true,
   scrollNav = false,
+  fixed = false,
 }) => {
   const menuItems = [
     { id: "services", label: "Services", icon: Wrench },
@@ -20,13 +21,17 @@ export const Sidebar = ({
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
-  const sidebarStickyClasses = sticky ? "sticky top-16" : "";
+  const sidebarPositionClasses = fixed
+    ? "fixed left-0 top-16 z-20"
+    : sticky
+      ? "sticky top-16"
+      : "";
   const sidebarHeightClasses = "h-[calc(100vh-4rem)]";
   const navScrollClasses = scrollNav ? "overflow-y-auto" : "overflow-hidden";
 
   return (
     <div
-      className={`w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col p-4 overflow-hidden ${sidebarHeightClasses} ${sidebarStickyClasses}`}
+      className={`w-64 shrink-0 bg-white border-r border-slate-200 flex flex-col p-4 overflow-hidden ${sidebarHeightClasses} ${sidebarPositionClasses}`}
     >
       <nav className={`min-h-0 flex-1 space-y-1 pb-4 ${navScrollClasses}`}>
         {menuItems.map((item) => (
@@ -114,7 +119,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10">
+    <header className="fixed left-0 right-0 top-0 z-30 h-16 border-b border-slate-200 bg-white px-8 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
           <Wrench size={24} />

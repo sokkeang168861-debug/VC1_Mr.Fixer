@@ -432,19 +432,20 @@ export default function CustomerHistoryPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-50">
       <Header />
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="mt-16 flex min-h-0 flex-1 overflow-hidden">
         <Sidebar
           activeTab="history"
           onChange={handleSidebarChange}
           onLogout={handleLogout}
-          sticky={false}
           scrollNav={false}
+          sticky={false}
+          fixed
         />
 
-        <main className="min-h-0 flex-1 overflow-y-auto p-10">
+        <main className="ml-64 min-h-0 flex-1 overflow-y-auto p-10">
           <AnimatePresence>
             {currentView === "history" && (
               <Motion.div
@@ -524,6 +525,7 @@ export default function CustomerHistoryPage() {
 
             {currentView === "profile" && selectedService && (
               <FixerProfile
+                bookingId={selectedService.bookingId}
                 onBack={() => setCurrentView("history")}
                 name={selectedService.fixer.name}
                 avatar={selectedService.fixer.avatar}

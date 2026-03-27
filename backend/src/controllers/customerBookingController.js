@@ -58,6 +58,27 @@ class CustomerBookingController {
     }
   }
 
+  async getFixerProfile(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const profile = await customerBookingService.getFixerProfile(
+        db,
+        req.user,
+        req.params.id
+      );
+
+      res.status(200).json({
+        message: "Fixer profile fetched successfully",
+        data: profile,
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to fetch fixer profile",
+      });
+    }
+  }
+
   async getReceiptDetails(req, res) {
     const db = req.app.get("db");
 

@@ -465,16 +465,17 @@ export default function CustomerBooking() {
             <div className="flex h-screen flex-col overflow-hidden">
                 <Header />
 
-                <div className="flex flex-1 overflow-hidden">
+                <div className="mt-16 flex min-h-0 flex-1 overflow-hidden">
                     <Sidebar
                         activeTab="booking"
                         onChange={handleSidebarChange}
                         onLogout={handleLogout}
                         sticky={false}
                         scrollNav={false}
+                        fixed
                     />
 
-                    <main className="flex flex-1 items-center justify-center p-10">
+                    <main className="ml-64 flex flex-1 items-center justify-center p-10">
                         <div className="flex items-center gap-3 rounded-2xl bg-white px-6 py-5 text-slate-500 shadow-sm">
                             <LoaderCircle className="h-5 w-5 animate-spin" />
                             <span>Loading your current booking...</span>
@@ -489,16 +490,17 @@ export default function CustomerBooking() {
         <div className="flex h-screen flex-col overflow-hidden">
             <Header />
 
-            <div className="flex flex-1 overflow-hidden">
+            <div className="mt-16 flex min-h-0 flex-1 overflow-hidden">
                 <Sidebar
                     activeTab="booking"
                     onChange={handleSidebarChange}
                     onLogout={handleLogout}
                     sticky={false}
                     scrollNav={false}
+                    fixed
                 />
 
-                <main className="flex-1 overflow-y-auto p-10">
+                <main className="ml-64 flex-1 overflow-y-auto p-10">
                     <div className="max-w-5xl mx-auto">
                         <div className="mb-8 flex items-start justify-between gap-4">
                             <div className="flex-1 text-center">

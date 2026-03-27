@@ -30,6 +30,11 @@ router.get(
   (req, res) => CustomerBookingController.getCompletedHistory(req, res)
 );
 router.get(
+  "/bookings/:id/fixer-profile",
+  protect,
+  (req, res) => CustomerBookingController.getFixerProfile(req, res)
+);
+router.get(
   "/bookings/:id/receipt",
   protect,
   (req, res) => CustomerBookingController.getReceiptDetails(req, res)
