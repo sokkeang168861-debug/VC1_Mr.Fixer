@@ -81,7 +81,6 @@ class FixerBookingModel {
         COALESCE(rt.receipt_total, 0) AS receipt_total,
         latest_payment.id AS payment_id,
         latest_payment.amount AS payment_amount,
-        latest_payment.payment_method,
         latest_payment.status AS payment_status,
         latest_payment.transaction_id,
         latest_payment.paid_at AS payment_paid_at,
@@ -116,7 +115,6 @@ class FixerBookingModel {
           p1.id,
           p1.booking_id,
           p1.amount,
-          p1.payment_method,
           p1.status,
           p1.transaction_id,
           p1.paid_at
@@ -167,7 +165,6 @@ class FixerBookingModel {
               booking.payment_amount !== null && booking.payment_amount !== undefined
                 ? Number(booking.payment_amount)
                 : 0,
-            payment_method: booking.payment_method || null,
             status: booking.payment_status || "pending",
             transaction_id: booking.transaction_id || null,
             paid_at: booking.payment_paid_at || null,
@@ -304,13 +301,12 @@ class FixerBookingModel {
           `INSERT INTO payments (
              booking_id,
              amount,
-             payment_method,
              status,
              transaction_id,
              paid_at,
              created_at
-           ) VALUES (?, ?, ?, 'pending', ?, NULL, NOW())`,
-          [booking_id, total, null, transactionId]
+           ) VALUES (?, ?, 'pending', ?, NULL, NOW())`,
+          [booking_id, total, transactionId]
         );
       } else if (String(latestPayment.status || "").toLowerCase() === "pending") {
         await connection.query(
@@ -366,7 +362,6 @@ class FixerBookingModel {
            id,
            booking_id,
            amount,
-           payment_method,
            status,
            transaction_id,
            paid_at,
@@ -404,7 +399,6 @@ class FixerBookingModel {
            id,
            booking_id,
            amount,
-           payment_method,
            status,
            transaction_id,
            paid_at,
@@ -455,7 +449,6 @@ class FixerBookingModel {
            id,
            booking_id,
            amount,
-           payment_method,
            status,
            transaction_id,
            paid_at,
@@ -499,7 +492,6 @@ class FixerBookingModel {
            id,
            booking_id,
            amount,
-           payment_method,
            status,
            transaction_id,
            paid_at,

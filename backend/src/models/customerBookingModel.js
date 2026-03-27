@@ -323,7 +323,6 @@ class CustomerBooking {
           id,
           booking_id,
           amount,
-          payment_method,
           status,
           transaction_id,
           paid_at,
@@ -353,13 +352,12 @@ class CustomerBooking {
         `INSERT INTO payments (
           booking_id,
           amount,
-          payment_method,
           status,
           transaction_id,
           paid_at,
           created_at
-        ) VALUES (?, ?, ?, 'pending', ?, NULL, NOW())`,
-        [bookingId, amount, null, transactionId]
+        ) VALUES (?, ?, 'pending', ?, NULL, NOW())`,
+        [bookingId, amount, transactionId]
       );
 
       const [paymentRows] = await connection.query(
@@ -367,7 +365,6 @@ class CustomerBooking {
           id,
           booking_id,
           amount,
-          payment_method,
           status,
           transaction_id,
           paid_at,
@@ -403,11 +400,10 @@ class CustomerBooking {
     }
 
     const [paymentRows] = await db.query(
-      `SELECT
+        `SELECT
         id,
         booking_id,
         amount,
-        payment_method,
         status,
         transaction_id,
         paid_at,
@@ -429,7 +425,6 @@ class CustomerBooking {
         payment.amount !== null && payment.amount !== undefined
           ? Number(payment.amount)
           : 0,
-      payment_method: payment.payment_method || null,
       status: payment.status || 'pending',
       transaction_id: payment.transaction_id || null,
       paid_at: payment.paid_at || null,
@@ -463,7 +458,6 @@ class CustomerBooking {
           id,
           booking_id,
           amount,
-          payment_method,
           status,
           transaction_id,
           paid_at,
@@ -507,7 +501,6 @@ class CustomerBooking {
           id,
           booking_id,
           amount,
-          payment_method,
           status,
           transaction_id,
           paid_at,
@@ -529,7 +522,6 @@ class CustomerBooking {
               payment.amount !== null && payment.amount !== undefined
                 ? Number(payment.amount)
                 : 0,
-            payment_method: payment.payment_method || null,
             status: payment.status || "completed",
             transaction_id: payment.transaction_id || null,
             paid_at: payment.paid_at || null,
