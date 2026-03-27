@@ -57,4 +57,9 @@ router.post(
   protect,
   FixerBookingController.markArrived
 );
+router.post(
+  "/provider/requests/:id/complete",
+  protect,
+  FixerBookingController.completeBooking
+);
 module.exports = router;

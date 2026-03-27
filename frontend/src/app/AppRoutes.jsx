@@ -30,7 +30,6 @@ const SetProposal = lazy(() => import("../pages/fixer/components/setProposal"));
 const ProposalStatus = lazy(() => import("../pages/fixer/components/ProposalStatus"));
 const HeadingToCustomer = lazy(() => import("../pages/fixer/components/HeadingToCustomer"));
 const ArrivedStatus = lazy(() => import("../pages/fixer/components/ArrivedStatus"));
-const NavigationMap = lazy(() => import("../pages/fixer/components/NavigationMap"));
 const CreateInvoice = lazy(() => import("../pages/fixer/components/CreateInvoice"));
 const ExpressCheckout = lazy(() => import("../pages/fixer/components/ExpressCheckout"));
 const JobCompleted = lazy(() => import("../pages/fixer/components/JobCompleted"));
@@ -187,7 +186,6 @@ function InnerRoutes() {
               <Route path="proposal-status" element={<ProposalStatus />} />
               <Route path="heading-to-customer" element={<HeadingToCustomer />} />
               <Route path="arrived-status" element={<ArrivedStatus />} />
-              <Route path="navigation-map" element={<NavigationMap />} />
               <Route path="create-invoice" element={<CreateInvoice />} />
               <Route path="express-checkout" element={<ExpressCheckout />} />
               <Route path="job-completed" element={<JobCompleted />} />

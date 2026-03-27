@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import useActiveFixerBooking from '@/pages/fixer/hooks/useActiveFixerBooking';
+import { getFixerJobOverview } from '@/pages/fixer/lib/jobOverview';
 
 export default function ArrivedStatus() {
   const navigate = useNavigate();
   const [isStarted, setIsStarted] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const { bookingId, job, loading, error } = useActiveFixerBooking();
+
+  const jobOverview = useMemo(
+    () => getFixerJobOverview(job, bookingId),
+    [bookingId, job]
+  );
 
   useEffect(() => {
     let interval;
@@ -22,6 +31,24 @@ export default function ArrivedStatus() {
     const secs = totalSeconds % 60;
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <Loader2 className="animate-spin text-[#FF7A1F]" size={36} />
+      </div>
+    );
+  }
+
+  if (error || !job) {
+    return (
+      <div className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+        <p className="text-sm font-semibold text-rose-700">
+          {error || 'Unable to load active booking.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto flex gap-8">
@@ -73,7 +100,9 @@ export default function ArrivedStatus() {
           <div className="bg-[#FFF9F0] rounded-2xl p-6 border border-[#FFF5ED]">
             <p className="text-[10px] uppercase font-bold text-gray-400 mb-2">Total Estimated Price</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-800">$124.50</span>
+              <span className="text-3xl font-bold text-gray-800">
+                ${Number(jobOverview?.total_estimated_price || 0).toFixed(2)}
+              </span>
               <span className="text-[10px] font-bold text-gray-400">Est. Earnings</span>
             </div>
           </div>
@@ -82,18 +111,22 @@ export default function ArrivedStatus() {
             <div>
               <p className="text-[10px] uppercase font-bold text-gray-400 mb-2">Issue Description</p>
               <p className="text-sm text-gray-600 leading-relaxed">
-                "Kitchen sink is leaking significantly from the P-trap. Water has started pooling under the cabinets. Needs immediate attention."
+                "{jobOverview?.issue_description || 'No issue description available.'}"
               </p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
               <div>
                 <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Job ID</p>
-                <p className="text-sm font-bold text-gray-800">#FIX-88421</p>
+                <p className="text-sm font-bold text-gray-800">
+                  #{jobOverview?.booking_reference || bookingId}
+                </p>
               </div>
               <div>
                 <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Category</p>
-                <p className="text-sm font-bold text-gray-800">Plumbing</p>
+                <p className="text-sm font-bold text-gray-800">
+                  {jobOverview?.category || 'Service Request'}
+                </p>
               </div>
             </div>
           </div>

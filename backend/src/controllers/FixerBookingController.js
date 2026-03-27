@@ -35,13 +35,13 @@ class FixerBookingController {
       const { id } = req.params;
       const provider_id = req.user.id;
 
-      const request = await FixerBookingService.getRequestById(
+      const requestDetail = await FixerBookingService.getRequestById(
         db,
         id,
         provider_id
       );
 
-      if (!request) {
+      if (!requestDetail) {
         return res.status(404).json({
           success: false,
           message: "Request not found",
@@ -50,13 +50,13 @@ class FixerBookingController {
 
       res.status(200).json({
         success: true,
-        data: request,
+        data: requestDetail,
       });
     } catch (error) {
       console.error(error);
       res.status(500).json({
         success: false,
-        message: "Failed to fetch request detail",
+        message: "Failed to fetch booking detail",
       });
     }
   }
@@ -158,6 +158,44 @@ class FixerBookingController {
       res.status(error.status || 500).json({
         success: false,
         message: error.message || "Failed to mark booking as arrived",
+      });
+    }
+  }
+
+  static async completeBooking(req, res) {
+    try {
+      const db = req.app.get("db");
+      const io = req.app.get("io");
+      const { id } = req.params;
+      const { items, total } = req.body;
+      const provider_id = req.user.id;
+
+      const result = await FixerBookingService.completeBooking(
+        db,
+        id,
+        provider_id,
+        items,
+        total
+      );
+
+      const booking = await CustomerBookingModel.getBookingDetailsById(db, Number(id));
+      if (booking) {
+        emitBookingUpdated(io, booking.customer_id, booking);
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "Booking completed and receipt saved successfully",
+        data: {
+          booking_id: result.booking_id,
+          customer_id: result.customer_id,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(error.status || 500).json({
+        success: false,
+        message: error.message || "Failed to complete booking",
       });
     }
   }

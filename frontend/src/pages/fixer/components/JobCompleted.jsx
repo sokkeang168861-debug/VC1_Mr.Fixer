@@ -1,16 +1,43 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ShieldCheck, Info } from 'lucide-react';
+import { Check, ShieldCheck, Info, Loader2 } from 'lucide-react';
+import useActiveFixerBooking from '@/pages/fixer/hooks/useActiveFixerBooking';
+import { getFixerJobOverview } from '@/pages/fixer/lib/jobOverview';
+import { clearActiveFixerBookingId } from '@/pages/fixer/lib/activeBooking';
 
 export default function JobCompleted() {
   const navigate = useNavigate();
+  const { bookingId, job, loading, error } = useActiveFixerBooking();
+  const jobOverview = useMemo(
+    () => getFixerJobOverview(job, bookingId),
+    [bookingId, job]
+  );
   
   useEffect(() => {
     const timer = setTimeout(() => {
+      clearActiveFixerBookingId();
       navigate('/dashboard/fixer/jobs');
     }, 5000);
     return () => clearTimeout(timer);
   }, [navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <Loader2 className="animate-spin text-[#FF7A1F]" size={36} />
+      </div>
+    );
+  }
+
+  if (error || !job) {
+    return (
+      <div className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+        <p className="text-sm font-semibold text-rose-700">
+          {error || 'Unable to load active booking.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-5xl mx-auto flex flex-col items-center justify-center min-h-[calc(100vh-100px)] space-y-12">
@@ -37,7 +64,9 @@ export default function JobCompleted() {
           <div className="flex justify-between items-start">
             <div>
               <p className="text-[10px] uppercase font-bold text-gray-300 tracking-widest mb-2">Job Identification</p>
-              <h3 className="text-3xl font-bold text-gray-800">#FIX-9921</h3>
+              <h3 className="text-3xl font-bold text-gray-800">
+                #{jobOverview?.booking_reference || bookingId}
+              </h3>
             </div>
             <span className="bg-[#FFF9F0] text-[#FF7A1F] text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Paid</span>
           </div>
@@ -45,11 +74,15 @@ export default function JobCompleted() {
           <div className="grid grid-cols-2 gap-8">
             <div>
               <p className="text-[10px] uppercase font-bold text-gray-300 tracking-widest mb-2">Customer</p>
-              <p className="text-xl font-bold text-gray-800">Jane Cooper</p>
+              <p className="text-xl font-bold text-gray-800">
+                {job.customer_name || 'Customer User'}
+              </p>
             </div>
             <div>
               <p className="text-[10px] uppercase font-bold text-gray-300 tracking-widest mb-2">Service Type</p>
-              <p className="text-xl font-bold text-gray-800">AC Repair</p>
+              <p className="text-xl font-bold text-gray-800">
+                {jobOverview?.category || 'Service Request'}
+              </p>
             </div>
           </div>
 
@@ -66,7 +99,9 @@ export default function JobCompleted() {
           <div>
             <p className="text-[10px] uppercase font-bold text-white/60 tracking-widest mb-4">Total Earned</p>
             <div className="relative inline-block">
-              <h2 className="text-5xl font-bold">$124.50</h2>
+              <h2 className="text-5xl font-bold">
+                ${Number(jobOverview?.total_estimated_price || 0).toFixed(2)}
+              </h2>
               <div className="h-1.5 bg-black/20 w-full mt-2 rounded-full" />
             </div>
           </div>
@@ -79,7 +114,9 @@ export default function JobCompleted() {
       {/* Footer Note */}
       <div className="flex items-center gap-2 text-gray-400 text-xs font-medium">
         <Info size={14} />
-        <span>Confirmation sent to jane.cooper@example.com</span>
+        <span>
+          Confirmation sent to {job.customer_email || 'the customer'}.
+        </span>
       </div>
     </div>
   );

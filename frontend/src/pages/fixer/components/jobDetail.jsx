@@ -12,6 +12,7 @@ import { motion as Motion } from 'motion/react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import httpClient from '../../../api/httpClient';
 import { getFixerProposalRoute } from '@/config/routes';
+import { setActiveFixerBookingId } from '@/pages/fixer/lib/activeBooking';
 import { resolveUploadUrl } from '@/lib/assets';
 
 const defaultCenter = {
@@ -132,6 +133,33 @@ const JobDetails = () => {
       return;
     }
 
+    const normalizedStatus = String(job.status || '').toLowerCase();
+    setActiveFixerBookingId(job.booking_id);
+
+    if (normalizedStatus === 'fixer_accept') {
+      navigate('/dashboard/fixer/jobs/proposal-status', {
+        replace: true,
+        state: { bookingId: job.booking_id },
+      });
+      return;
+    }
+
+    if (normalizedStatus === 'customer_accept') {
+      navigate('/dashboard/fixer/jobs/heading-to-customer', {
+        replace: true,
+        state: { bookingId: job.booking_id },
+      });
+      return;
+    }
+
+    if (normalizedStatus === 'arrived') {
+      navigate('/dashboard/fixer/jobs/arrived-status', {
+        replace: true,
+        state: { bookingId: job.booking_id },
+      });
+      return;
+    }
+
     if (job.latitude && job.longitude) {
       setMapCenter({
         lat: Number(job.latitude),
@@ -177,7 +205,7 @@ const JobDetails = () => {
     return () => {
       cancelled = true;
     };
-  }, [job]);
+  }, [job, navigate]);
 
   if (loading) {
     return (

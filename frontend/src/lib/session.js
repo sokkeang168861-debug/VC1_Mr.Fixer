@@ -1,5 +1,6 @@
 import httpClient from "@/api/httpClient";
 import { clearSession } from "@/lib/auth";
+import { clearActiveFixerBookingId } from "@/pages/fixer/lib/activeBooking";
 
 export async function logoutUser({ navigate, redirectTo } = {}) {
   try {
@@ -9,6 +10,7 @@ export async function logoutUser({ navigate, redirectTo } = {}) {
   }
 
   clearSession();
+  clearActiveFixerBookingId();
 
   if (httpClient?.defaults?.headers?.common) {
     delete httpClient.defaults.headers.common.Authorization;

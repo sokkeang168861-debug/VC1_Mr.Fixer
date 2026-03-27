@@ -1,9 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Wrench,
-  MapPin,
-  Loader2
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Wrench, MapPin, Loader2 } from 'lucide-react';
 import { motion as Motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { getFixerJobDetailRoute } from '@/config/routes';
@@ -11,68 +7,103 @@ import { resolveUploadUrl } from '@/lib/assets';
 import httpClient from '../../../api/httpClient';
 import { createAppSocket } from '@/lib/socket';
 
+const ACTIVE_JOB_STATUSES = ['pending', 'fixer_accept', 'customer_accept', 'arrived'];
+
+const STATUS_STYLES = {
+  pending: {
+    label: 'Pending Request',
+    className: 'bg-amber-50 text-amber-700',
+  },
+  fixer_accept: {
+    label: 'Proposal Sent',
+    className: 'bg-sky-50 text-sky-700',
+  },
+  customer_accept: {
+    label: 'Customer Accepted',
+    className: 'bg-emerald-50 text-emerald-700',
+  },
+  arrived: {
+    label: 'Arrived',
+    className: 'bg-violet-50 text-violet-700',
+  },
+};
+
 const JobCard = ({ job }) => {
   const detailUrl = getFixerJobDetailRoute(job.booking_id);
-  
+  const normalizedStatus = String(job.status || 'pending').toLowerCase();
+  const statusMeta = STATUS_STYLES[normalizedStatus] || STATUS_STYLES.pending;
+
   return (
-  <Motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm hover:shadow-md transition-shadow mb-4"
-  >
-    <div className="flex justify-between items-start mb-4">
-      <div className="flex gap-3 items-center">
-        <span className="text-[#FF7A00] font-bold text-sm">#JOB-{job.booking_id}</span>
-        <span className="text-gray-400 text-sm">• Posted {new Date(job.created_at).toLocaleString()}</span>
-      </div>
-      <div className="bg-[#FFF5EB] text-[#FF7A00] px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-        <MapPin size={12} />
-        {job.service_address || 'Near you'}
-      </div>
-    </div>
-
-    <h3 className="text-xl font-bold text-[#1A1A1A] mb-4">{job.customer_name}</h3>
-
-    <div className="flex flex-col md:flex-row gap-6 mb-6">
-      {job.issue_image && (
-        <div className="w-full md:w-48 h-32 rounded-xl overflow-hidden shrink-0 border border-gray-100">
-          <img
-            src={resolveUploadUrl(job.issue_image)}
-            alt="Issue Thumbnail"
-            className="w-full h-full object-cover"
-          />
+    <Motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-4 rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+    >
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-bold text-[#FF7A00]">#JOB-{job.booking_id}</span>
+          <span className="text-sm text-gray-400">
+            Posted {new Date(job.created_at).toLocaleString()}
+          </span>
         </div>
-      )}
 
-      <div className="flex-1 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-gray-50 rounded-lg text-gray-400">
-              <Wrench size={18} />
-            </div>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-0.5">Category</p>
-              <p className="text-sm font-semibold text-[#1A1A1A]">{job.category_name}</p>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-1 rounded-full bg-[#FFF5EB] px-3 py-1 text-xs font-semibold text-[#FF7A00]">
+            <MapPin size={12} />
+            {job.service_address || 'Near you'}
+          </div>
+          <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${statusMeta.className}`}>
+            {statusMeta.label}
+          </span>
+        </div>
+      </div>
+
+      <h3 className="mb-4 text-xl font-bold text-[#1A1A1A]">{job.customer_name}</h3>
+
+      <div className="mb-6 flex flex-col gap-6 md:flex-row">
+        {job.issue_image ? (
+          <div className="h-32 w-full shrink-0 overflow-hidden rounded-xl border border-gray-100 md:w-48">
+            <img
+              src={resolveUploadUrl(job.issue_image)}
+              alt="Issue Thumbnail"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : null}
+
+        <div className="flex-1 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-gray-50 p-2 text-gray-400">
+                <Wrench size={18} />
+              </div>
+              <div>
+                <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  Category
+                </p>
+                <p className="text-sm font-semibold text-[#1A1A1A]">{job.category_name}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="bg-[#F8F9FA] rounded-lg p-4">
-          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2">Issue Description</p>
-          <p className="text-sm text-[#4A4A4A] leading-relaxed line-clamp-2">
-            {job.issue_description}
-          </p>
+          <div className="rounded-lg bg-[#F8F9FA] p-4">
+            <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Issue Description
+            </p>
+            <p className="line-clamp-2 text-sm leading-relaxed text-[#4A4A4A]">
+              {job.issue_description}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
 
-    <Link
-      to={detailUrl}
-      className="w-full bg-[#FF7A00] hover:bg-[#E66E00] text-white text-center block font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-orange-200"
-    >
-      View Detail
-    </Link>
-  </Motion.div>
+      <Link
+        to={detailUrl}
+        className="block w-full rounded-xl bg-[#FF7A00] py-3.5 text-center font-bold text-white shadow-lg shadow-orange-200 transition-colors hover:bg-[#E66E00]"
+      >
+        View Detail
+      </Link>
+    </Motion.div>
   );
 };
 
@@ -100,18 +131,45 @@ export default function JobList() {
     fetchJobs();
 
     const socket = createAppSocket();
+
     socket.on('booking:new', (newBooking) => {
       console.log('New booking received via socket:', newBooking);
-      setJobs((prevJobs) => [newBooking, ...prevJobs]);
+      const normalizedStatus = String(newBooking.status || 'pending').toLowerCase();
+
+      if (!ACTIVE_JOB_STATUSES.includes(normalizedStatus)) {
+        return;
+      }
+
+      setJobs((prevJobs) => {
+        const nextBookingId = newBooking.booking_id || newBooking.id;
+        const filteredJobs = prevJobs.filter((job) => job.booking_id !== nextBookingId);
+        return [{ ...newBooking, booking_id: nextBookingId }, ...filteredJobs];
+      });
     });
 
     socket.on('booking:updated', (updatedBooking) => {
       console.log('Booking updated via socket:', updatedBooking);
-      // If the booking is no longer pending (e.g. accepted by this fixer or cancelled), 
-      // we might want to remove it from the requests list if it's there.
-      if (updatedBooking.status !== 'pending') {
-        setJobs((prevJobs) => prevJobs.filter(job => job.booking_id !== updatedBooking.id));
+      const normalizedStatus = String(updatedBooking.status || '').toLowerCase();
+      const updatedBookingId = updatedBooking.booking_id || updatedBooking.id;
+
+      if (!ACTIVE_JOB_STATUSES.includes(normalizedStatus)) {
+        setJobs((prevJobs) => prevJobs.filter((job) => job.booking_id !== updatedBookingId));
+        return;
       }
+
+      setJobs((prevJobs) => {
+        const existingJob = prevJobs.find((job) => job.booking_id === updatedBookingId);
+
+        if (!existingJob) {
+          return [{ ...updatedBooking, booking_id: updatedBookingId }, ...prevJobs];
+        }
+
+        return prevJobs.map((job) =>
+          job.booking_id === updatedBookingId
+            ? { ...job, ...updatedBooking, booking_id: updatedBookingId }
+            : job
+        );
+      });
     });
 
     return () => {
@@ -121,24 +179,24 @@ export default function JobList() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-3xl font-black text-[#1A1A1A] mb-1">Job Acceptance</h1>
-          <p className="text-gray-400 font-medium">Manage incoming requests and active assignments</p>
+          <h1 className="mb-1 text-3xl font-black text-[#1A1A1A]">Job Acceptance</h1>
+          <p className="font-medium text-gray-400">Manage incoming requests and active assignments</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center py-20">
+        <div className="flex items-center justify-center py-20">
           <Loader2 className="animate-spin text-primary" size={40} />
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 text-red-600 p-6 rounded-2xl text-center">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-600">
           {error}
         </div>
       ) : jobs.length === 0 ? (
-        <div className="bg-white p-12 rounded-2xl border border-gray-100 text-center">
-          <p className="text-gray-400 font-medium">No pending job requests at the moment.</p>
+        <div className="rounded-2xl border border-gray-100 bg-white p-12 text-center">
+          <p className="font-medium text-gray-400">No pending or active fixer jobs at the moment.</p>
         </div>
       ) : (
         <div className="space-y-6">

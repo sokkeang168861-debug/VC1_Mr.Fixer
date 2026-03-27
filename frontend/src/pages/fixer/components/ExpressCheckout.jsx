@@ -1,9 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QrCode, Lock, Receipt } from 'lucide-react';
+import { QrCode, Lock, Receipt, Loader2 } from 'lucide-react';
+import useActiveFixerBooking from '@/pages/fixer/hooks/useActiveFixerBooking';
+import { getFixerJobOverview } from '@/pages/fixer/lib/jobOverview';
 
 export default function ExpressCheckout() {
   const navigate = useNavigate();
+  const { bookingId, job, loading, error } = useActiveFixerBooking();
+  const jobOverview = useMemo(
+    () => getFixerJobOverview(job, bookingId),
+    [bookingId, job]
+  );
+  const qrValue = useMemo(() => {
+    const reference = jobOverview?.booking_reference || bookingId || 'booking';
+    return `https://mrfixer.app/pay/${reference}`;
+  }, [bookingId, jobOverview]);
   
   console.log('ExpressCheckout component loaded');
 
@@ -23,6 +34,25 @@ export default function ExpressCheckout() {
       clearTimeout(timer);
     };
   }, [navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <Loader2 className="animate-spin text-[#FF7A1F]" size={36} />
+      </div>
+    );
+  }
+
+  if (error || !job) {
+    return (
+      <div className="mx-auto max-w-4xl rounded-3xl border border-rose-200 bg-rose-50 p-8 text-center">
+        <p className="text-sm font-semibold text-rose-700">
+          {error || 'Unable to load active booking.'}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 max-w-4xl mx-auto flex items-center justify-center min-h-[calc(100vh-100px)]">
       <div className="w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-50">
@@ -43,7 +73,7 @@ export default function ExpressCheckout() {
             <div className="w-64 h-64 bg-gray-50 flex items-center justify-center overflow-hidden rounded-2xl">
               {/* Placeholder for QR Code */}
               <img 
-                src="https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=https://mrfixer.app/pay/FIX-8892-XP" 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(qrValue)}`} 
                 alt="Payment QR Code"
                 className="w-full h-full p-4"
                 referrerPolicy="no-referrer"
@@ -62,9 +92,13 @@ export default function ExpressCheckout() {
               <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-[#FF7A1F] shadow-sm">
                 <Receipt size={18} />
               </div>
-              <p className="text-sm font-bold text-gray-700">Order ID: <span className="text-gray-400">#FIX-8892-XP</span></p>
+              <p className="text-sm font-bold text-gray-700">
+                Order ID: <span className="text-gray-400">#{jobOverview?.booking_reference || bookingId}</span>
+              </p>
             </div>
-            <p className="text-lg font-bold text-gray-800">$124.50</p>
+            <p className="text-lg font-bold text-gray-800">
+              ${Number(jobOverview?.total_estimated_price || 0).toFixed(2)}
+            </p>
           </div>
 
           {/* Action Button */}

@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import httpClient from "../../api/httpClient";
 import { getDashboardByRole, setToken } from "@/lib/auth";
 import { ROUTES } from "@/config/routes";
+import { clearActiveFixerBookingId } from "@/pages/fixer/lib/activeBooking";
 
 const signupImage = "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=1200";
 
@@ -30,6 +31,7 @@ export default function Login() {
       const res = await httpClient.post("/auth/login", { email, password });
       const { token, role } = res.data;
       
+      clearActiveFixerBookingId();
       setToken(token);
       navigate(getDashboardByRole(role) || ROUTES.home);
     } catch (err) {
