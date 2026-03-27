@@ -417,7 +417,7 @@ class CustomerBooking {
     }
 
     const [paymentRows] = await db.query(
-      `SELECT
+        `SELECT
         id,
         booking_id,
         amount,
