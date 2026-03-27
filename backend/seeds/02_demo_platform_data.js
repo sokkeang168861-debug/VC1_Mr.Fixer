@@ -96,7 +96,7 @@ exports.seed = async function seed(knex) {
         behavior_rating: 4.9,
         overall_rating: 4.8,
         is_verified: 1,
-        is_actice: 1,
+        is_active: 1,
         latitude: 11.5564,
         longitude: 104.9282,
         created_at: now,
@@ -163,14 +163,13 @@ exports.seed = async function seed(knex) {
           comment: "Fast repair and clear explanation of the breaker issue.",
         },
         issue_image_label: "demo-issue-breaker-photo",
-        payments: [
-          {
-            amount: 85,
-            payment_method: "card",
-            status: "paid",
-            transaction_id: "MRFIXER-DEMO-TXN-10001",
-            paid_at: daysAgo(baseDate, 19, 11, 15),
-          },
+         payments: [
+           {
+             amount: 85,
+             status: "paid",
+             transaction_id: "MRFIXER-DEMO-TXN-10001",
+             paid_at: daysAgo(baseDate, 19, 11, 15),
+           },
         ],
       },
       {
@@ -200,21 +199,19 @@ exports.seed = async function seed(knex) {
           comment: "The kitchen outlets work perfectly again after the repair.",
         },
         issue_image_label: "demo-issue-kitchen-outlet-photo",
-        payments: [
-          {
-            amount: 70,
-            payment_method: "aba_pay",
-            status: "paid",
-            transaction_id: "MRFIXER-DEMO-TXN-10002A",
-            paid_at: daysAgo(baseDate, 8, 15, 20),
-          },
-          {
-            amount: 50,
-            payment_method: "aba_pay",
-            status: "paid",
-            transaction_id: "MRFIXER-DEMO-TXN-10002B",
-            paid_at: daysAgo(baseDate, 8, 15, 30),
-          },
+         payments: [
+           {
+             amount: 70,
+             status: "paid",
+             transaction_id: "MRFIXER-DEMO-TXN-10002A",
+             paid_at: daysAgo(baseDate, 8, 15, 20),
+           },
+           {
+             amount: 50,
+             status: "paid",
+             transaction_id: "MRFIXER-DEMO-TXN-10002B",
+             paid_at: daysAgo(baseDate, 8, 15, 30),
+           },
         ],
       },
       {
@@ -244,14 +241,13 @@ exports.seed = async function seed(knex) {
           comment: "Quiet fan now and the fixer arrived on time.",
         },
         issue_image_label: "demo-issue-ceiling-fan-photo",
-        payments: [
-          {
-            amount: 60,
-            payment_method: "cash",
-            status: "completed",
-            transaction_id: "MRFIXER-DEMO-TXN-10003",
-            paid_at: daysAgo(baseDate, 2, 14, 45),
-          },
+         payments: [
+           {
+             amount: 60,
+             status: "completed",
+             transaction_id: "MRFIXER-DEMO-TXN-10003",
+             paid_at: daysAgo(baseDate, 2, 14, 45),
+           },
         ],
       },
       {
@@ -304,7 +300,6 @@ exports.seed = async function seed(knex) {
           {
             booking_id: bookingId,
             amount: payment.amount,
-            payment_method: payment.payment_method,
             status: payment.status,
             transaction_id: payment.transaction_id,
             paid_at: payment.paid_at,

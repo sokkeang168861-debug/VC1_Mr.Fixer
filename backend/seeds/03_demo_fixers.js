@@ -129,13 +129,12 @@ exports.seed = async function seed(knex) {
             scheduled_at: daysAgo(baseDate, 11, 14, 0),
             latitude: 11.57560000,
             longitude: 104.89140000,
-            payment: {
-              amount: 95,
-              payment_method: "card",
-              status: "paid",
-              transaction_id: "MRFIXER-DARA-0001",
-              paid_at: daysAgo(baseDate, 11, 16, 0),
-            },
+             payment: {
+               amount: 95,
+               status: "paid",
+               transaction_id: "MRFIXER-DARA-0001",
+               paid_at: daysAgo(baseDate, 11, 16, 0),
+             },
             review: {
               speed_rating: 5,
               quality_rating: 5,
@@ -178,13 +177,12 @@ exports.seed = async function seed(knex) {
             scheduled_at: daysAgo(baseDate, 7, 13, 30),
             latitude: 11.59110000,
             longitude: 104.88100000,
-            payment: {
-              amount: 70,
-              payment_method: "aba_pay",
-              status: "paid",
-              transaction_id: "MRFIXER-LINA-0001",
-              paid_at: daysAgo(baseDate, 7, 15, 10),
-            },
+             payment: {
+               amount: 70,
+               status: "paid",
+               transaction_id: "MRFIXER-LINA-0001",
+               paid_at: daysAgo(baseDate, 7, 15, 10),
+             },
             review: {
               speed_rating: 4,
               quality_rating: 5,
@@ -227,13 +225,12 @@ exports.seed = async function seed(knex) {
             scheduled_at: daysAgo(baseDate, 4, 15, 0),
             latitude: 11.60810000,
             longitude: 104.90940000,
-            payment: {
-              amount: 110,
-              payment_method: "cash",
-              status: "completed",
-              transaction_id: "MRFIXER-VANNA-0001",
-              paid_at: daysAgo(baseDate, 4, 17, 20),
-            },
+             payment: {
+               amount: 110,
+               status: "completed",
+               transaction_id: "MRFIXER-VANNA-0001",
+               paid_at: daysAgo(baseDate, 4, 17, 20),
+             },
             review: {
               speed_rating: 4,
               quality_rating: 4,
@@ -278,15 +275,15 @@ exports.seed = async function seed(knex) {
           experience: fixer.provider.experience,
           speed_rating: fixer.provider.speed_rating,
           quality_rating: fixer.provider.quality_rating,
-          price_fairness_rating: fixer.provider.price_fairness_rating,
-          behavior_rating: fixer.provider.behavior_rating,
-          overall_rating: fixer.provider.overall_rating,
-          is_verified: 1,
-          is_actice: 1,
-          latitude: fixer.provider.latitude,
-          longitude: fixer.provider.longitude,
-        }
-      );
+           price_fairness_rating: fixer.provider.price_fairness_rating,
+           behavior_rating: fixer.provider.behavior_rating,
+           overall_rating: fixer.provider.overall_rating,
+           is_verified: 1,
+           is_active: 1,
+           latitude: fixer.provider.latitude,
+           longitude: fixer.provider.longitude,
+         }
+       );
 
       for (const categoryKey of fixer.categoryKeys) {
         const categoryId = categoryIds[categoryKey];
@@ -341,7 +338,6 @@ exports.seed = async function seed(knex) {
           {
             booking_id: bookingId,
             amount: booking.payment.amount,
-            payment_method: booking.payment.payment_method,
             status: booking.payment.status,
             transaction_id: booking.payment.transaction_id,
             paid_at: booking.payment.paid_at,
