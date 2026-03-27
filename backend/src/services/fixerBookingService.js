@@ -11,10 +11,14 @@ function buildJobOverview(request) {
     return null;
   }
 
+  const normalizedStatus = String(request.status || "").toLowerCase();
+  const totalSource =
+    normalizedStatus === "complete"
+      ? request.receipt_total ?? request.proposal_total ?? request.service_fee
+      : request.proposal_total ?? request.service_fee;
+
   return {
-    total_estimated_price: toMoney(
-      request.proposal_total ?? request.service_fee
-    ),
+    total_estimated_price: toMoney(totalSource),
     issue_description:
       request.issue_description || "No issue description available.",
     booking_reference:
@@ -65,6 +69,8 @@ class FixerBookingService {
     return {
       ...request,
       service_fee: toMoney(request.service_fee),
+      receipt_total: toMoney(request.receipt_total),
+      payment_status: request.payment?.status || request.payment_status || null,
       job_overview: buildJobOverview(request),
     };
   }
@@ -168,6 +174,40 @@ class FixerBookingService {
       provider_id,
       normalizedItems,
       normalizedTotal
+    );
+  }
+
+  static async markPaymentPaid(db, booking_id, provider_id) {
+    const normalizedBookingId = Number(booking_id);
+
+    if (!Number.isInteger(normalizedBookingId) || normalizedBookingId <= 0) {
+      throw {
+        status: 400,
+        message: "Invalid booking id",
+      };
+    }
+
+    return await FixerBookingModel.markPaymentPaid(
+      db,
+      normalizedBookingId,
+      provider_id
+    );
+  }
+
+  static async markPaymentCompleted(db, booking_id, provider_id) {
+    const normalizedBookingId = Number(booking_id);
+
+    if (!Number.isInteger(normalizedBookingId) || normalizedBookingId <= 0) {
+      throw {
+        status: 400,
+        message: "Invalid booking id",
+      };
+    }
+
+    return await FixerBookingModel.markPaymentCompleted(
+      db,
+      normalizedBookingId,
+      provider_id
     );
   }
 }

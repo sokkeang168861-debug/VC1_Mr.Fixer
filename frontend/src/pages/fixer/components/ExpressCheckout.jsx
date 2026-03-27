@@ -1,12 +1,14 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QrCode, Lock, Receipt, Loader2 } from 'lucide-react';
+import httpClient from '@/api/httpClient';
 import useActiveFixerBooking from '@/pages/fixer/hooks/useActiveFixerBooking';
 import { getFixerJobOverview } from '@/pages/fixer/lib/jobOverview';
 
 export default function ExpressCheckout() {
   const navigate = useNavigate();
   const { bookingId, job, loading, error } = useActiveFixerBooking();
+  const [submittingPayment, setSubmittingPayment] = useState(false);
   const jobOverview = useMemo(
     () => getFixerJobOverview(job, bookingId),
     [bookingId, job]
@@ -15,25 +17,62 @@ export default function ExpressCheckout() {
     const reference = jobOverview?.booking_reference || bookingId || 'booking';
     return `https://mrfixer.app/pay/${reference}`;
   }, [bookingId, jobOverview]);
-  
-  console.log('ExpressCheckout component loaded');
+  const bookingStatus = String(job?.status || '').toLowerCase();
+  const paymentStatus = String(job?.payment?.status || job?.payment_status || '').toLowerCase();
 
-  const onComplete = () => {
-    console.log('Payment complete - navigating to job-completed');
-    navigate('/dashboard/fixer/jobs/job-completed');
+  const onComplete = async () => {
+    if (!bookingId || submittingPayment) {
+      return;
+    }
+
+    if (bookingStatus !== 'complete') {
+      window.alert('This booking must be complete before payment can be received.');
+      return;
+    }
+
+    if (paymentStatus === 'completed') {
+      navigate('/dashboard/fixer/jobs', { replace: true });
+      return;
+    }
+
+    if (paymentStatus === 'paid') {
+      navigate('/dashboard/fixer/jobs/job-completed', {
+        replace: true,
+        state: { bookingId },
+      });
+      return;
+    }
+
+    try {
+      setSubmittingPayment(true);
+      await httpClient.post(`/fixer/provider/requests/${bookingId}/payments/paid`);
+      navigate('/dashboard/fixer/jobs/job-completed', {
+        replace: true,
+        state: { bookingId },
+      });
+    } catch (requestError) {
+      console.error(requestError);
+      window.alert(
+        requestError?.response?.data?.message ||
+          'Failed to update payment status.'
+      );
+    } finally {
+      setSubmittingPayment(false);
+    }
   };
-  
+
   useEffect(() => {
-    console.log('ExpressCheckout useEffect - setting up timer');
-    const timer = setTimeout(() => {
-      console.log('ExpressCheckout timer triggered - navigating to job-completed');
-      navigate('/dashboard/fixer/jobs/job-completed');
-    }, 10000); // Auto-redirect after 10 seconds
-    return () => {
-      console.log('ExpressCheckout cleanup - clearing timer');
-      clearTimeout(timer);
-    };
-  }, [navigate]);
+    if (bookingStatus === 'complete' && paymentStatus === 'paid') {
+      navigate('/dashboard/fixer/jobs/job-completed', {
+        replace: true,
+        state: { bookingId },
+      });
+    } else if (bookingStatus === 'complete' && paymentStatus === 'completed') {
+      navigate('/dashboard/fixer/jobs', {
+        replace: true,
+      });
+    }
+  }, [bookingId, bookingStatus, navigate, paymentStatus]);
 
   if (loading) {
     return (
@@ -105,9 +144,17 @@ export default function ExpressCheckout() {
           <div className="w-full max-w-md space-y-6">
             <button 
               onClick={onComplete}
-              className="w-full bg-[#FF7A1F] hover:bg-[#E66D1C] text-white font-bold py-5 rounded-2xl transition-all shadow-xl shadow-[#FF7A1F]/20 text-lg"
+              disabled={submittingPayment}
+              className="w-full bg-[#FF7A1F] hover:bg-[#E66D1C] text-white font-bold py-5 rounded-2xl transition-all shadow-xl shadow-[#FF7A1F]/20 text-lg disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Receive payment
+              {submittingPayment ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 size={20} className="animate-spin" />
+                  Updating Payment...
+                </span>
+              ) : (
+                'Receive Payment'
+              )}
             </button>
             
             <div className="flex items-center justify-center gap-2 text-[10px] uppercase font-bold text-gray-300 tracking-[0.2em]">

@@ -100,7 +100,7 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
   const [submittingReceipt, setSubmittingReceipt] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const taxRate = 0.085;
+  const taxRate = 0.1;
   const tax = subtotal * taxRate;
   const totalAmount = subtotal + tax;
 
@@ -229,7 +229,7 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
         total: Number(totalAmount.toFixed(2)),
       });
 
-      navigate('/dashboard/fixer/jobs/job-completed', {
+      navigate('/dashboard/fixer/jobs/express-checkout', {
         state: { bookingId },
       });
     } catch (error) {
@@ -451,7 +451,7 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
           </div>
           <div className="flex justify-between items-center text-gray-500">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Tax (8.5%)</span>
+              <span className="text-sm font-medium">Tax ({(taxRate * 100).toFixed(0)}%)</span>
               <Info size={14} className="text-gray-300" />
             </div>
             <span className="text-sm font-bold text-gray-800">${tax.toFixed(2)}</span>

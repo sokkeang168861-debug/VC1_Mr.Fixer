@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, ShieldCheck, Info, Loader2 } from 'lucide-react';
+import httpClient from '@/api/httpClient';
 import useActiveFixerBooking from '@/pages/fixer/hooks/useActiveFixerBooking';
 import { getFixerJobOverview } from '@/pages/fixer/lib/jobOverview';
 import { clearActiveFixerBookingId } from '@/pages/fixer/lib/activeBooking';
@@ -8,18 +9,46 @@ import { clearActiveFixerBookingId } from '@/pages/fixer/lib/activeBooking';
 export default function JobCompleted() {
   const navigate = useNavigate();
   const { bookingId, job, loading, error } = useActiveFixerBooking();
+  const [submittingCompletion, setSubmittingCompletion] = useState(false);
   const jobOverview = useMemo(
     () => getFixerJobOverview(job, bookingId),
     [bookingId, job]
   );
-  
+  const paymentStatus = String(job?.payment?.status || job?.payment_status || '').toLowerCase();
+
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (paymentStatus === 'completed') {
       clearActiveFixerBookingId();
-      navigate('/dashboard/fixer/jobs');
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [navigate]);
+      navigate('/dashboard/fixer/jobs', { replace: true });
+    }
+  }, [navigate, paymentStatus]);
+
+  const handleGoBackToJobs = async () => {
+    if (!bookingId || submittingCompletion) {
+      return;
+    }
+
+    if (paymentStatus === 'completed') {
+      clearActiveFixerBookingId();
+      navigate('/dashboard/fixer/jobs', { replace: true });
+      return;
+    }
+
+    try {
+      setSubmittingCompletion(true);
+      await httpClient.post(`/fixer/provider/requests/${bookingId}/payments/completed`);
+      clearActiveFixerBookingId();
+      navigate('/dashboard/fixer/jobs', { replace: true });
+    } catch (requestError) {
+      console.error(requestError);
+      window.alert(
+        requestError?.response?.data?.message ||
+          'Failed to finalize payment completion.'
+      );
+    } finally {
+      setSubmittingCompletion(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -109,6 +138,17 @@ export default function JobCompleted() {
             Funds will be available in your dashboard within 24 hours.
           </p>
         </div>
+      </div>
+
+      <div className="flex w-full max-w-4xl justify-center">
+        <button
+          type="button"
+          onClick={handleGoBackToJobs}
+          disabled={submittingCompletion}
+          className="inline-flex min-h-[3.25rem] items-center justify-center rounded-2xl bg-slate-900 px-8 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {submittingCompletion ? 'Updating...' : 'Go Back To Jobs'}
+        </button>
       </div>
 
       {/* Footer Note */}

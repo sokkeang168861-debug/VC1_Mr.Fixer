@@ -2,6 +2,39 @@ const ServiceCategoryModel = require("../models/serviceCategoryModel");
 const FixerDashboardModel = require("../models/fixerDashboardModel");
 
 class ServiceCategoryService {
+  static async enrichProviders(db, providers) {
+    return await Promise.all(
+      providers.map(async (provider) => {
+        if (!provider?.provider_id) {
+          return {
+            ...provider,
+            overall_rating: 0,
+            total_ratings: 0,
+            reviews: [],
+          };
+        }
+
+        const [summary, feedback] = await Promise.all([
+          FixerDashboardModel.getRatingSummary(db, provider.provider_id),
+          FixerDashboardModel.getRecentFeedback(db, provider.provider_id, 20),
+        ]);
+
+        return {
+          ...provider,
+          overall_rating: Number(summary?.overall_rating || 0),
+          total_ratings: Number(summary?.total_ratings || 0),
+          reviews: feedback.map((item) => ({
+            id: item.id,
+            customer_name: item.customer_name,
+            overall_rating: Number(item.overall_rating || 0),
+            comment: item.comment,
+            created_at: item.created_at,
+          })),
+        };
+      })
+    );
+  }
+
   static async getAllCategories(db) {
     const categories = await ServiceCategoryModel.getAllCategories(db);
 
@@ -105,37 +138,24 @@ class ServiceCategoryService {
     }
 
     const providers = await ServiceCategoryModel.nearProvidersByCategory(db, categoryId, parsedLatitude, parsedLongitude);
-
-    return await Promise.all(
-      providers.map(async (provider) => {
-        const [summary, feedback] = await Promise.all([
-          FixerDashboardModel.getRatingSummary(db, provider.provider_id),
-          FixerDashboardModel.getRecentFeedback(db, provider.provider_id, 20),
-        ]);
-
-        return {
-          ...provider,
-          overall_rating: Number(summary?.overall_rating || 0),
-          total_ratings: Number(summary?.total_ratings || 0),
-          reviews: feedback.map((item) => ({
-            id: item.id,
-            customer_name: item.customer_name,
-            overall_rating: Number(item.overall_rating || 0),
-            comment: item.comment,
-            created_at: item.created_at,
-          })),
-        };
-      })
-    );
+    return await this.enrichProviders(db, providers);
   }
 
   static async getProvidersByCategory(db, categoryId, latitude, longitude) {
-    return await ServiceCategoryService.nearProvidersEachCategory(
-      db,
-      categoryId,
-      latitude,
-      longitude
-    );
+    const parsedLatitude = Number(latitude);
+    const parsedLongitude = Number(longitude);
+
+    if (Number.isFinite(parsedLatitude) && Number.isFinite(parsedLongitude)) {
+      return await ServiceCategoryService.nearProvidersEachCategory(
+        db,
+        categoryId,
+        parsedLatitude,
+        parsedLongitude
+      );
+    }
+
+    const providers = await ServiceCategoryModel.allProvidersByCategory(db, categoryId);
+    return await this.enrichProviders(db, providers);
   }
 }
 

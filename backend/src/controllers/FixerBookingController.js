@@ -199,6 +199,58 @@ class FixerBookingController {
       });
     }
   }
+
+  static async markPaymentPaid(req, res) {
+    try {
+      const db = req.app.get("db");
+      const { id } = req.params;
+      const provider_id = req.user.id;
+
+      const payment = await FixerBookingService.markPaymentPaid(
+        db,
+        id,
+        provider_id
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Payment marked as paid successfully",
+        data: payment,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(error.status || 500).json({
+        success: false,
+        message: error.message || "Failed to mark payment as paid",
+      });
+    }
+  }
+
+  static async markPaymentCompleted(req, res) {
+    try {
+      const db = req.app.get("db");
+      const { id } = req.params;
+      const provider_id = req.user.id;
+
+      const payment = await FixerBookingService.markPaymentCompleted(
+        db,
+        id,
+        provider_id
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Payment marked as completed successfully",
+        data: payment,
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(error.status || 500).json({
+        success: false,
+        message: error.message || "Failed to mark payment as completed",
+      });
+    }
+  }
 }
 
 module.exports = FixerBookingController;

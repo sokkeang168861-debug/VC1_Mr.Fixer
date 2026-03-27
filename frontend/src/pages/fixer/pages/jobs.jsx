@@ -5,6 +5,7 @@ import { Header } from "../components/Header";
 import httpClient from '@/api/httpClient';
 import { ROUTES } from '@/config/routes';
 import {
+  clearActiveFixerBookingId,
   getActiveFixerBookingId,
   setActiveFixerBookingId,
 } from '@/pages/fixer/lib/activeBooking';
@@ -29,8 +30,86 @@ export default function JobsPage() {
 
     let isMounted = true;
 
+    const routeFromBooking = (booking) => {
+      const nextBookingId = Number(booking?.booking_id || booking?.id || 0);
+      const nextStatus = String(booking?.status || '').toLowerCase();
+      const nextPaymentStatus = String(
+        booking?.payment?.status || booking?.payment_status || ''
+      ).toLowerCase();
+
+      if (!nextBookingId || !nextStatus) {
+        return false;
+      }
+
+      if (nextStatus === 'complete') {
+        if (nextPaymentStatus === 'completed') {
+          clearActiveFixerBookingId();
+          return false;
+        }
+
+        setActiveFixerBookingId(nextBookingId);
+        navigate(
+          nextPaymentStatus === 'paid'
+            ? '/dashboard/fixer/jobs/job-completed'
+            : '/dashboard/fixer/jobs/express-checkout',
+          {
+            replace: true,
+            state: { bookingId: nextBookingId },
+          }
+        );
+        return true;
+      }
+
+      setActiveFixerBookingId(nextBookingId);
+
+      if (nextStatus === 'fixer_accept') {
+        navigate('/dashboard/fixer/jobs/proposal-status', {
+          replace: true,
+          state: { bookingId: nextBookingId },
+        });
+        return true;
+      }
+
+      if (nextStatus === 'customer_accept') {
+        navigate('/dashboard/fixer/jobs/heading-to-customer', {
+          replace: true,
+          state: { bookingId: nextBookingId },
+        });
+        return true;
+      }
+
+      if (nextStatus === 'arrived') {
+        navigate('/dashboard/fixer/jobs/arrived-status', {
+          replace: true,
+          state: { bookingId: nextBookingId },
+        });
+        return true;
+      }
+
+      return false;
+    };
+
     const resumeActiveStep = async () => {
       try {
+        if (activeBookingId) {
+          try {
+            const activeResponse = await httpClient.get(
+              `/fixer/provider/requests/${activeBookingId}`
+            );
+            const activeBooking = activeResponse?.data?.data;
+
+            if (!isMounted) {
+              return;
+            }
+
+            if (activeBooking && routeFromBooking(activeBooking)) {
+              return;
+            }
+          } catch (activeError) {
+            console.error(activeError);
+          }
+        }
+
         const response = await httpClient.get('/fixer/provider/requests');
         const jobs = Array.isArray(response?.data?.data) ? response.data.data : [];
 
@@ -39,6 +118,7 @@ export default function JobsPage() {
         }
 
         const statusPriority = {
+          complete: 4,
           arrived: 3,
           customer_accept: 2,
           fixer_accept: 1,
@@ -87,29 +167,7 @@ export default function JobsPage() {
           return;
         }
 
-        setActiveFixerBookingId(nextBookingId);
-
-        if (nextStatus === 'fixer_accept') {
-          navigate('/dashboard/fixer/jobs/proposal-status', {
-            replace: true,
-            state: { bookingId: nextBookingId },
-          });
-          return;
-        }
-
-        if (nextStatus === 'customer_accept') {
-          navigate('/dashboard/fixer/jobs/heading-to-customer', {
-            replace: true,
-            state: { bookingId: nextBookingId },
-          });
-          return;
-        }
-
-        if (nextStatus === 'arrived') {
-          navigate('/dashboard/fixer/jobs/arrived-status', {
-            replace: true,
-            state: { bookingId: nextBookingId },
-          });
+        if (routeFromBooking(nextJob)) {
           return;
         }
       } catch (error) {

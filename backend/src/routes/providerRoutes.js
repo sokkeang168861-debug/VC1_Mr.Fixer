@@ -62,4 +62,14 @@ router.post(
   protect,
   FixerBookingController.completeBooking
 );
+router.post(
+  "/provider/requests/:id/payments/paid",
+  protect,
+  FixerBookingController.markPaymentPaid
+);
+router.post(
+  "/provider/requests/:id/payments/completed",
+  protect,
+  FixerBookingController.markPaymentCompleted
+);
 module.exports = router;

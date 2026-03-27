@@ -47,6 +47,7 @@ export default function CustomerDashboard({ initialPage = "services" }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [providersError, setProvidersError] = useState("");
+  const [providersNotice, setProvidersNotice] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -83,12 +84,24 @@ export default function CustomerDashboard({ initialPage = "services" }) {
   const getProvidersByCategory = async (categoryId) => {
     try {
       setProvidersError("");
-      const { latitude, longitude } = await getCurrentCoordinates();
+      setProvidersNotice("");
+
+      let requestConfig = {};
+
+      try {
+        const { latitude, longitude } = await getCurrentCoordinates();
+        requestConfig = {
+          params: { latitude, longitude },
+        };
+      } catch {
+        setProvidersNotice(
+          "Location access is unavailable. Showing all providers in this category instead."
+        );
+      }
+
       const res = await httpClient.get(
         `/user/providersEachCategory/${categoryId}`,
-        {
-          params: { latitude, longitude },
-        }
+        requestConfig
       );
 
       const list = res?.data?.data ?? res?.data ?? [];
@@ -97,6 +110,7 @@ export default function CustomerDashboard({ initialPage = "services" }) {
     } catch (err) {
       console.error("Failed to load providers", err);
       setProviders([]);
+      setProvidersNotice("");
       setProvidersError(
         err?.response?.data?.message ||
           err?.message ||
@@ -139,6 +153,12 @@ export default function CustomerDashboard({ initialPage = "services" }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {providersNotice ? (
+              <div className="col-span-full rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-center text-sm text-amber-700">
+                {providersNotice}
+              </div>
+            ) : null}
+
             {providersError ? (
               <div className="col-span-full text-center text-rose-600">
                 {providersError}

@@ -68,12 +68,16 @@ class ServiceCategoryModel {
   static async allProvidersByCategory(db, categoryId) {
     const [rows] = await db.query(
       `SELECT
+        s.id AS service_id,
+        sp.id AS provider_id,
         u.full_name,
         u.profile_img,
         u.email,
         u.phone,
         sp.company_name,
-        sp.location
+        sp.location,
+        sp.latitude,
+        sp.longitude
       FROM users u
       INNER JOIN service_providers sp ON sp.user_id = u.id
       INNER JOIN services s ON s.provider_id = sp.id
