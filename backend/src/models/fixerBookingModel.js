@@ -92,6 +92,8 @@ class FixerBookingModel {
         customer.phone AS customer_phone,
         customer.email AS customer_email,
         fixer.full_name AS fixer_name,
+        fixer.phone AS fixer_phone,
+        fixer.email AS fixer_email,
         sp.company_name AS fixer_company_name,
         sp.qr AS fixer_qr,
         sp.location AS provider_location,

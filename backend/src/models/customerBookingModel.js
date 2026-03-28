@@ -89,8 +89,16 @@ class CustomerBooking {
       items: normalizedItems,
       fixer: {
         name: row.fixer_name || "Assigned Fixer",
+        email: row.fixer_email || "",
+        phone: row.fixer_phone || "",
+        address: row.provider_location || "",
         companyName: row.fixer_company_name || "",
         avatar: toImageDataUrl(row.fixer_avatar),
+      },
+      customer: {
+        name: row.customer_name || "Customer",
+        email: row.customer_email || "",
+        phone: row.customer_phone || "",
       },
     };
   }
@@ -245,9 +253,15 @@ class CustomerBooking {
         b.status,
         b.created_at,
         sc.name AS category_name,
+        customer.full_name AS customer_name,
+        customer.email AS customer_email,
+        customer.phone AS customer_phone,
         fixer.full_name AS fixer_name,
+        fixer.email AS fixer_email,
+        fixer.phone AS fixer_phone,
         fixer.profile_img AS fixer_avatar,
         sp.company_name AS fixer_company_name,
+        sp.location AS provider_location,
         COALESCE(
           payment_totals.amount_paid,
           receipt_totals.receipt_amount,
@@ -256,6 +270,7 @@ class CustomerBooking {
         ) AS amount_paid,
         COALESCE(payment_totals.latest_paid_at, b.created_at) AS receipt_date
       FROM bookings b
+      INNER JOIN users customer ON customer.id = b.customer_id
       INNER JOIN services s ON s.id = b.service_id
       INNER JOIN service_categories sc ON sc.id = s.category_id
       INNER JOIN service_providers sp ON sp.id = s.provider_id

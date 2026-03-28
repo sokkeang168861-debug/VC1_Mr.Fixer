@@ -161,6 +161,7 @@ export default function CustomerHistoryPage() {
   const [historyItems, setHistoryItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [receiptLoading, setReceiptLoading] = useState(false);
 
   const [currentView, setCurrentView] = useState("history");
   const [selectedService, setSelectedService] = useState(null);
@@ -219,9 +220,40 @@ export default function CustomerHistoryPage() {
     setCurrentView("rating");
   };
 
-  const handleViewReceipt = (service) => {
+  const handleViewReceipt = async (service) => {
     setSelectedService(service);
     setCurrentView("receipt");
+
+    if (!service?.bookingId) {
+      return;
+    }
+
+    try {
+      setReceiptLoading(true);
+
+      const response = await httpClient.get(
+        `/user/bookings/${service.bookingId}/receipt`
+      );
+
+      const receiptDetails = response?.data?.data;
+
+      if (!receiptDetails) {
+        return;
+      }
+
+      setSelectedService((prev) =>
+        prev?.bookingId === service.bookingId
+          ? {
+              ...prev,
+              ...receiptDetails,
+            }
+          : prev
+      );
+    } catch (error) {
+      console.error("Failed to load receipt details:", error);
+    } finally {
+      setReceiptLoading(false);
+    }
   };
 
   const handleViewFixerProfile = (service) => {
@@ -551,6 +583,7 @@ export default function CustomerHistoryPage() {
               <ReceiptView
                 onClose={() => setCurrentView("history")}
                 receipt={selectedService}
+                loading={receiptLoading}
               />
             )}
 

@@ -1,30 +1,12 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Star, Download, Send } from 'lucide-react';
+import ReceiptView from './ReceiptView';
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
   }).format(Number(amount || 0));
-}
-
-function formatReceiptDate(value) {
-  if (!value) {
-    return 'N/A';
-  }
-
-  const parsedDate = new Date(value);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return 'N/A';
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(parsedDate);
 }
 
 const PaymentProgressBar = ({ currentStep }) => {
@@ -97,6 +79,7 @@ const PaymentSuccess = ({
   const [comment, setComment] = useState('');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [showReceipt, setShowReceipt] = useState(false);
   const orderId =
     receipt?.orderId ||
     `#BK-${String(booking?.id || '').padStart(5, '0')}`;
@@ -109,20 +92,6 @@ const PaymentSuccess = ({
     receipt?.amount ??
     booking?.service_fee ??
     0;
-  const receiptDate = formatReceiptDate(
-    payment?.paid_at ||
-    receipt?.date ||
-    booking?.created_at
-  );
-  const lineItems = Array.isArray(receipt?.items) && receipt.items.length > 0
-    ? receipt.items
-    : [
-        {
-          id: 'summary',
-          name: serviceName,
-          price: totalPaid,
-        },
-      ];
   const categories = [
     { id: 'quality', label: 'QUALITY' },
     { id: 'speed', label: 'SPEED' },
@@ -169,146 +138,10 @@ const PaymentSuccess = ({
     }
   };
 
-  const handleDownloadReceipt = () => {
-    const fileName = `Receipt_${String(orderId).replace(/[^a-zA-Z0-9-]/g, '') || 'booking'}`;
-    const receiptRows = lineItems
-      .map(
-        (item) => `
-          <tr>
-            <td>${item.name}</td>
-            <td style="text-align:right;">${formatCurrency(item.price)}</td>
-          </tr>
-        `
-      )
-      .join('');
-
-    const printWindow = window.open('', '_blank', 'width=900,height=1200');
-
-    if (!printWindow) {
-      window.alert('Please allow pop-ups to save the receipt as PDF.');
-      return;
-    }
-
-    printWindow.document.write(`
-      <!doctype html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>${fileName}</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              color: #0f172a;
-              margin: 0;
-              padding: 32px;
-              background: #ffffff;
-            }
-            .sheet {
-              max-width: 760px;
-              margin: 0 auto;
-              border: 1px solid #e2e8f0;
-              border-radius: 24px;
-              padding: 32px;
-            }
-            .label {
-              color: #7c3aed;
-              font-size: 12px;
-              font-weight: 700;
-              letter-spacing: 0.2em;
-              text-transform: uppercase;
-            }
-            h1 {
-              margin: 12px 0 4px;
-              font-size: 36px;
-            }
-            .muted {
-              color: #64748b;
-              font-size: 14px;
-            }
-            .summary {
-              margin-top: 24px;
-              padding: 20px;
-              border-radius: 20px;
-              background: #f8fafc;
-            }
-            .summary-row {
-              display: flex;
-              justify-content: space-between;
-              margin: 10px 0;
-              font-size: 15px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 24px;
-            }
-            td {
-              padding: 12px 0;
-              border-bottom: 1px solid #e2e8f0;
-              font-size: 15px;
-            }
-            .total {
-              margin-top: 24px;
-              display: flex;
-              justify-content: space-between;
-              font-size: 24px;
-              font-weight: 700;
-              color: #7c3aed;
-            }
-            @media print {
-              body {
-                padding: 0;
-              }
-              .sheet {
-                border: none;
-                border-radius: 0;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="sheet">
-            <div class="label">Official Receipt</div>
-            <h1>Receipt ${orderId}</h1>
-            <div class="muted">${receiptDate}</div>
-
-            <div class="summary">
-              <div class="summary-row">
-                <span>Service</span>
-                <strong>${serviceName}</strong>
-              </div>
-              <div class="summary-row">
-                <span>Fixer</span>
-                <strong>${receipt?.fixer?.name || booking?.fixer_name || 'Assigned Fixer'}</strong>
-              </div>
-              <div class="summary-row">
-                <span>Payment Status</span>
-                <strong>${String(payment?.status || 'success').toUpperCase()}</strong>
-              </div>
-            </div>
-
-            <table>
-              <tbody>
-                ${receiptRows}
-              </tbody>
-            </table>
-
-            <div class="total">
-              <span>Total Paid</span>
-              <span>${formatCurrency(totalPaid)}</span>
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-  };
-
   return (
-    <div className="max-w-5xl mx-auto">
-      <PaymentProgressBar currentStep={3} />
+    <>
+      <div className="max-w-5xl mx-auto">
+        <PaymentProgressBar currentStep={3} />
       
       <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm p-12 mb-8">
         {/* Success Header */}
@@ -427,25 +260,32 @@ const PaymentSuccess = ({
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={handleDownloadReceipt}
-          className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-all"
-        >
-          <Download className="w-4 h-4" />
-          Download PDF Receipt
-        </button>
-        <button
-          type="button"
-          onClick={onDone}
-          disabled={completingPayment}
-          className="px-10 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all"
-        >
-          {completingPayment ? 'Finishing...' : 'Done'}
-        </button>
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setShowReceipt(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 rounded-xl text-slate-600 font-bold hover:bg-slate-50 transition-all"
+          >
+            <Download className="w-4 h-4" />
+            View Receipt
+          </button>
+          <button
+            type="button"
+            onClick={onDone}
+            disabled={completingPayment}
+            className="px-10 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-all"
+          >
+            {completingPayment ? 'Finishing...' : 'Done'}
+          </button>
+        </div>
       </div>
-    </div>
+      {showReceipt ? (
+        <ReceiptView
+          onClose={() => setShowReceipt(false)}
+          receipt={receipt || booking}
+        />
+      ) : null}
+    </>
   );
 };
 

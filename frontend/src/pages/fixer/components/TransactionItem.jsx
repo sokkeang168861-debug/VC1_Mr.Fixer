@@ -47,11 +47,12 @@ const TransactionItem = ({
   serviceFee,
   commission,
   netPayout,
+  onViewReceipt,
 }) => {
   return (
     <div className="border-b border-gray-100 last:border-b-0">
       <div className="px-4 py-3 transition-colors hover:bg-gray-50">
-        <div className="grid grid-cols-6 items-center gap-4 text-sm">
+        <div className="grid grid-cols-7 items-center gap-4 text-sm">
           <div className="font-medium text-gray-900">
             #{bookingId}
           </div>
@@ -85,6 +86,16 @@ const TransactionItem = ({
 
           <div className="font-semibold text-gray-900">
             {currencyFormatter.format(Number(netPayout || 0))}
+          </div>
+
+          <div>
+            <button
+              type="button"
+              onClick={() => onViewReceipt?.(bookingId)}
+              className="rounded-lg border border-orange-200 px-3 py-2 text-xs font-semibold text-orange-600 transition hover:bg-orange-50"
+            >
+              View Receipt
+            </button>
           </div>
         </div>
       </div>
