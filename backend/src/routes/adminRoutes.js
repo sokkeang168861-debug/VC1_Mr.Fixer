@@ -31,7 +31,10 @@ router.post(
   "/fixers",
   protect,
   adminCheck,
-  upload.single("profile_img"),
+  upload.fields([
+    { name: "profile_img", maxCount: 1 },
+    { name: "qr", maxCount: 1 },
+  ]),
   FixerManagementController.createFixer
 );
 router.get(
@@ -50,7 +53,10 @@ router.put(
   "/fixers/:id",
   protect,
   adminCheck,
-  upload.single("profile_img"),
+  upload.fields([
+    { name: "profile_img", maxCount: 1 },
+    { name: "qr", maxCount: 1 },
+  ]),
   FixerManagementController.updateFixer
 );
 router.delete(

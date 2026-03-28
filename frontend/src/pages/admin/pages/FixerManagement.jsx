@@ -63,6 +63,7 @@ const normalizeFixer = (fixer) => {
     jobs: fixer.totalBookings ?? fixer.jobs ?? 0,
     rating: Number(fixer.rating ?? 0),
     avatar: fixer.avatar || fallbackAvatar,
+    qr: fixer.qr || '',
     companyName: fixer.companyName || '',
     location: fixer.location || '',
     latitude:
@@ -222,12 +223,9 @@ export default function App() {
     const textFields = [
       'fullName',
       'email',
-      'password',
       'phone',
       'companyName',
       'location',
-      'latitude',
-      'longitude',
       'experience',
       'bio',
     ];
@@ -247,6 +245,10 @@ export default function App() {
 
     if (payload.profileImage instanceof File) {
       formData.append('profile_img', payload.profileImage);
+    }
+
+    if (payload.qrImage instanceof File) {
+      formData.append('qr', payload.qrImage);
     }
 
     return formData;

@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 
 class FixerManagementService {
   static COMMISSION_RATE = 0.1;
+  static DEFAULT_FIXER_PASSWORD = "secret123";
 
   static toOptionalString(value) {
     if (value === undefined || value === null) return null;
@@ -253,6 +254,7 @@ class FixerManagementService {
       totalBookings: item.totalBookings,
       rating: item.overallRating,
       avatar: item.avatar,
+      qr: item.qr,
     };
   }
 
@@ -358,18 +360,17 @@ class FixerManagementService {
   static async createFixer(db, payload = {}, file = null) {
     const fullName = this.toOptionalString(payload.fullName);
     const email = this.toOptionalString(payload.email)?.toLowerCase();
-    const password = this.toOptionalString(payload.password);
+    const password =
+      this.toOptionalString(payload.password) || this.DEFAULT_FIXER_PASSWORD;
     const phone = this.toOptionalString(payload.phone);
     const companyName = this.toOptionalString(payload.companyName);
     const location = this.toOptionalString(payload.location);
     const bio = this.toOptionalString(payload.bio);
+    const profileImageFile = file?.profile_img || null;
+    const qrFile = file?.qr || null;
 
     if (!fullName || !email) {
       throw new Error("Full name and email are required");
-    }
-
-    if (!password) {
-      throw new Error("Password is required");
     }
 
     const experienceRaw = this.toOptionalString(payload.experience);
@@ -406,8 +407,23 @@ class FixerManagementService {
       throw new Error("Password must be at least 6 characters");
     }
 
+    if (profileImageFile) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+      if (!allowedTypes.includes(profileImageFile.mimetype)) {
+        throw new Error("Profile image must be JPG, PNG, or WEBP");
+      }
+    }
+
+    if (qrFile) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+      if (!allowedTypes.includes(qrFile.mimetype)) {
+        throw new Error("QR image must be JPG, PNG, or WEBP");
+      }
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const profileImg = file?.buffer || null;
+    const profileImg = profileImageFile?.buffer || null;
+    const qr = qrFile?.buffer || null;
 
     const createPayload = {
       fullName,
@@ -421,6 +437,7 @@ class FixerManagementService {
       longitude,
       experience,
       bio,
+      qr,
       categoryIds,
     };
 
@@ -428,9 +445,9 @@ class FixerManagementService {
     try {
       result = await FixerManagementModel.createFixer(db, createPayload);
     } catch (error) {
-      if (profileImg && this.isLikelyConnectionResetError(error)) {
+      if ((profileImg || qr) && this.isLikelyConnectionResetError(error)) {
         throw new Error(
-          "Unable to save profile image. Please use a smaller image and try again",
+          "Unable to save uploaded image. Please use a smaller image and try again",
           { cause: error }
         );
       }
@@ -449,9 +466,25 @@ class FixerManagementService {
 
     const categoryIds = this.parseCategoryIds(payload.categoryIds);
     const nextPassword = this.toOptionalString(payload.password);
+    const profileImageFile = file?.profile_img || null;
+    const qrFile = file?.qr || null;
 
     if (nextPassword && nextPassword.length < 6) {
       throw new Error("Password must be at least 6 characters");
+    }
+
+    if (profileImageFile) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+      if (!allowedTypes.includes(profileImageFile.mimetype)) {
+        throw new Error("Profile image must be JPG, PNG, or WEBP");
+      }
+    }
+
+    if (qrFile) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+      if (!allowedTypes.includes(qrFile.mimetype)) {
+        throw new Error("QR image must be JPG, PNG, or WEBP");
+      }
     }
 
     let providerRows;
@@ -538,19 +571,20 @@ class FixerManagementService {
         email: payload.email,
         hashedPassword,
         phone: payload.phone,
-        profileImg: file?.buffer || null,
+        profileImg: profileImageFile?.buffer || null,
         companyName: payload.companyName,
         location: resolvedLocation,
         latitude,
         longitude,
         experience: payload.experience,
         bio: payload.bio,
+        qr: qrFile?.buffer || null,
         categoryIds,
       });
     } catch (error) {
-      if (file?.buffer && this.isLikelyConnectionResetError(error)) {
+      if ((profileImageFile?.buffer || qrFile?.buffer) && this.isLikelyConnectionResetError(error)) {
         throw new Error(
-          "Unable to save profile image. Please use a smaller image and try again",
+          "Unable to save uploaded image. Please use a smaller image and try again",
           { cause: error }
         );
       }

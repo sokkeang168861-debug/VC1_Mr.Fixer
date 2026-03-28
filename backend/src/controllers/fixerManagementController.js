@@ -5,10 +5,14 @@ class FixerManagementController {
     const db = req.app.get("db");
 
     try {
+      const files = req.files || {};
       const created = await FixerManagementService.createFixer(
         db,
         req.body,
-        req.file
+        {
+          profile_img: files.profile_img?.[0] || null,
+          qr: files.qr?.[0] || null,
+        }
       );
       res.status(201).json({
         success: true,
@@ -118,11 +122,15 @@ class FixerManagementController {
     const { id } = req.params;
 
     try {
+      const files = req.files || {};
       const result = await FixerManagementService.updateFixer(
         db,
         Number(id),
         req.body,
-        req.file
+        {
+          profile_img: files.profile_img?.[0] || null,
+          qr: files.qr?.[0] || null,
+        }
       );
 
       if (!result.found) {

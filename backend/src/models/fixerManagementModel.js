@@ -31,6 +31,7 @@ class FixerManagementModel {
           u.email,
           u.phone,
           u.profile_img,
+          sp.qr,
           sp.company_name,
           sp.location,
           ${coordinateSelection}
@@ -100,6 +101,10 @@ class FixerManagementModel {
         row.profile_img && Buffer.isBuffer(row.profile_img)
           ? `data:image/jpeg;base64,${row.profile_img.toString("base64")}`
           : null,
+      qr:
+        row.qr && Buffer.isBuffer(row.qr)
+          ? `data:image/jpeg;base64,${row.qr.toString("base64")}`
+          : null,
     }));
   }
 
@@ -118,6 +123,7 @@ class FixerManagementModel {
           u.email,
           u.phone,
           u.profile_img,
+          sp.qr,
           sp.company_name,
           sp.location,
           ${coordinateSelection}
@@ -193,6 +199,10 @@ class FixerManagementModel {
       avatar:
         row.profile_img && Buffer.isBuffer(row.profile_img)
           ? `data:image/jpeg;base64,${row.profile_img.toString("base64")}`
+          : null,
+      qr:
+        row.qr && Buffer.isBuffer(row.qr)
+          ? `data:image/jpeg;base64,${row.qr.toString("base64")}`
           : null,
     };
   }
@@ -283,6 +293,7 @@ class FixerManagementModel {
       longitude,
       experience,
       bio,
+      qr,
       categoryIds = [],
     } = payload;
 
@@ -307,18 +318,18 @@ class FixerManagementModel {
       if (hasCoordinateColumns) {
         [providerResult] = await connection.query(
           `
-            INSERT INTO service_providers (user_id, company_name, location, latitude, longitude, experience, bio)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO service_providers (user_id, company_name, location, latitude, longitude, experience, bio, qr)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
           `,
-          [userId, companyName, location, latitude, longitude, experience, bio]
+          [userId, companyName, location, latitude, longitude, experience, bio, qr]
         );
       } else {
         [providerResult] = await connection.query(
           `
-            INSERT INTO service_providers (user_id, company_name, location, experience, bio)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO service_providers (user_id, company_name, location, experience, bio, qr)
+            VALUES (?, ?, ?, ?, ?, ?)
           `,
-          [userId, companyName, location, experience, bio]
+          [userId, companyName, location, experience, bio, qr]
         );
       }
 
@@ -359,6 +370,7 @@ class FixerManagementModel {
       longitude,
       experience,
       bio,
+      qr,
       categoryIds = [],
     } = payload;
 
@@ -402,10 +414,11 @@ class FixerManagementModel {
                 latitude = COALESCE(?, latitude),
                 longitude = COALESCE(?, longitude),
                 experience = COALESCE(?, experience),
-                bio = COALESCE(?, bio)
+                bio = COALESCE(?, bio),
+                qr = COALESCE(?, qr)
             WHERE id = ?
           `,
-          [companyName, location, latitude, longitude, experience, bio, providerId]
+          [companyName, location, latitude, longitude, experience, bio, qr, providerId]
         );
       } else {
         await connection.query(
@@ -414,10 +427,11 @@ class FixerManagementModel {
             SET company_name = COALESCE(?, company_name),
                 location = COALESCE(?, location),
                 experience = COALESCE(?, experience),
-                bio = COALESCE(?, bio)
+                bio = COALESCE(?, bio),
+                qr = COALESCE(?, qr)
             WHERE id = ?
           `,
-          [companyName, location, experience, bio, providerId]
+          [companyName, location, experience, bio, qr, providerId]
         );
       }
 

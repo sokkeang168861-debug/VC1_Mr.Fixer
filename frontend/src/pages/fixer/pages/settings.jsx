@@ -193,7 +193,10 @@ const Settings = () => {
               ? String(data.experience)
               : fallbackProfile.experience,
           profileImage: data.profile_img || '',
-          qrImage: data.qr || fallbackProfile.qrImage || '',
+          qrImage:
+            Object.prototype.hasOwnProperty.call(data, 'qr')
+              ? (data.qr || '')
+              : fallbackProfile.qrImage || '',
           categories: Array.isArray(data.categories)
             ? data.categories
             : fallbackProfile.categories

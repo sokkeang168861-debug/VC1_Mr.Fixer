@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Briefcase, X, Eye, EyeOff } from 'lucide-react';
+import { Briefcase, X, MapPin, Loader2, QrCode } from 'lucide-react';
 import { motion as Motion } from 'motion/react';
+import defaultProfile from '@/assets/image/default-profile.png';
 
 const IMAGE_MAX_DIMENSION = 1280;
 const IMAGE_QUALITY = 0.82;
@@ -8,43 +9,48 @@ const IMAGE_QUALITY = 0.82;
 const emptyForm = {
   fullName: '',
   email: '',
-  password: '',
   phone: '',
   companyName: '',
-  latitude: '',
-  longitude: '',
   location: '',
   experience: '',
   bio: '',
   categoryIds: [],
 };
 
+const getOpenStreetMapEmbedUrl = ({ lat, lng }) => {
+  const delta = 0.01;
+  const left = lng - delta;
+  const right = lng + delta;
+  const top = lat + delta;
+  const bottom = lat - delta;
+
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lng}`;
+};
+
 const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }) => {
   const [form, setForm] = useState(emptyForm);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState('');
+  const [selectedQr, setSelectedQr] = useState(null);
+  const [qrPreview, setQrPreview] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const [mapCoordinates, setMapCoordinates] = useState(null);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState('');
   const fileInputRef = useRef(null);
+  const qrInputRef = useRef(null);
   const objectUrlRef = useRef('');
+  const qrObjectUrlRef = useRef('');
+  const geocodeAbortRef = useRef(null);
   const isEditMode = title.toLowerCase().includes('edit');
 
   useEffect(() => {
     const next = {
       fullName: initialData?.name || initialData?.fullName || '',
       email: initialData?.email || '',
-      password: '',
       phone: initialData?.phone || '',
       companyName: initialData?.companyName || '',
-      latitude:
-        initialData?.latitude === null || initialData?.latitude === undefined
-          ? ''
-          : String(initialData.latitude),
-      longitude:
-        initialData?.longitude === null || initialData?.longitude === undefined
-          ? ''
-          : String(initialData.longitude),
       location: initialData?.location || '',
       experience: initialData?.experience || '',
       bio: initialData?.bio || '',
@@ -54,12 +60,30 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
     };
     setForm(next);
     setSelectedPhoto(null);
+    setSelectedQr(null);
     if (objectUrlRef.current) {
       URL.revokeObjectURL(objectUrlRef.current);
       objectUrlRef.current = '';
     }
+    if (qrObjectUrlRef.current) {
+      URL.revokeObjectURL(qrObjectUrlRef.current);
+      qrObjectUrlRef.current = '';
+    }
     setPhotoPreview(initialData?.avatar || '');
-    setShowPassword(false);
+    setQrPreview(initialData?.qr || '');
+    setMapError('');
+    setMapLoading(false);
+    setMapCoordinates(
+      initialData?.latitude !== null &&
+        initialData?.latitude !== undefined &&
+        initialData?.longitude !== null &&
+        initialData?.longitude !== undefined
+        ? {
+            lat: Number(initialData.latitude),
+            lng: Number(initialData.longitude),
+          }
+        : null
+    );
   }, [initialData]);
 
   useEffect(() => {
@@ -67,8 +91,89 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
       if (objectUrlRef.current) {
         URL.revokeObjectURL(objectUrlRef.current);
       }
+      if (qrObjectUrlRef.current) {
+        URL.revokeObjectURL(qrObjectUrlRef.current);
+      }
+      if (geocodeAbortRef.current) {
+        geocodeAbortRef.current.abort();
+      }
     };
   }, []);
+
+  useEffect(() => {
+    const address = form.location.trim();
+
+    if (!address) {
+      setMapCoordinates(null);
+      setMapError('');
+      setMapLoading(false);
+      if (geocodeAbortRef.current) {
+        geocodeAbortRef.current.abort();
+        geocodeAbortRef.current = null;
+      }
+      return;
+    }
+
+    const controller = new AbortController();
+    geocodeAbortRef.current?.abort();
+    geocodeAbortRef.current = controller;
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setMapLoading(true);
+        setMapError('');
+
+        const params = new URLSearchParams({
+          format: 'jsonv2',
+          q: address,
+          limit: '1',
+        });
+
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+          {
+            headers: {
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Unable to preview this address on the map.');
+        }
+
+        const results = await response.json();
+        const bestMatch = Array.isArray(results) ? results[0] : null;
+        const lat = Number(bestMatch?.lat);
+        const lng = Number(bestMatch?.lon);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          setMapCoordinates(null);
+          setMapError('Address not found on the map yet. Try a more specific address.');
+          return;
+        }
+
+        setMapCoordinates({
+          lat: Number(lat.toFixed(8)),
+          lng: Number(lng.toFixed(8)),
+        });
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
+        setMapCoordinates(null);
+        setMapError(err?.message || 'Unable to preview this address on the map.');
+      } finally {
+        if (!controller.signal.aborted) {
+          setMapLoading(false);
+        }
+      }
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [form.location]);
 
   const updateField = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -93,41 +198,19 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
       return;
     }
 
-    if (!isEditMode && !form.password.trim()) {
-      setError('Password is required');
+    if (!form.location.trim()) {
+      setError('Address is required');
       return;
     }
 
-    if (form.password.trim() && form.password.trim().length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
-    if (form.latitude === '' || form.longitude === '') {
-      setError('Latitude and longitude are required');
-      return;
-    }
-
-    const lat = Number(form.latitude);
-    const lng = Number(form.longitude);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      setError('Latitude and longitude must be valid numbers');
-      return;
-    }
-
-    if (lat < -90 || lat > 90) {
-      setError('Latitude must be between -90 and 90');
-      return;
-    }
-
-    if (lng < -180 || lng > 180) {
-      setError('Longitude must be between -180 and 180');
+    if (!mapCoordinates) {
+      setError('Please enter an address that can be located on the map before saving');
       return;
     }
 
     try {
       setSaving(true);
-      await onSave({ ...form, profileImage: selectedPhoto });
+      await onSave({ ...form, profileImage: selectedPhoto, qrImage: selectedQr });
     } catch (err) {
       setError(err?.message || 'Failed to save');
     } finally {
@@ -214,6 +297,80 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
     void applyPhoto();
   };
 
+  const handleQrChange = (event) => {
+    const applyQr = async () => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        setError('Please select a valid QR image file');
+        return;
+      }
+
+      let processed = file;
+      try {
+        processed = await (async () => {
+          const loadImage = (sourceFile) =>
+            new Promise((resolve, reject) => {
+              const url = URL.createObjectURL(sourceFile);
+              const img = new Image();
+              img.onload = () => {
+                URL.revokeObjectURL(url);
+                resolve(img);
+              };
+              img.onerror = () => {
+                URL.revokeObjectURL(url);
+                reject(new Error('Unable to load image'));
+              };
+              img.src = url;
+            });
+
+          const image = await loadImage(file);
+          const width = image.width || 0;
+          const height = image.height || 0;
+          if (!width || !height) return file;
+
+          const scale = Math.min(1, IMAGE_MAX_DIMENSION / Math.max(width, height));
+          const nextWidth = Math.max(1, Math.round(width * scale));
+          const nextHeight = Math.max(1, Math.round(height * scale));
+
+          const canvas = document.createElement('canvas');
+          canvas.width = nextWidth;
+          canvas.height = nextHeight;
+          const context = canvas.getContext('2d');
+          if (!context) return file;
+
+          context.drawImage(image, 0, 0, nextWidth, nextHeight);
+
+          const compressedBlob = await new Promise((resolve) =>
+            canvas.toBlob(resolve, 'image/jpeg', IMAGE_QUALITY)
+          );
+
+          if (!compressedBlob || compressedBlob.size >= file.size) return file;
+
+          const safeName = file.name.replace(/\.[^.]+$/, '') || 'qr';
+          return new File([compressedBlob], `${safeName}.jpg`, {
+            type: 'image/jpeg',
+          });
+        })();
+      } catch {
+        processed = file;
+      }
+
+      if (qrObjectUrlRef.current) {
+        URL.revokeObjectURL(qrObjectUrlRef.current);
+      }
+
+      const nextPreview = URL.createObjectURL(processed);
+      qrObjectUrlRef.current = nextPreview;
+      setSelectedQr(processed);
+      setQrPreview(nextPreview);
+      setError(null);
+    };
+
+    void applyQr();
+  };
+
   return (
     <Motion.div 
       initial={{ opacity: 0 }}
@@ -227,12 +384,6 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
         className="bg-white w-full max-w-xl rounded-3xl shadow-2xl p-6 md:p-8 relative my-8 max-h-[85vh] overflow-y-auto"
       >
-        <button 
-          onClick={onClose}
-          className="absolute right-8 top-8 p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-400"
-        >
-          <X size={24} />
-        </button>
 
         <h2 className="text-2xl font-bold mb-6">{title}</h2>
         {error && (
@@ -242,7 +393,7 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
         )}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Photo Upload Section */}
-          <div className="md:col-span-4">
+          <div className="md:col-span-4 space-y-4">
             <input
               ref={fileInputRef}
               type="file"
@@ -256,18 +407,51 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
               className="w-full aspect-square rounded-3xl border-2 border-dashed border-blue-100 bg-blue-50/30 flex flex-col items-center justify-center gap-4 group cursor-pointer hover:bg-blue-50 transition-colors"
             >
               <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 overflow-hidden">
-                {photoPreview ? (
+                <img
+                  src={photoPreview || defaultProfile}
+                  alt="Fixer profile preview"
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <span className="text-blue-600 font-semibold text-sm">
+                {photoPreview ? 'Change Photo' : 'Upload Photo'}
+              </span>
+            </button>
+
+            <input
+              ref={qrInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              className="hidden"
+              onChange={handleQrChange}
+            />
+            <button
+              type="button"
+              onClick={() => qrInputRef.current?.click()}
+              className="w-full rounded-3xl border-2 border-dashed border-emerald-100 bg-emerald-50/30 p-4 flex flex-col items-center justify-center gap-4 group cursor-pointer hover:bg-emerald-50 transition-colors"
+            >
+              <div className="h-32 w-full rounded-2xl bg-white border border-emerald-100 flex items-center justify-center overflow-hidden">
+                {qrPreview ? (
                   <img
-                    src={photoPreview}
-                    alt="Fixer profile preview"
-                    className="w-full h-full object-cover"
+                    src={qrPreview}
+                    alt="Fixer QR preview"
+                    className="h-full w-full object-contain p-3"
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <User size={40} />
+                  <div className="text-center text-slate-400">
+                    <QrCode className="mx-auto h-10 w-10 text-emerald-300" />
+                    <div className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-500">
+                      Payment QR
+                    </div>
+                    <div className="mt-2 text-sm">No QR uploaded yet</div>
+                  </div>
                 )}
               </div>
-              <span className="text-blue-600 font-semibold text-sm">Upload Photo</span>
+              <span className="text-emerald-700 font-semibold text-sm">
+                {qrPreview ? 'Change QR' : 'Upload QR'}
+              </span>
             </button>
           </div>
 
@@ -304,33 +488,7 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">
-                {isEditMode ? 'Set New Password' : 'Set Password'}
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder={
-                    isEditMode
-                      ? 'Leave blank to keep current password'
-                      : 'Enter at least 6 characters'
-                  }
-                  className="w-full px-5 py-3 pr-12 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                  value={form.password}
-                  onChange={(e) => updateField('password', e.target.value)}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Company name</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Company Name</label>
               <input 
                 type="text" 
                 placeholder="e.g.Bike company"
@@ -339,6 +497,11 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
                 onChange={(e) => updateField('companyName', e.target.value)}
               />
             </div>
+            {!isEditMode ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                New fixer accounts are created with the default password <span className="font-bold">secret123</span>.
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -371,29 +534,7 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Latitude</label>
-              <input 
-                type="number"
-                step="any"
-                placeholder="e.g. 11.5564"
-                className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                value={form.latitude}
-                onChange={(e) => updateField('latitude', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Longitude</label>
-              <input 
-                type="number"
-                step="any"
-                placeholder="e.g. 104.9282"
-                className="w-full px-5 py-3 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
-                value={form.longitude}
-                onChange={(e) => updateField('longitude', e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Location Label (optional)</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Address</label>
               <input 
                 type="text" 
                 placeholder="e.g. Tuol Kork, Phnom Penh"
@@ -401,6 +542,55 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
                 value={form.location}
                 onChange={(e) => updateField('location', e.target.value)}
               />
+              <p className="mt-2 text-xs text-slate-500">
+                The system will automatically convert this address into latitude and longitude before saving.
+              </p>
+            </div>
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <MapPin size={18} className="text-blue-600" />
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Location Preview</p>
+                    <p className="text-xs text-slate-500">
+                      Check the map before saving this fixer account.
+                    </p>
+                  </div>
+                </div>
+                {mapLoading ? (
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 border border-slate-200">
+                    <Loader2 size={14} className="animate-spin" />
+                    Finding...
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                {mapCoordinates ? (
+                  <iframe
+                    title="Fixer address preview"
+                    src={getOpenStreetMapEmbedUrl(mapCoordinates)}
+                    className="h-64 w-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                ) : (
+                  <div className="flex h-64 items-center justify-center px-6 text-center text-sm text-slate-500">
+                    {form.location.trim()
+                      ? mapError || 'Searching for this address on the map...'
+                      : 'Enter an address to preview the saved location on the map.'}
+                  </div>
+                )}
+              </div>
+
+              {mapCoordinates ? (
+                <p className="mt-3 text-xs font-medium text-slate-600">
+                  Auto-detected coordinates: {mapCoordinates.lat}, {mapCoordinates.lng}
+                </p>
+              ) : null}
+              {mapError ? (
+                <p className="mt-3 text-xs font-semibold text-amber-600">{mapError}</p>
+              ) : null}
             </div>
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Years of Experience</label>
@@ -426,7 +616,7 @@ const FixerForm = ({ title, onClose, onSave, initialData = {}, categories = [] }
         </div>
 
         {/* Footer Buttons */}
-        <div className="mt-8 flex justify-end gap-3 sticky bottom-0 bg-white pt-4">
+        <div className="mt-8 flex justify-between gap-3 sticky bottom-0 bg-white pt-4">
           <button 
             onClick={onClose}
             className="px-8 py-3 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-colors border border-slate-200"
