@@ -1,3 +1,5 @@
+const { toImageDataUrl } = require("../utils/imageDataUrl");
+
 class CustomerBooking {
   static mapBookingRow(row, proposalItems = []) {
     if (!row) return null;
@@ -29,6 +31,7 @@ class CustomerBooking {
       fixer_email: row.fixer_email || "",
       fixer_phone: row.fixer_phone || "",
       fixer_company_name: row.fixer_company_name || "",
+      fixer_qr: toImageDataUrl(row.fixer_qr),
       provider_location: row.provider_location || "",
       provider_latitude:
         row.provider_latitude !== null && row.provider_latitude !== undefined
@@ -71,11 +74,6 @@ class CustomerBooking {
         ? Number(row.amount_paid)
         : receiptTotal;
 
-    let fixerAvatar = row.fixer_avatar || null;
-    if (fixerAvatar && Buffer.isBuffer(fixerAvatar)) {
-      fixerAvatar = `data:image/jpeg;base64,${fixerAvatar.toString("base64")}`;
-    }
-
     return {
       bookingId: Number(row.booking_id),
       serviceId: Number(row.service_id),
@@ -92,7 +90,7 @@ class CustomerBooking {
       fixer: {
         name: row.fixer_name || "Assigned Fixer",
         companyName: row.fixer_company_name || "",
-        avatar: fixerAvatar,
+        avatar: toImageDataUrl(row.fixer_avatar),
       },
     };
   }
@@ -699,6 +697,7 @@ class CustomerBooking {
         fixer.email AS fixer_email,
         fixer.phone AS fixer_phone,
         sp.company_name AS fixer_company_name,
+        sp.qr AS fixer_qr,
         sp.location AS provider_location,
         sp.latitude AS provider_latitude,
         sp.longitude AS provider_longitude
@@ -745,6 +744,7 @@ class CustomerBooking {
         fixer.email AS fixer_email,
         fixer.phone AS fixer_phone,
         sp.company_name AS fixer_company_name,
+        sp.qr AS fixer_qr,
         sp.location AS provider_location,
         sp.latitude AS provider_latitude,
         sp.longitude AS provider_longitude

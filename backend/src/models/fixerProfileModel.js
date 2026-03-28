@@ -1,3 +1,5 @@
+const { toImageDataUrl } = require("../utils/imageDataUrl");
+
 class FixerProfileModel {
   static async getFixerById(db, fixerId) {
     const [rows] = await db.query(
@@ -9,6 +11,10 @@ class FixerProfileModel {
         u.role,
         u.profile_img,
         sp.id AS service_provider_id,
+        sp.company_name,
+        sp.bio,
+        sp.experience,
+        sp.qr,
         sp.location,
         sp.latitude,
         sp.longitude
@@ -72,6 +78,26 @@ class FixerProfileModel {
       values.push(payload.location);
     }
 
+    if (Object.prototype.hasOwnProperty.call(payload, "company_name")) {
+      fields.push("company_name = ?");
+      values.push(payload.company_name);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, "bio")) {
+      fields.push("bio = ?");
+      values.push(payload.bio);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, "experience")) {
+      fields.push("experience = ?");
+      values.push(payload.experience);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, "qr")) {
+      fields.push("qr = ?");
+      values.push(payload.qr);
+    }
+
     if (Object.prototype.hasOwnProperty.call(payload, "latitude")) {
       fields.push("latitude = ?");
       values.push(payload.latitude);
@@ -100,10 +126,23 @@ class FixerProfileModel {
 
   static async createServiceProviderByUserId(db, fixerId, payload) {
     const [result] = await db.query(
-      `INSERT INTO service_providers (user_id, location, latitude, longitude)
-       VALUES (?, ?, ?, ?)`,
+      `INSERT INTO service_providers (
+        user_id,
+        company_name,
+        bio,
+        experience,
+        qr,
+        location,
+        latitude,
+        longitude
+      )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         fixerId,
+        payload.company_name || null,
+        payload.bio || null,
+        payload.experience ?? null,
+        payload.qr ?? null,
         payload.location || null,
         payload.latitude ?? null,
         payload.longitude ?? null,
@@ -130,6 +169,38 @@ class FixerProfileModel {
     );
 
     return result;
+  }
+
+  static serializeFixerProfile(row) {
+    if (!row) {
+      return null;
+    }
+
+    return {
+      id: row.id,
+      full_name: row.full_name || "",
+      email: row.email || "",
+      phone: row.phone || "",
+      role: row.role || "fixer",
+      profile_img: toImageDataUrl(row.profile_img),
+      company_name: row.company_name || "",
+      bio: row.bio || "",
+      experience:
+        row.experience !== null && row.experience !== undefined
+          ? Number(row.experience)
+          : null,
+      qr: toImageDataUrl(row.qr),
+      location: row.location || "",
+      latitude:
+        row.latitude !== null && row.latitude !== undefined
+          ? Number(row.latitude)
+          : null,
+      longitude:
+        row.longitude !== null && row.longitude !== undefined
+          ? Number(row.longitude)
+          : null,
+      service_provider_id: row.service_provider_id || null,
+    };
   }
 }
 

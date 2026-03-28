@@ -3,7 +3,27 @@ import { Wrench } from "lucide-react";
 import httpClient from "../../../api/httpClient";
 import { resolveUploadUrl } from "@/lib/assets";
 import defaultProfile from "@/assets/image/default-profile.png";
-export const Header = () => {
+
+const FIXER_SETTINGS_STORAGE_KEY = "fixer_settings_local";
+
+const loadLocalFixerSettings = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(FIXER_SETTINGS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const getAvatarSource = (profileImage) => {
+  return profileImage ? resolveUploadUrl(profileImage) : defaultProfile;
+};
+
+export const Header = ({ className = "" }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(() => !!localStorage.getItem("token"));
   const [avatarSrc, setAvatarSrc] = useState(defaultProfile);
@@ -15,22 +35,56 @@ export const Header = () => {
       return;
     }
 
+    const applyLocalSettings = () => {
+      const localSettings = loadLocalFixerSettings();
+      const localProfile = localSettings?.profile;
+
+      if (!localProfile) {
+        return;
+      }
+
+      setUser((prev) => ({
+        ...(prev || {}),
+        full_name: localProfile.fullName || prev?.full_name || "Fixer User",
+        email: localProfile.email || prev?.email || "",
+        phone: localProfile.phone || prev?.phone || "",
+        role: prev?.role || "fixer",
+      }));
+      setAvatarSrc(getAvatarSource(localProfile.profileImage));
+    };
+
+    applyLocalSettings();
+
     httpClient
-      .get("/user/currentUser")
+      .get("/fixer/settings/profile")
       .then((res) => {
-        setUser(res.data);
-        setAvatarSrc(
-          res.data?.profile_img ? resolveUploadUrl(res.data.profile_img) : defaultProfile
-        );
+        const profile = res.data || {};
+        setUser((prev) => ({
+          ...(prev || {}),
+          full_name: profile.full_name || prev?.full_name || "Fixer User",
+          email: profile.email || prev?.email || "",
+          phone: profile.phone || prev?.phone || "",
+          role: profile.role || prev?.role || "fixer",
+        }));
+        setAvatarSrc(getAvatarSource(profile.profile_img));
       })
       .catch((err) => {
         console.error(err);
-        setUser(null);
-        setAvatarSrc(defaultProfile);
+        applyLocalSettings();
       })
       .finally(() => {
         setLoading(false);
       });
+
+    const handleFixerSettingsUpdated = () => {
+      applyLocalSettings();
+    };
+
+    window.addEventListener("fixer-settings-updated", handleFixerSettingsUpdated);
+
+    return () => {
+      window.removeEventListener("fixer-settings-updated", handleFixerSettingsUpdated);
+    };
   }, []);
 
   const renderUserInfo = () => {
@@ -46,7 +100,9 @@ export const Header = () => {
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex justify-between z-50`}>
+    <header
+      className={`fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex justify-between z-50 ${className}`}
+    >
       <div className="p-6 flex items-center gap-3">
         <div className="w-9 h-9 rounded-lg bg-orange-500 flex items-center justify-center">
           <Wrench className="w-5 h-5 text-white" />

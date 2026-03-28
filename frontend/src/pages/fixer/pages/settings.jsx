@@ -4,10 +4,9 @@ import {
   User, 
   MapPin, 
   Shield, 
-  Plus, 
   Camera,
   Pencil,
-  X
+  QrCode
 } from 'lucide-react';
 import { Header } from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -33,6 +32,7 @@ const loadLocalFixerSettings = () => {
 const saveLocalFixerSettings = (data) => {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(FIXER_SETTINGS_STORAGE_KEY, JSON.stringify(data));
+  window.dispatchEvent(new Event('fixer-settings-updated'));
 };
 
 const buildAddressList = (location) => {
@@ -52,6 +52,51 @@ const buildStoredSettings = ({ profile, location }) => ({
   location,
 });
 
+const getOpenStreetMapEmbedUrl = ({ lat, lng }) => {
+  const delta = 0.01;
+  const left = lng - delta;
+  const right = lng + delta;
+  const top = lat + delta;
+  const bottom = lat - delta;
+
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lng}`;
+};
+
+const geocodeAddressPreview = async (address) => {
+  const params = new URLSearchParams({
+    format: 'jsonv2',
+    q: String(address).trim(),
+    limit: '1',
+  });
+
+  const response = await fetch(
+    `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+    {
+      headers: {
+        Accept: 'application/json',
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to preview map location');
+  }
+
+  const results = await response.json();
+  const bestMatch = Array.isArray(results) ? results[0] : null;
+  const latitude = Number(bestMatch?.lat);
+  const longitude = Number(bestMatch?.lon);
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
+
+  return {
+    lat: Number(latitude.toFixed(8)),
+    lng: Number(longitude.toFixed(8)),
+  };
+};
+
 const Settings = () => {
   const navigate = useNavigate();
   const locationInputRef = useRef(null);
@@ -65,19 +110,31 @@ const Settings = () => {
     fullName: '',
     email: '',
     phone: '',
-    profileImage: ''
+    companyName: '',
+    bio: '',
+    experience: '',
+    profileImage: '',
+    qrImage: ''
   });
   const [originalProfileData, setOriginalProfileData] = useState({
     fullName: '',
     email: '',
     phone: '',
-    profileImage: ''
+    companyName: '',
+    bio: '',
+    experience: '',
+    profileImage: '',
+    qrImage: ''
   });
+  const [selectedQrFile, setSelectedQrFile] = useState(null);
 
   const [addresses, setAddresses] = useState([]);
   const [locationInput, setLocationInput] = useState('');
+  const [locationCoordinates, setLocationCoordinates] = useState(null);
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [isSavingLocation, setIsSavingLocation] = useState(false);
+  const [loadingLocationPreview, setLoadingLocationPreview] = useState(false);
+  const [locationPreviewError, setLocationPreviewError] = useState('');
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
@@ -95,7 +152,11 @@ const Settings = () => {
       fullName: localSettings?.profile?.fullName || tokenPayload?.full_name || '',
       email: localSettings?.profile?.email || tokenPayload?.email || '',
       phone: localSettings?.profile?.phone || '',
-      profileImage: localSettings?.profile?.profileImage || ''
+      companyName: localSettings?.profile?.companyName || '',
+      bio: localSettings?.profile?.bio || '',
+      experience: localSettings?.profile?.experience || '',
+      profileImage: '',
+      qrImage: localSettings?.profile?.qrImage || ''
     };
 
     setProfileData({
@@ -115,13 +176,31 @@ const Settings = () => {
           fullName: data.full_name || fallbackProfile.fullName,
           email: data.email || fallbackProfile.email,
           phone: data.phone || fallbackProfile.phone,
-          profileImage: data.profile_img || fallbackProfile.profileImage
+          companyName: data.company_name || fallbackProfile.companyName,
+          bio: data.bio || fallbackProfile.bio,
+          experience:
+            data.experience !== null && data.experience !== undefined
+              ? String(data.experience)
+              : fallbackProfile.experience,
+          profileImage: data.profile_img || '',
+          qrImage: data.qr || fallbackProfile.qrImage || ''
         };
 
         setProfileData(nextProfile);
         setOriginalProfileData(nextProfile);
         setAddresses(buildAddressList(data.location || localSettings?.location || ''));
         setLocationInput(data.location || localSettings?.location || '');
+        setLocationCoordinates(
+          data.latitude !== null &&
+            data.latitude !== undefined &&
+            data.longitude !== null &&
+            data.longitude !== undefined
+            ? {
+                lat: Number(data.latitude),
+                lng: Number(data.longitude),
+              }
+            : null
+        );
         saveLocalFixerSettings(
           buildStoredSettings({
             profile: nextProfile,
@@ -142,6 +221,60 @@ const Settings = () => {
       locationInputRef.current?.focus();
     }
   }, [isEditingLocation]);
+
+  useEffect(() => {
+    if (!isEditingLocation) {
+      setLoadingLocationPreview(false);
+      setLocationPreviewError('');
+      return undefined;
+    }
+
+    const trimmedLocation = locationInput.trim();
+    if (!trimmedLocation) {
+      setLocationCoordinates(null);
+      setLoadingLocationPreview(false);
+      setLocationPreviewError('');
+      return undefined;
+    }
+
+    let isMounted = true;
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setLoadingLocationPreview(true);
+        setLocationPreviewError('');
+        const previewCoordinates = await geocodeAddressPreview(trimmedLocation);
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (!previewCoordinates) {
+          setLocationCoordinates(null);
+          setLocationPreviewError('Map preview not found for this address yet.');
+          return;
+        }
+
+        setLocationCoordinates(previewCoordinates);
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        console.error('Failed to preview fixer location:', error);
+        setLocationCoordinates(null);
+        setLocationPreviewError('Unable to preview this address on the map.');
+      } finally {
+        if (isMounted) {
+          setLoadingLocationPreview(false);
+        }
+      }
+    }, 500);
+
+    return () => {
+      isMounted = false;
+      window.clearTimeout(timeoutId);
+    };
+  }, [isEditingLocation, locationInput]);
 
   const handleProfileChange = (field, value) => {
     setSaveMessage('');
@@ -179,6 +312,34 @@ const Settings = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleQrImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      setProfileError('QR image must be JPG or PNG.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError('QR image must be 5MB or smaller.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileData((prev) => ({
+        ...prev,
+        qrImage: reader.result
+      }));
+      setSelectedQrFile(file);
+      setProfileError('');
+      setSaveMessage('');
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleEditProfile = () => {
     setIsEditingProfile(true);
     setSaveMessage('');
@@ -188,6 +349,7 @@ const Settings = () => {
   const handleCancelProfileEdit = () => {
     setProfileData(originalProfileData);
     setSelectedProfileFile(null);
+    setSelectedQrFile(null);
     setIsEditingProfile(false);
     setSaveMessage('');
     setProfileError('');
@@ -207,9 +369,16 @@ const Settings = () => {
       formData.append('full_name', profileData.fullName.trim());
       formData.append('email', profileData.email.trim());
       formData.append('phone', profileData.phone.trim());
+      formData.append('company_name', profileData.companyName.trim());
+      formData.append('bio', profileData.bio.trim());
+      formData.append('experience', profileData.experience.trim());
 
       if (selectedProfileFile) {
         formData.append('profile_img', selectedProfileFile);
+      }
+
+      if (selectedQrFile) {
+        formData.append('qr', selectedQrFile);
       }
 
       const res = await httpClient.put('/fixer/settings/profile', formData, {
@@ -223,12 +392,26 @@ const Settings = () => {
         fullName: updatedProfile.full_name || profileData.fullName,
         email: updatedProfile.email || profileData.email,
         phone: updatedProfile.phone || profileData.phone,
-        profileImage: updatedProfile.profile_img || profileData.profileImage
+        companyName: updatedProfile.company_name || profileData.companyName,
+        bio: updatedProfile.bio || profileData.bio,
+        experience:
+          updatedProfile.experience !== null && updatedProfile.experience !== undefined
+            ? String(updatedProfile.experience)
+            : profileData.experience,
+        profileImage:
+          Object.prototype.hasOwnProperty.call(updatedProfile, 'profile_img')
+            ? (updatedProfile.profile_img || '')
+            : profileData.profileImage,
+        qrImage:
+          Object.prototype.hasOwnProperty.call(updatedProfile, 'qr')
+            ? (updatedProfile.qr || '')
+            : profileData.qrImage
       };
 
       setProfileData(nextProfileData);
       setOriginalProfileData(nextProfileData);
       setSelectedProfileFile(null);
+      setSelectedQrFile(null);
       setIsEditingProfile(false);
       saveLocalFixerSettings(
         buildStoredSettings({
@@ -245,11 +428,16 @@ const Settings = () => {
         fullName: profileData.fullName,
         email: profileData.email,
         phone: profileData.phone,
-        profileImage: profileData.profileImage
+        companyName: profileData.companyName,
+        bio: profileData.bio,
+        experience: profileData.experience,
+        profileImage: profileData.profileImage,
+        qrImage: profileData.qrImage
       };
 
       setOriginalProfileData(nextProfileData);
       setSelectedProfileFile(null);
+      setSelectedQrFile(null);
       setIsEditingProfile(false);
       saveLocalFixerSettings(
         buildStoredSettings({
@@ -280,6 +468,7 @@ const Settings = () => {
   const handleAddressDelete = (id) => {
     setAddresses(prev => prev.filter(addr => addr.id !== id));
     setLocationInput('');
+    setLocationCoordinates(null);
     setIsEditingLocation(false);
     setSaveMessage('');
     saveLocalFixerSettings(
@@ -295,10 +484,12 @@ const Settings = () => {
     setIsEditingLocation(true);
     setProfileError('');
     setSaveMessage('');
+    setLocationPreviewError('');
   };
 
   const handleCancelLocationEdit = () => {
     setLocationInput(addresses[0]?.street || '');
+    setLocationPreviewError('');
     setIsEditingLocation(false);
     setProfileError('');
   };
@@ -323,6 +514,17 @@ const Settings = () => {
       const savedLocation = res.data?.location || trimmedLocation;
       setAddresses(buildAddressList(savedLocation));
       setLocationInput(savedLocation);
+      setLocationCoordinates(
+        res.data?.latitude !== null &&
+          res.data?.latitude !== undefined &&
+          res.data?.longitude !== null &&
+          res.data?.longitude !== undefined
+          ? {
+              lat: Number(res.data.latitude),
+              lng: Number(res.data.longitude),
+            }
+          : null
+      );
       setIsEditingLocation(false);
       saveLocalFixerSettings(
         buildStoredSettings({
@@ -539,7 +741,7 @@ const Settings = () => {
             <Camera className="w-5 h-5 text-orange-600" />
           </label>
         </div>
-        <div>
+        <div className="flex-1">
           <p className="text-xs text-orange-400 mt-1">
             {loadingProfile ? 'Loading fixer profile...' : `Profile: ${profileInitials}`}
           </p>
@@ -549,6 +751,35 @@ const Settings = () => {
           {!loadingProfile && profileData.email ? (
             <p className="text-xs text-slate-500 mt-1">{profileData.email}</p>
           ) : null}
+        </div>
+        <div className="w-full max-w-[220px]">
+          <p className="mb-2 text-sm font-semibold text-orange-700">Payment QR</p>
+          <label className={`block rounded-2xl border border-orange-200 bg-orange-50/50 p-4 transition-all ${isEditingProfile ? 'cursor-pointer hover:border-orange-300' : 'cursor-not-allowed opacity-80'}`}>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg"
+              className="hidden"
+              onChange={handleQrImageChange}
+              disabled={!isEditingProfile}
+            />
+            <div className="h-36 overflow-hidden rounded-xl bg-white flex items-center justify-center">
+              {profileData.qrImage ? (
+                <img
+                  src={profileData.qrImage}
+                  alt="Fixer QR"
+                  className="w-full h-full object-contain p-3"
+                />
+              ) : (
+                <div className="text-center text-slate-400">
+                  <QrCode className="mx-auto h-10 w-10" />
+                  <p className="mt-2 text-xs font-medium">Upload QR image</p>
+                </div>
+              )}
+            </div>
+            <p className="mt-3 text-xs text-slate-500">
+              {isEditingProfile ? 'Click to change QR' : 'QR preview'}
+            </p>
+          </label>
         </div>
       </div>
 
@@ -597,6 +828,40 @@ const Settings = () => {
             placeholder="Enter your phone number"
           />
         </div>
+        <div>
+          <label className="block text-sm font-semibold text-orange-700 mb-2">Company Name</label>
+          <input
+            type="text"
+            value={profileData.companyName}
+            onChange={(e) => handleProfileChange('companyName', e.target.value)}
+            disabled={loadingProfile || !isEditingProfile}
+            className="w-full px-4 py-3 border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 text-slate-900 placeholder-orange-400"
+            placeholder="Enter your company name"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-orange-700 mb-2">Experience (Years)</label>
+          <input
+            type="number"
+            min="0"
+            value={profileData.experience}
+            onChange={(e) => handleProfileChange('experience', e.target.value)}
+            disabled={loadingProfile || !isEditingProfile}
+            className="w-full px-4 py-3 border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 text-slate-900 placeholder-orange-400"
+            placeholder="Enter years of experience"
+          />
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-orange-700 mb-2">Bio</label>
+          <textarea
+            value={profileData.bio}
+            onChange={(e) => handleProfileChange('bio', e.target.value)}
+            disabled={loadingProfile || !isEditingProfile}
+            rows={4}
+            className="w-full px-4 py-3 border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 text-slate-900 placeholder-orange-400 resize-y"
+            placeholder="Tell customers about your services and experience"
+          />
+        </div>
       </div>
     </div>
   );
@@ -609,6 +874,37 @@ const Settings = () => {
             <MapPin className="w-6 h-6 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Saved Addresses</h2>
+        </div>
+        <div className="flex items-center gap-3">
+          {isEditingLocation ? (
+            <>
+              <button
+                type="button"
+                onClick={handleCancelLocationEdit}
+                disabled={isSavingLocation}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition-all duration-200 font-semibold disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveLocation}
+                disabled={isSavingLocation}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-blue-500 text-white bg-blue-500 hover:bg-blue-600 transition-all duration-200 font-semibold disabled:opacity-60"
+              >
+                {isSavingLocation ? 'Saving...' : 'Save Location'}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleStartLocationEdit()}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 transition-all duration-200 font-semibold"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit Location
+            </button>
+          )}
         </div>
       </div>
 
@@ -647,6 +943,35 @@ const Settings = () => {
             )}
           </>
         )}
+
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 bg-slate-50 px-4 py-3">
+            <p className="text-sm font-semibold text-slate-900">Location Preview</p>
+            <p className="text-xs text-slate-500">
+              {isEditingLocation
+                ? 'The map updates while you type the address.'
+                : 'Saved fixer location preview.'}
+            </p>
+          </div>
+
+          <div className="h-72 bg-slate-100">
+            {locationCoordinates ? (
+              <iframe
+                title="Fixer location preview map"
+                src={getOpenStreetMapEmbedUrl(locationCoordinates)}
+                className="h-full w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center px-6 text-center text-sm text-slate-500">
+                {loadingLocationPreview
+                  ? 'Finding this address on the map...'
+                  : locationPreviewError || 'Enter an address to preview its map location.'}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

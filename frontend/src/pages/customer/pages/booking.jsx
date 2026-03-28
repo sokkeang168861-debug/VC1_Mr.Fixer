@@ -595,6 +595,7 @@ export default function CustomerBooking() {
                             {isCompletedServiceFlow && currentStep === 8 && (
                                 <PaymentScreen
                                     payment={paymentDetails}
+                                    booking={activeBooking}
                                     refreshing={loadingPayment}
                                 />
                             )}

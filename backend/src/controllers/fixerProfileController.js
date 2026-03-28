@@ -17,11 +17,15 @@ const updateFixerProfile = async (req, res) => {
   const db = req.app.get("db");
 
   try {
+    const files = req.files || {};
     const result = await FixerProfileService.updateFixerProfile(
       db,
       req.user,
       req.body,
-      req.file
+      {
+        profile_img: files.profile_img?.[0] || null,
+        qr: files.qr?.[0] || null,
+      }
     );
     res.json(result);
   } catch (error) {

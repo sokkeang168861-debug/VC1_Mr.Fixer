@@ -1,3 +1,5 @@
+const { toImageDataUrl } = require("../utils/imageDataUrl");
+
 class FixerBookingModel {
   static mapImageRows(imageRows) {
     return imageRows
@@ -91,6 +93,7 @@ class FixerBookingModel {
         customer.email AS customer_email,
         fixer.full_name AS fixer_name,
         sp.company_name AS fixer_company_name,
+        sp.qr AS fixer_qr,
         sp.location AS provider_location,
         sp.latitude AS provider_latitude,
         sp.longitude AS provider_longitude
@@ -170,6 +173,7 @@ class FixerBookingModel {
             paid_at: booking.payment_paid_at || null,
           }
         : null;
+    booking.fixer_qr = toImageDataUrl(booking.fixer_qr);
 
     return booking;
   }

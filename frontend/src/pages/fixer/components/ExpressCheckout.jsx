@@ -13,12 +13,9 @@ export default function ExpressCheckout() {
     () => getFixerJobOverview(job, bookingId),
     [bookingId, job]
   );
-  const qrValue = useMemo(() => {
-    const reference = jobOverview?.booking_reference || bookingId || 'booking';
-    return `https://mrfixer.app/pay/${reference}`;
-  }, [bookingId, jobOverview]);
   const bookingStatus = String(job?.status || '').toLowerCase();
   const paymentStatus = String(job?.payment?.status || job?.payment_status || '').toLowerCase();
+  const fixerQr = job?.fixer_qr || null;
 
   const onComplete = async () => {
     if (!bookingId || submittingPayment) {
@@ -110,13 +107,20 @@ export default function ExpressCheckout() {
         <div className="p-12 flex flex-col items-center space-y-12">
           <div className="relative p-8 bg-white rounded-[48px] shadow-xl border border-gray-50">
             <div className="w-64 h-64 bg-gray-50 flex items-center justify-center overflow-hidden rounded-2xl">
-              {/* Placeholder for QR Code */}
-              <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(qrValue)}`} 
-                alt="Payment QR Code"
-                className="w-full h-full p-4"
-                referrerPolicy="no-referrer"
-              />
+              {fixerQr ? (
+                <img
+                  src={fixerQr}
+                  alt="Fixer payment QR code"
+                  className="w-full h-full object-contain p-4"
+                />
+              ) : (
+                <div className="px-6 text-center">
+                  <QrCode size={48} className="mx-auto text-gray-300" />
+                  <p className="mt-3 text-sm font-semibold text-gray-600">
+                    QR code not available yet
+                  </p>
+                </div>
+              )}
             </div>
             {/* Corner Accents */}
             <div className="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-[#FF7A1F]/20 rounded-tl-[48px]" />
@@ -139,6 +143,10 @@ export default function ExpressCheckout() {
               ${Number(jobOverview?.total_estimated_price || 0).toFixed(2)}
             </p>
           </div>
+
+          <p className="text-sm text-center text-gray-500">
+            Customers will scan this fixer QR to pay {job?.fixer_company_name || job?.fixer_name || 'your account'}.
+          </p>
 
           {/* Action Button */}
           <div className="w-full max-w-md space-y-6">

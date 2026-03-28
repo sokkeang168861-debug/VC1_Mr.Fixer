@@ -50,7 +50,9 @@ function formatCurrency(amount) {
   }).format(Number(amount || 0));
 }
 
-const PaymentScreen = ({ payment, refreshing = false }) => {
+const PaymentScreen = ({ payment, booking, refreshing = false }) => {
+  const fixerQr = booking?.fixer_qr || null;
+
   return (
     <div className="max-w-5xl mx-auto">
       <PaymentProgressBar currentStep={2} />
@@ -70,11 +72,22 @@ const PaymentScreen = ({ payment, refreshing = false }) => {
         {/* QR Code Section */}
         <div className="flex-1 flex items-center justify-center p-20">
           <div className="p-8 bg-white rounded-[32px] border-2 border-slate-50 shadow-inner text-center">
-            <img 
-              src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=MRFIXER-PAYMENT-MF88291" 
-              alt="Payment QR Code"
-              className="w-64 h-64 opacity-90"
-            />
+            <div className="w-64 h-64 mx-auto rounded-[28px] border border-slate-100 bg-slate-50 overflow-hidden flex items-center justify-center">
+              {fixerQr ? (
+                <img
+                  src={fixerQr}
+                  alt="Fixer payment QR code"
+                  className="w-full h-full object-contain p-4"
+                />
+              ) : (
+                <div className="px-6 text-center">
+                  <QrCode className="w-12 h-12 mx-auto text-slate-300" />
+                  <p className="mt-3 text-sm font-semibold text-slate-600">
+                    QR code not available yet
+                  </p>
+                </div>
+              )}
+            </div>
             <p className="mt-6 text-sm font-semibold text-slate-800">
               Payment Status: {String(payment?.status || 'pending').toUpperCase()}
             </p>
@@ -85,6 +98,9 @@ const PaymentScreen = ({ payment, refreshing = false }) => {
             </p>
             <p className="mt-3 text-sm text-slate-700">
               Amount: {formatCurrency(payment?.amount)}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">
+              Pay to {booking?.fixer_company_name || booking?.fixer_name || 'your fixer'}.
             </p>
           </div>
         </div>

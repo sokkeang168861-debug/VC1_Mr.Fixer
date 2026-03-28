@@ -1,6 +1,5 @@
 const FixerProfileModel = require("../models/fixerProfileModel");
-const { toImageDataUrl } = require("../utils/imageDataUrl");
-
+const FixerManagementService = require("./fixerManagementService");
 const normalizeCoordinate = (value, fieldName) => {
   if (value === undefined) {
     return undefined;
@@ -45,23 +44,7 @@ const getFixerProfile = async (db, user) => {
     throw error;
   }
 
-  return {
-    id: fixer.id,
-    full_name: fixer.full_name || "",
-    email: fixer.email || "",
-    phone: fixer.phone || "",
-    location: fixer.location || "",
-    latitude:
-      fixer.latitude !== null && fixer.latitude !== undefined
-        ? Number(fixer.latitude)
-        : null,
-    longitude:
-      fixer.longitude !== null && fixer.longitude !== undefined
-        ? Number(fixer.longitude)
-        : null,
-    role: fixer.role || "fixer",
-    profile_img: toImageDataUrl(fixer.profile_img),
-  };
+  return FixerProfileModel.serializeFixerProfile(fixer);
 };
 
 const validateFixerAccess = (user) => {
@@ -88,6 +71,13 @@ const updateFixerProfile = async (db, user, data, file) => {
   const full_name = String(data?.full_name || "").trim();
   const email = String(data?.email || "").trim();
   const phone = String(data?.phone || "").trim();
+  const company_name = String(data?.company_name || "").trim();
+  const bio = String(data?.bio || "").trim();
+  const experienceRaw = String(data?.experience || "").trim();
+  const experience =
+    experienceRaw === "" ? null : Number.parseInt(experienceRaw, 10);
+  const profileImageFile = file?.profile_img || null;
+  const qrFile = file?.qr || null;
 
   if (!full_name || !email || !phone) {
     const error = new Error("Full name, email, and phone are required");
@@ -120,40 +110,68 @@ const updateFixerProfile = async (db, user, data, file) => {
     throw error;
   }
 
-  if (file) {
+  if (experienceRaw !== "" && (!Number.isFinite(experience) || experience < 0)) {
+    const error = new Error("Experience must be a valid non-negative number");
+    error.status = 400;
+    throw error;
+  }
+
+  if (profileImageFile) {
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-    if (!allowedTypes.includes(file.mimetype)) {
+    if (!allowedTypes.includes(profileImageFile.mimetype)) {
       const error = new Error("Profile image must be JPG or PNG");
       error.status = 400;
       throw error;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (profileImageFile.size > 5 * 1024 * 1024) {
       const error = new Error("Profile image must be 5MB or smaller");
       error.status = 400;
       throw error;
     }
   }
 
+  if (qrFile) {
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    if (!allowedTypes.includes(qrFile.mimetype)) {
+      const error = new Error("QR image must be JPG or PNG");
+      error.status = 400;
+      throw error;
+    }
+
+    if (qrFile.size > 5 * 1024 * 1024) {
+      const error = new Error("QR image must be 5MB or smaller");
+      error.status = 400;
+      throw error;
+    }
+  }
+
+  const providerPayload = {
+    company_name: company_name || null,
+    bio: bio || null,
+    experience,
+    ...(qrFile ? { qr: qrFile.buffer } : {}),
+  };
+
   await FixerProfileModel.updateFixerById(db, fixerId, {
     full_name,
     email,
     phone,
-    ...(file ? { profile_img: file.buffer } : {}),
+    ...(profileImageFile ? { profile_img: profileImageFile.buffer } : {}),
   });
 
+  if (currentFixer.service_provider_id) {
+    await FixerProfileModel.updateServiceProviderByUserId(db, fixerId, providerPayload);
+  } else {
+    await FixerProfileModel.createServiceProviderByUserId(db, fixerId, providerPayload);
+  }
+
   const updatedFixer = await FixerProfileModel.getFixerById(db, fixerId);
+  const serializedFixer = FixerProfileModel.serializeFixerProfile(updatedFixer);
 
   return {
     message: "Fixer profile updated successfully",
-    profile: {
-      id: updatedFixer.id,
-      full_name: updatedFixer.full_name || "",
-      email: updatedFixer.email || "",
-      phone: updatedFixer.phone || "",
-      role: updatedFixer.role || "fixer",
-      profile_img: toImageDataUrl(updatedFixer.profile_img),
-    },
+    profile: serializedFixer,
   };
 };
 
@@ -161,18 +179,22 @@ const updateFixerLocation = async (db, user, data) => {
   const fixerId = validateFixerAccess(user);
   const rawLocation =
     typeof data?.location === "string" ? data.location.trim() : "";
-  const latitude = normalizeCoordinate(data?.latitude, "latitude");
-  const longitude = normalizeCoordinate(data?.longitude, "longitude");
+  const providedLatitude = normalizeCoordinate(data?.latitude, "latitude");
+  const providedLongitude = normalizeCoordinate(data?.longitude, "longitude");
 
-  if (!rawLocation && latitude === undefined && longitude === undefined) {
+  if (
+    !rawLocation &&
+    providedLatitude === undefined &&
+    providedLongitude === undefined
+  ) {
     const error = new Error("Location or coordinates are required");
     error.status = 400;
     throw error;
   }
 
   if (
-    (latitude === undefined && longitude !== undefined) ||
-    (latitude !== undefined && longitude === undefined)
+    (providedLatitude === undefined && providedLongitude !== undefined) ||
+    (providedLatitude !== undefined && providedLongitude === undefined)
   ) {
     const error = new Error("Latitude and longitude must be provided together");
     error.status = 400;
@@ -184,6 +206,31 @@ const updateFixerLocation = async (db, user, data) => {
     const error = new Error("Fixer profile not found");
     error.status = 404;
     throw error;
+  }
+
+  let latitude = providedLatitude;
+  let longitude = providedLongitude;
+
+  if (
+    rawLocation &&
+    providedLatitude === undefined &&
+    providedLongitude === undefined
+  ) {
+    const coordinates = await FixerManagementService.resolveCoordinates(
+      {},
+      rawLocation
+    );
+
+    if (coordinates.latitude === null || coordinates.longitude === null) {
+      const error = new Error(
+        "Unable to detect latitude and longitude from that address. Please enter a more specific location."
+      );
+      error.status = 400;
+      throw error;
+    }
+
+    latitude = coordinates.latitude;
+    longitude = coordinates.longitude;
   }
 
   if (fixer.service_provider_id) {
