@@ -8,6 +8,7 @@ const {
   updateFixerProfile,
   updateFixerLocation,
   updateFixerNotifications,
+  getAdminContacts,
 } = require("../controllers/fixerProfileController");
 const FixerBookingController = require("../controllers/FixerBookingController");
 
@@ -34,6 +35,7 @@ router.put(
 );
 router.put("/settings/location", protect, updateFixerLocation);
 router.put("/settings/notifications", protect, updateFixerNotifications);
+router.get("/settings/admin-contacts", protect, getAdminContacts);
 // bookings
 router.get(
   "/provider/requests",

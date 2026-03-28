@@ -127,6 +127,26 @@ class FixerDashboardModel {
 
     return rows.slice(0, Math.max(Number(limit) || 0, 0));
   }
+
+  static async getProviderCategories(db, providerId) {
+    if (!providerId) {
+      return [];
+    }
+
+    const [rows] = await db.query(
+      `SELECT DISTINCT sc.id, sc.name
+       FROM services s
+       INNER JOIN service_categories sc ON sc.id = s.category_id
+       WHERE s.provider_id = ?
+       ORDER BY sc.name ASC`,
+      [providerId]
+    );
+
+    return rows.map((row) => ({
+      id: Number(row.id),
+      name: row.name || "",
+    }));
+  }
 }
 
 module.exports = FixerDashboardModel;

@@ -69,9 +69,25 @@ const updateFixerNotifications = async (req, res) => {
   }
 };
 
+const getAdminContacts = async (req, res) => {
+  const db = req.app.get("db");
+
+  try {
+    const result = await FixerProfileService.getAdminContacts(db, req.user);
+    res.json({
+      contacts: result,
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to load admin contacts",
+    });
+  }
+};
+
 module.exports = {
   getFixerProfile,
   updateFixerProfile,
   updateFixerLocation,
   updateFixerNotifications,
+  getAdminContacts,
 };

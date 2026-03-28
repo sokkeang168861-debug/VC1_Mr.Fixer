@@ -120,6 +120,7 @@ export default function App() {
       outOf: 5,
       totalRatings: 0,
     },
+    categories: [],
     detailedRatings: [],
     feedback: [],
   });
@@ -152,6 +153,7 @@ export default function App() {
             outOf: Number(payload.overallRating?.outOf || 5),
             totalRatings: Number(payload.overallRating?.totalRatings || 0),
           },
+          categories: Array.isArray(payload.categories) ? payload.categories : [],
           detailedRatings: Array.isArray(payload.detailedRatings) ? payload.detailedRatings : [],
           feedback: Array.isArray(payload.feedback) ? payload.feedback : [],
         });
@@ -176,7 +178,7 @@ export default function App() {
     <div className="bg-gray-100 min-h-screen">
 
       {/* Header */}
-      <Header className="fixed top-0 left-0 right-0 h-20 z-50" />
+      <Header className="fixed top-0 left-0 right-0 z-50" />
 
       {/* Sidebar */}
       <Sidebar className="fixed top-16 left-0 w-64 h-[calc(100vh-64px)] bg-white shadow-md" />
@@ -189,6 +191,36 @@ export default function App() {
               {dashboardError}
             </div>
           ) : null}
+
+          <div className="mb-8 rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-orange-500">
+                  Your Services
+                </p>
+                <h2 className="mt-2 text-2xl font-black tracking-[-0.03em] text-slate-950">
+                  Categories you currently serve
+                </h2>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {dashboard.categories.length > 0 ? (
+                  dashboard.categories.map((category) => (
+                    <span
+                      key={category.id || category.name}
+                      className="inline-flex items-center rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-bold text-orange-800"
+                    >
+                      {category.name}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-sm font-medium text-slate-500">
+                    No categories assigned yet.
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

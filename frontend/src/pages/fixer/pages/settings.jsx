@@ -6,7 +6,8 @@ import {
   Shield, 
   Camera,
   Pencil,
-  QrCode
+  QrCode,
+  Mail
 } from 'lucide-react';
 import { Header } from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -114,7 +115,8 @@ const Settings = () => {
     bio: '',
     experience: '',
     profileImage: '',
-    qrImage: ''
+    qrImage: '',
+    categories: []
   });
   const [originalProfileData, setOriginalProfileData] = useState({
     fullName: '',
@@ -124,7 +126,8 @@ const Settings = () => {
     bio: '',
     experience: '',
     profileImage: '',
-    qrImage: ''
+    qrImage: '',
+    categories: []
   });
   const [selectedQrFile, setSelectedQrFile] = useState(null);
 
@@ -144,6 +147,10 @@ const Settings = () => {
     confirmPassword: ''
   });
   const [passwordMessage, setPasswordMessage] = useState('');
+  const [showAdminContacts, setShowAdminContacts] = useState(false);
+  const [loadingAdminContacts, setLoadingAdminContacts] = useState(false);
+  const [adminContacts, setAdminContacts] = useState([]);
+  const [adminContactsError, setAdminContactsError] = useState('');
 
   useEffect(() => {
     const localSettings = loadLocalFixerSettings();
@@ -156,7 +163,10 @@ const Settings = () => {
       bio: localSettings?.profile?.bio || '',
       experience: localSettings?.profile?.experience || '',
       profileImage: '',
-      qrImage: localSettings?.profile?.qrImage || ''
+      qrImage: localSettings?.profile?.qrImage || '',
+      categories: Array.isArray(localSettings?.profile?.categories)
+        ? localSettings.profile.categories
+        : []
     };
 
     setProfileData({
@@ -183,7 +193,10 @@ const Settings = () => {
               ? String(data.experience)
               : fallbackProfile.experience,
           profileImage: data.profile_img || '',
-          qrImage: data.qr || fallbackProfile.qrImage || ''
+          qrImage: data.qr || fallbackProfile.qrImage || '',
+          categories: Array.isArray(data.categories)
+            ? data.categories
+            : fallbackProfile.categories
         };
 
         setProfileData(nextProfile);
@@ -405,7 +418,10 @@ const Settings = () => {
         qrImage:
           Object.prototype.hasOwnProperty.call(updatedProfile, 'qr')
             ? (updatedProfile.qr || '')
-            : profileData.qrImage
+            : profileData.qrImage,
+        categories: Array.isArray(updatedProfile.categories)
+          ? updatedProfile.categories
+          : profileData.categories
       };
 
       setProfileData(nextProfileData);
@@ -432,7 +448,8 @@ const Settings = () => {
         bio: profileData.bio,
         experience: profileData.experience,
         profileImage: profileData.profileImage,
-        qrImage: profileData.qrImage
+        qrImage: profileData.qrImage,
+        categories: profileData.categories
       };
 
       setOriginalProfileData(nextProfileData);
@@ -621,6 +638,33 @@ const Settings = () => {
 
   const handleLogout = async () => {
     await logoutUser({ navigate, redirectTo: ROUTES.home });
+  };
+
+  const handleToggleAdminContacts = async () => {
+    if (showAdminContacts) {
+      setShowAdminContacts(false);
+      return;
+    }
+
+    setShowAdminContacts(true);
+
+    if (adminContacts.length > 0 || loadingAdminContacts) {
+      return;
+    }
+
+    try {
+      setLoadingAdminContacts(true);
+      setAdminContactsError('');
+      const res = await httpClient.get('/fixer/settings/admin-contacts');
+      setAdminContacts(Array.isArray(res.data?.contacts) ? res.data.contacts : []);
+    } catch (error) {
+      console.error('Failed to load admin contacts:', error);
+      setAdminContactsError(
+        error?.response?.data?.message || 'Failed to load admin emails.'
+      );
+    } finally {
+      setLoadingAdminContacts(false);
+    }
   };
 
   const handleDiscardAllChanges = () => {
@@ -862,6 +906,68 @@ const Settings = () => {
             placeholder="Tell customers about your services and experience"
           />
         </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-orange-700 mb-2">Your Services</label>
+          <div className="min-h-[58px] w-full rounded-xl border border-orange-300 bg-orange-50/40 px-4 py-3">
+            {Array.isArray(profileData.categories) && profileData.categories.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {profileData.categories.map((category) => (
+                  <span
+                    key={category.id || category.name}
+                    className="inline-flex items-center rounded-full border border-orange-200 bg-white px-3 py-1 text-sm font-semibold text-orange-700"
+                  >
+                    {category.name}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">
+                No service categories assigned yet.
+              </p>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            These categories are assigned to your fixer account. Please contact the admin if you want to change them.
+          </p>
+          <button
+            type="button"
+            onClick={handleToggleAdminContacts}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-orange-700 hover:bg-orange-50 transition-all duration-200"
+          >
+            <Mail className="h-4 w-4" />
+            {showAdminContacts ? 'Hide Admin Emails' : 'View Admin Emails'}
+          </button>
+          {showAdminContacts ? (
+            <div className="mt-3 rounded-xl border border-orange-200 bg-orange-50/40 p-4">
+              {loadingAdminContacts ? (
+                <p className="text-sm text-slate-500">Loading admin emails...</p>
+              ) : adminContactsError ? (
+                <p className="text-sm text-rose-600">{adminContactsError}</p>
+              ) : adminContacts.length > 0 ? (
+                <div className="space-y-2">
+                  {adminContacts.map((contact) => (
+                    <div
+                      key={contact.id || contact.email}
+                      className="rounded-lg border border-orange-100 bg-white px-3 py-2"
+                    >
+                      <p className="text-sm font-semibold text-slate-900">
+                        {contact.full_name || 'Admin'}
+                      </p>
+                      <a
+                        href={`mailto:${contact.email}`}
+                        className="text-sm text-orange-700 hover:underline"
+                      >
+                        {contact.email}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500">No admin emails found.</p>
+              )}
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -1089,7 +1195,7 @@ const Settings = () => {
   return (
     <div className="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
       {/* Header */}
-      <Header className="fixed top-0 left-0 right-0 h-20 z-50" />
+      <Header className="fixed top-0 left-0 right-0 z-50" />
 
       {/* Page body */}
       <div className="flex">

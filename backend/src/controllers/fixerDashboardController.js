@@ -58,11 +58,12 @@ class FixerDashboardController {
 
     try {
       const providerId = await FixerDashboardModel.getProviderIdByUserId(db, fixerId);
-      const [completedJobs, totalProfit, summary, feedback] = await Promise.all([
+      const [completedJobs, totalProfit, summary, feedback, categories] = await Promise.all([
         FixerDashboardModel.getCompletedJobsCount(db, fixerId),
         FixerDashboardModel.getTotalProfit(db, fixerId),
         FixerDashboardModel.getRatingSummary(db, providerId),
         FixerDashboardModel.getRecentFeedback(db, providerId, feedbackLimit),
+        FixerDashboardModel.getProviderCategories(db, providerId),
       ]);
 
       const commission = Number((0.1 * totalProfit).toFixed(2));
@@ -110,6 +111,7 @@ class FixerDashboardController {
           outOf: 5,
           totalRatings: Number(summary?.total_ratings || 0),
         },
+        categories,
         detailedRatings,
         feedback: feedback.map((item) => ({
           id: item.id,

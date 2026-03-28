@@ -44,7 +44,15 @@ const getFixerProfile = async (db, user) => {
     throw error;
   }
 
-  return FixerProfileModel.serializeFixerProfile(fixer);
+  const categories = await FixerProfileModel.getFixerCategoriesByProviderId(
+    db,
+    fixer.service_provider_id
+  );
+
+  return {
+    ...FixerProfileModel.serializeFixerProfile(fixer),
+    categories,
+  };
 };
 
 const validateFixerAccess = (user) => {
@@ -168,10 +176,17 @@ const updateFixerProfile = async (db, user, data, file) => {
 
   const updatedFixer = await FixerProfileModel.getFixerById(db, fixerId);
   const serializedFixer = FixerProfileModel.serializeFixerProfile(updatedFixer);
+  const categories = await FixerProfileModel.getFixerCategoriesByProviderId(
+    db,
+    updatedFixer?.service_provider_id
+  );
 
   return {
     message: "Fixer profile updated successfully",
-    profile: serializedFixer,
+    profile: {
+      ...serializedFixer,
+      categories,
+    },
   };
 };
 
@@ -291,9 +306,15 @@ const updateFixerNotifications = async (db, user, data) => {
   };
 };
 
+const getAdminContacts = async (db, user) => {
+  validateFixerAccess(user);
+  return FixerProfileModel.getAdminContacts(db);
+};
+
 module.exports = {
   getFixerProfile,
   updateFixerProfile,
   updateFixerLocation,
   updateFixerNotifications,
+  getAdminContacts,
 };

@@ -171,6 +171,41 @@ class FixerProfileModel {
     return result;
   }
 
+  static async getFixerCategoriesByProviderId(db, providerId) {
+    if (!providerId) {
+      return [];
+    }
+
+    const [rows] = await db.query(
+      `SELECT DISTINCT sc.id, sc.name
+       FROM services s
+       INNER JOIN service_categories sc ON sc.id = s.category_id
+       WHERE s.provider_id = ?
+       ORDER BY sc.name ASC`,
+      [providerId]
+    );
+
+    return rows.map((row) => ({
+      id: Number(row.id),
+      name: row.name || "",
+    }));
+  }
+
+  static async getAdminContacts(db) {
+    const [rows] = await db.query(
+      `SELECT id, full_name, email
+       FROM users
+       WHERE LOWER(role) = 'admin'
+       ORDER BY full_name ASC, email ASC`
+    );
+
+    return rows.map((row) => ({
+      id: Number(row.id),
+      full_name: row.full_name || "Admin",
+      email: row.email || "",
+    }));
+  }
+
   static serializeFixerProfile(row) {
     if (!row) {
       return null;
