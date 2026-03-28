@@ -26,7 +26,10 @@ router.get("/settings/profile", protect, getFixerProfile);
 router.put(
   "/settings/profile",
   protect,
-  upload.single("profile_img"),
+  upload.fields([
+    { name: "profile_img", maxCount: 1 },
+    { name: "qr_img", maxCount: 1 },
+  ]),
   updateFixerProfile
 );
 router.put("/settings/location", protect, updateFixerLocation);

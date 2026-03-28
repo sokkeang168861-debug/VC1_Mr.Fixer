@@ -298,10 +298,24 @@ export default function CustomerBooking() {
             });
 
             const nextBooking = {
-                id: data?.bookingId,
+                ...(data?.data ?? {}),
+                id: data?.data?.id ?? data?.bookingId,
                 category_name: bookingDraft.categoryName,
                 issue_description: bookingDraft.issueDescription,
                 service_address: bookingDraft.serviceAddress,
+                urgent_level: bookingDraft.urgentLevel,
+                latitude: bookingDraft.latitude,
+                longitude: bookingDraft.longitude,
+                fixer_name: data?.data?.fixer_name || fixer?.name || "",
+                fixer_phone: data?.data?.fixer_phone || fixer?.phone || "",
+                fixer_email: data?.data?.fixer_email || fixer?.email || "",
+                fixer_company_name: data?.data?.fixer_company_name || fixer?.companyName || "",
+                fixer_overall_rating: data?.data?.fixer_overall_rating ?? fixer?.rating ?? 0,
+                fixer_total_ratings: data?.data?.fixer_total_ratings ?? fixer?.reviews ?? 0,
+                fixer_profile_img: data?.data?.fixer_profile_img || fixer?.image || "",
+                provider_location: data?.data?.provider_location || fixer?.location || "",
+                provider_latitude: data?.data?.provider_latitude ?? null,
+                provider_longitude: data?.data?.provider_longitude ?? null,
                 status: "pending",
             };
             setActiveBooking(nextBooking);
@@ -595,6 +609,7 @@ export default function CustomerBooking() {
                             {isCompletedServiceFlow && currentStep === 8 && (
                                 <PaymentScreen
                                     payment={paymentDetails}
+                                    booking={activeBooking}
                                     refreshing={loadingPayment}
                                 />
                             )}

@@ -4,10 +4,8 @@ import {
   User, 
   MapPin, 
   Shield, 
-  Plus, 
   Camera,
-  Pencil,
-  X
+  Pencil
 } from 'lucide-react';
 import { Header } from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -65,19 +63,21 @@ const Settings = () => {
     fullName: '',
     email: '',
     phone: '',
-    profileImage: ''
+    profileImage: '',
+    qrImage: ''
   });
   const [originalProfileData, setOriginalProfileData] = useState({
     fullName: '',
     email: '',
     phone: '',
-    profileImage: ''
+    profileImage: '',
+    qrImage: ''
   });
 
   const [addresses, setAddresses] = useState([]);
   const [locationInput, setLocationInput] = useState('');
   const [isEditingLocation, setIsEditingLocation] = useState(false);
-  const [isSavingLocation, setIsSavingLocation] = useState(false);
+  const [_isSavingLocation, setIsSavingLocation] = useState(false);
 
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
@@ -95,7 +95,8 @@ const Settings = () => {
       fullName: localSettings?.profile?.fullName || tokenPayload?.full_name || '',
       email: localSettings?.profile?.email || tokenPayload?.email || '',
       phone: localSettings?.profile?.phone || '',
-      profileImage: localSettings?.profile?.profileImage || ''
+      profileImage: localSettings?.profile?.profileImage || '',
+      qrImage: localSettings?.profile?.qrImage || ''
     };
 
     setProfileData({
@@ -115,7 +116,8 @@ const Settings = () => {
           fullName: data.full_name || fallbackProfile.fullName,
           email: data.email || fallbackProfile.email,
           phone: data.phone || fallbackProfile.phone,
-          profileImage: data.profile_img || fallbackProfile.profileImage
+          profileImage: data.profile_img || fallbackProfile.profileImage,
+          qrImage: data.qr_img || fallbackProfile.qrImage
         };
 
         setProfileData(nextProfile);
@@ -223,7 +225,8 @@ const Settings = () => {
         fullName: updatedProfile.full_name || profileData.fullName,
         email: updatedProfile.email || profileData.email,
         phone: updatedProfile.phone || profileData.phone,
-        profileImage: updatedProfile.profile_img || profileData.profileImage
+        profileImage: updatedProfile.profile_img || profileData.profileImage,
+        qrImage: updatedProfile.qr_img || profileData.qrImage
       };
 
       setProfileData(nextProfileData);
@@ -245,7 +248,8 @@ const Settings = () => {
         fullName: profileData.fullName,
         email: profileData.email,
         phone: profileData.phone,
-        profileImage: profileData.profileImage
+        profileImage: profileData.profileImage,
+        qrImage: profileData.qrImage
       };
 
       setOriginalProfileData(nextProfileData);
@@ -277,7 +281,7 @@ const Settings = () => {
       .join('');
   }, [profileData.fullName]);
 
-  const handleAddressDelete = (id) => {
+  const _handleAddressDelete = (id) => {
     setAddresses(prev => prev.filter(addr => addr.id !== id));
     setLocationInput('');
     setIsEditingLocation(false);
@@ -290,7 +294,7 @@ const Settings = () => {
     );
   };
 
-  const handleStartLocationEdit = (location = addresses[0]?.street || '') => {
+  const _handleStartLocationEdit = (location = addresses[0]?.street || '') => {
     setLocationInput(location);
     setIsEditingLocation(true);
     setProfileError('');
@@ -421,7 +425,7 @@ const Settings = () => {
     await logoutUser({ navigate, redirectTo: ROUTES.home });
   };
 
-  const handleDiscardAllChanges = () => {
+  const _handleDiscardAllChanges = () => {
     setSaveMessage('');
     setProfileError('');
 
@@ -442,7 +446,7 @@ const Settings = () => {
     }
   };
 
-  const handleSaveAllChanges = async () => {
+  const _handleSaveAllChanges = async () => {
     setSaveMessage('');
     setProfileError('');
 

@@ -213,6 +213,14 @@ const BookingForm = ({ onNext, initialData }) => {
     });
   };
 
+  const isFormReady = Boolean(
+    selectedCategory &&
+    issueDescription.trim() &&
+    serviceAddress.trim() &&
+    latitude !== '' &&
+    longitude !== ''
+  );
+
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);
@@ -230,45 +238,47 @@ const BookingForm = ({ onNext, initialData }) => {
         <p className="text-slate-500">Select a category, describe the issue, and add your location before choosing a fixer.</p>
       </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
-        {loadingCategories && (
-          <p className="text-sm text-slate-500">Loading categories...</p>
-        )}
+      <div className="-mx-2 mb-12 overflow-x-auto px-2 pb-3 scroll-smooth snap-x snap-mandatory">
+        <div className="flex min-w-max gap-4">
+          {loadingCategories && (
+            <p className="text-sm text-slate-500">Loading categories...</p>
+          )}
 
-        {!loadingCategories && categories.map((cat) => {
-          const Icon = getCategoryIcon(cat.name);
+          {!loadingCategories && categories.map((cat) => {
+            const Icon = getCategoryIcon(cat.name);
 
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`flex flex-col items-center justify-center p-8 rounded-2xl border-2 transition-all duration-200 group ${
-                selectedCategory === cat.id
-                  ? 'border-violet-500 bg-violet-50/30'
-                  : 'border-gray-100 hover:border-violet-200'
-              }`}
-            >
-              {cat.imageUrl ? (
-                <img
-                  src={cat.imageUrl}
-                  alt={cat.name}
-                  className="w-16 h-16 mb-4 rounded-2xl object-cover"
-                />
-              ) : (
-                <Icon className={`w-8 h-8 mb-4 transition-colors ${
-                  selectedCategory === cat.id ? 'text-violet-600' : 'text-slate-400 group-hover:text-violet-400'
-                }`} />
-              )}
-              <h3 className="font-bold text-slate-800 mb-1">{cat.name}</h3>
-              <p className="text-xs text-slate-400 text-center">{cat.description}</p>
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`flex w-[19rem] shrink-0 snap-start flex-col items-center justify-center p-8 rounded-2xl border-2 transition-all duration-200 group ${
+                  selectedCategory === cat.id
+                    ? 'border-violet-500 bg-violet-50/30'
+                    : 'border-gray-100 hover:border-violet-200'
+                }`}
+              >
+                {cat.imageUrl ? (
+                  <img
+                    src={cat.imageUrl}
+                    alt={cat.name}
+                    className="w-16 h-16 mb-4 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <Icon className={`w-8 h-8 mb-4 transition-colors ${
+                    selectedCategory === cat.id ? 'text-violet-600' : 'text-slate-400 group-hover:text-violet-400'
+                  }`} />
+                )}
+                <h3 className="font-bold text-slate-800 mb-1">{cat.name}</h3>
+                <p className="text-xs text-slate-400 text-center">{cat.description}</p>
+              </button>
+            );
+          })}
 
-        {!loadingCategories && categories.length === 0 && (
-          <p className="text-sm text-slate-500">No categories available.</p>
-        )}
+          {!loadingCategories && categories.length === 0 && (
+            <p className="text-sm text-slate-500">No categories available.</p>
+          )}
+        </div>
       </div>
 
       <section className="mb-12">
@@ -344,6 +354,9 @@ const BookingForm = ({ onNext, initialData }) => {
           <span>{photos.length}/3 photos selected</span>
           {photoError && <span className="text-red-500">{photoError}</span>}
         </div>
+        <p className="mt-3 text-xs text-slate-400">
+          Photos are optional. You can continue without uploading any images.
+        </p>
         {photos.length > 0 && (
           <div className="grid grid-cols-3 gap-4 mt-4">
             {photos.map((photo, index) => (
@@ -401,7 +414,8 @@ const BookingForm = ({ onNext, initialData }) => {
         <button
           type="button"
           onClick={handleSubmit}
-          className="bg-violet-600 hover:bg-violet-700 text-white font-bold py-4 px-12 rounded-2xl flex items-center gap-2 transition-all shadow-lg shadow-violet-200 hover:shadow-violet-300 active:scale-95"
+          disabled={!isFormReady || locating}
+          className="bg-violet-600 hover:bg-violet-700 text-white font-bold py-4 px-12 rounded-2xl flex items-center gap-2 transition-all shadow-lg shadow-violet-200 hover:shadow-violet-300 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none disabled:hover:bg-slate-300 disabled:text-white"
         >
           Next: Find an Expert
           <ArrowRight className="w-5 h-5" />

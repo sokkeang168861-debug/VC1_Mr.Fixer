@@ -17,6 +17,7 @@ export default function RouteMapPanel({
         customerLatitude={job?.latitude}
         customerLongitude={job?.longitude}
         fixerLabel={job?.fixer_name || job?.fixer_company_name || "Fixer"}
+        fixerProfileImg={job?.fixer_profile_img || ""}
         fixerLocation={job?.provider_location || ""}
         customerLabel={job?.customer_name || "Customer"}
         customerLocation={job?.service_address || ""}

@@ -10,6 +10,8 @@ import {
   Star,
   Wallet,
 } from 'lucide-react';
+import defaultProfile from '@/assets/image/default-profile.png';
+import { resolveUploadUrl } from '@/lib/assets';
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-US', {
@@ -26,12 +28,23 @@ function formatDateTime(value) {
   return new Date(value).toLocaleString();
 }
 
+function getInitials(name = '') {
+  const words = String(name).trim().split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase()).join('') || 'FX';
+}
+
 const BookingAgreement = ({ booking, onConfirm, onReject, submitting = false }) => {
   const [agreed, setAgreed] = useState(false);
 
-  const proposalItems = Array.isArray(booking?.proposal_items) ? booking.proposal_items : [];
+  const proposalItems = Array.isArray(booking?.proposal_items)
+    ? booking.proposal_items.filter(
+        (item) => String(item?.name || '').trim().toLowerCase() !== 'diagnostic fee'
+      )
+    : [];
   const calculatedTotal = proposalItems.reduce((sum, item) => sum + Number(item.price || 0), 0);
   const totalAmount = booking?.service_fee ?? calculatedTotal;
+  const fixerName = booking?.fixer_name || 'Assigned Fixer';
+  const fixerProfileImg = booking?.fixer_profile_img ? resolveUploadUrl(booking.fixer_profile_img) : '';
 
   return (
     <Motion.div
@@ -66,7 +79,25 @@ const BookingAgreement = ({ booking, onConfirm, onReject, submitting = false }) 
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fixer Accepted</p>
                 </div>
-                <h4 className="font-bold text-slate-800">{booking?.fixer_name || 'Assigned Fixer'}</h4>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-violet-100 text-sm font-bold text-violet-700">
+                    {fixerProfileImg ? (
+                      <img
+                        src={fixerProfileImg}
+                        alt={fixerName}
+                        className="h-full w-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src = defaultProfile;
+                        }}
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      getInitials(fixerName)
+                    )}
+                  </div>
+                  <h4 className="font-bold text-slate-800">{fixerName}</h4>
+                </div>
                 <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
                   <Star className="w-4 h-4 text-orange-400 fill-orange-400" />
                   <span>Proposal is ready for your confirmation.</span>

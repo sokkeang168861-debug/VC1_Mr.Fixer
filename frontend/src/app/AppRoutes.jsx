@@ -64,7 +64,7 @@ function InnerRoutes() {
   const isDashboard = location.pathname.startsWith("/dashboard");
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col overflow-x-hidden">
       {!isDashboard && <Navbar />}
       <main className="grow">
         <Suspense fallback={<div className="p-6 text-sm text-slate-500">Loading...</div>}>

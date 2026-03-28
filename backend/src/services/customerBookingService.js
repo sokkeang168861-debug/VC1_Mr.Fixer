@@ -27,6 +27,10 @@ function normalizeCoordinate(value, fieldName) {
 
 class BookingService {
   static normalizeRating(value, fieldName) {
+    if (value === undefined || value === null || value === "" || Number(value) === 0) {
+      return null;
+    }
+
     const parsedValue = Number(value);
 
     if (!Number.isInteger(parsedValue) || parsedValue < 1 || parsedValue > 5) {

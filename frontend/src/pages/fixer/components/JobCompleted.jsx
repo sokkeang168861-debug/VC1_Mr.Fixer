@@ -5,6 +5,13 @@ import httpClient from '@/api/httpClient';
 import useActiveFixerBooking from '@/pages/fixer/hooks/useActiveFixerBooking';
 import { getFixerJobOverview } from '@/pages/fixer/lib/jobOverview';
 import { clearActiveFixerBookingId } from '@/pages/fixer/lib/activeBooking';
+import { resolveUploadUrl } from '@/lib/assets';
+import defaultProfile from '@/assets/image/default-profile.png';
+
+function getInitials(name = '') {
+  const words = String(name).trim().split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase()).join('') || 'CU';
+}
 
 export default function JobCompleted() {
   const navigate = useNavigate();
@@ -15,6 +22,8 @@ export default function JobCompleted() {
     [bookingId, job]
   );
   const paymentStatus = String(job?.payment?.status || job?.payment_status || '').toLowerCase();
+  const customerName = job?.customer_name || 'Customer User';
+  const customerProfileImg = resolveUploadUrl(job?.customer_profile_img || job?.customerProfileImg || '');
 
   useEffect(() => {
     if (paymentStatus === 'completed') {
@@ -103,9 +112,27 @@ export default function JobCompleted() {
           <div className="grid grid-cols-2 gap-8">
             <div>
               <p className="text-[10px] uppercase font-bold text-gray-300 tracking-widest mb-2">Customer</p>
-              <p className="text-xl font-bold text-gray-800">
-                {job.customer_name || 'Customer User'}
-              </p>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-orange-100 text-sm font-bold text-[#FF7A1F]">
+                  {customerProfileImg ? (
+                    <img
+                      src={customerProfileImg}
+                      alt={customerName}
+                      className="h-full w-full object-cover"
+                      onError={(event) => {
+                        event.currentTarget.onerror = null;
+                        event.currentTarget.src = defaultProfile;
+                      }}
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    getInitials(customerName)
+                  )}
+                </div>
+                <p className="text-xl font-bold text-gray-800">
+                  {customerName}
+                </p>
+              </div>
             </div>
             <div>
               <p className="text-[10px] uppercase font-bold text-gray-300 tracking-widest mb-2">Service Type</p>

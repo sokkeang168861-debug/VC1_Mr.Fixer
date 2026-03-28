@@ -8,6 +8,7 @@ class FixerProfileModel {
         u.phone,
         u.role,
         u.profile_img,
+        u.qr_img,
         sp.id AS service_provider_id,
         sp.location,
         sp.latitude,
@@ -44,6 +45,11 @@ class FixerProfileModel {
     if (Object.prototype.hasOwnProperty.call(payload, "profile_img")) {
       fields.push("profile_img = ?");
       values.push(payload.profile_img);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(payload, "qr_img")) {
+      fields.push("qr_img = ?");
+      values.push(payload.qr_img);
     }
 
     if (fields.length === 0) {

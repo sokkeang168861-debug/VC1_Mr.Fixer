@@ -12,6 +12,7 @@ import { ROUTES } from '@/config/routes';
 import { useNavigate, useParams } from 'react-router-dom';
 import httpClient from '../../../api/httpClient';
 import { setActiveFixerBookingId } from '@/pages/fixer/lib/activeBooking';
+import { resolveUploadUrl } from '@/lib/assets';
 
 const ServiceEstimate = () => {
   const navigate = useNavigate();
@@ -19,10 +20,9 @@ const ServiceEstimate = () => {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [items, setItems] = useState([
-    { id: '1', name: 'Diagnostic Fee', price: 20.00 }
-  ]);
+  const [items, setItems] = useState([]);
   const [message, setMessage] = useState('');
+  const categoryImage = resolveUploadUrl(job?.category_image || job?.categoryImage || '');
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -53,9 +53,11 @@ const ServiceEstimate = () => {
   };
 
   const total = items.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+  const hasIncompleteItems = items.some((item) => !String(item.name || '').trim() || Number(item.price) <= 0);
+  const canSubmitProposal = items.length > 0 && !hasIncompleteItems && !submitting;
 
   const handleSubmit = async () => {
-    if (items.some(item => !item.name || item.price <= 0)) {
+    if (!canSubmitProposal) {
       alert('Please fill in all item names and prices correctly.');
       return;
     }
@@ -116,8 +118,16 @@ const ServiceEstimate = () => {
       {job && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 flex justify-between items-start">
           <div className="flex gap-4">
-            <div className="p-3 bg-[#FFF5EB] text-[#FF7A00] rounded-xl">
-              <Wrench size={24} />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#FFF5EB] text-[#FF7A00]">
+              {categoryImage ? (
+                <img
+                  src={categoryImage}
+                  alt={job.category_name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Wrench size={24} />
+              )}
             </div>
             <div>
               <h2 className="text-xl font-bold text-[#1A1A1A]">{job.category_name}</h2>
@@ -152,8 +162,8 @@ const ServiceEstimate = () => {
                 <label className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-2 block">Price ($)</label>
                 <input
                   type="number"
-                  value={item.price || ''}
-                  onChange={(e) => updateItem(item.id, 'price', parseFloat(e.target.value))}
+                  value={Number.isFinite(item.price) ? item.price : ''}
+                  onChange={(e) => updateItem(item.id, 'price', e.target.value === '' ? '' : parseFloat(e.target.value))}
                   className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2.5 text-sm font-bold text-right focus:ring-2 focus:ring-orange-100 focus:border-[#FF7A00] outline-none transition-all"
                   placeholder="0.00"
                 />
@@ -197,8 +207,8 @@ const ServiceEstimate = () => {
       <div className="flex justify-start">
         <button
           onClick={handleSubmit}
-          disabled={submitting}
-          className="bg-[#FF7A00] hover:bg-[#E66E00] text-white font-bold px-10 py-4 rounded-xl transition-all shadow-lg shadow-orange-200 flex items-center gap-2 disabled:opacity-50"
+          disabled={!canSubmitProposal}
+          className="bg-[#FF7A00] hover:bg-[#E66E00] text-white font-bold px-10 py-4 rounded-xl transition-all shadow-lg shadow-orange-200 flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
           Submit Proposal

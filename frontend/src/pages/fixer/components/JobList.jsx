@@ -4,6 +4,7 @@ import { motion as Motion } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { getFixerJobDetailRoute } from '@/config/routes';
 import { resolveUploadUrl } from '@/lib/assets';
+import defaultProfile from '@/assets/image/default-profile.png';
 import httpClient from '../../../api/httpClient';
 import { createAppSocket } from '@/lib/socket';
 
@@ -28,10 +29,18 @@ const STATUS_STYLES = {
   },
 };
 
+function getInitials(name = '') {
+  const words = String(name).trim().split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase()).join('') || 'CU';
+}
+
 const JobCard = ({ job }) => {
   const detailUrl = getFixerJobDetailRoute(job.booking_id);
   const normalizedStatus = String(job.status || 'pending').toLowerCase();
   const statusMeta = STATUS_STYLES[normalizedStatus] || STATUS_STYLES.pending;
+  const customerName = job.customer_name || 'Customer User';
+  const customerProfileImg = resolveUploadUrl(job.customer_profile_img || job.customerProfileImg || '');
+  const categoryImage = resolveUploadUrl(job.category_image || job.categoryImage || '');
 
   return (
     <Motion.div
@@ -58,7 +67,29 @@ const JobCard = ({ job }) => {
         </div>
       </div>
 
-      <h3 className="mb-4 text-xl font-bold text-[#1A1A1A]">{job.customer_name}</h3>
+      <div className="mb-4 flex items-center gap-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-orange-100 text-lg font-bold text-[#FF7A00]">
+          {customerProfileImg ? (
+            <img
+              src={customerProfileImg}
+              alt={customerName}
+              className="h-full w-full object-cover"
+              onError={(event) => {
+                event.currentTarget.onerror = null;
+                event.currentTarget.src = defaultProfile;
+              }}
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            getInitials(customerName)
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-gray-400">Customer</p>
+          <h3 className="truncate text-xl font-bold text-[#1A1A1A]">{customerName}</h3>
+        </div>
+      </div>
 
       <div className="mb-6 flex flex-col gap-6 md:flex-row">
         {job.issue_image ? (
@@ -74,8 +105,16 @@ const JobCard = ({ job }) => {
         <div className="flex-1 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-start gap-3">
-              <div className="rounded-lg bg-gray-50 p-2 text-gray-400">
-                <Wrench size={18} />
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-50 text-gray-400">
+                {categoryImage ? (
+                  <img
+                    src={categoryImage}
+                    alt={job.category_name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Wrench size={18} />
+                )}
               </div>
               <div>
                 <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">

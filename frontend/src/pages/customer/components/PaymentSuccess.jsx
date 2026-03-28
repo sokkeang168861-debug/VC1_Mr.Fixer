@@ -1,31 +1,12 @@
 import React, { useState } from 'react';
 import { CheckCircle2, Star, Download, Send } from 'lucide-react';
-
-function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(Number(amount || 0));
-}
-
-function formatReceiptDate(value) {
-  if (!value) {
-    return 'N/A';
-  }
-
-  const parsedDate = new Date(value);
-  if (Number.isNaN(parsedDate.getTime())) {
-    return 'N/A';
-  }
-
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(parsedDate);
-}
+import {
+  buildPrintableReceiptHtml,
+  formatCurrency,
+  formatReceiptDate,
+  formatStatusLabel,
+  getReceiptLineItems,
+} from '@/lib/receipt';
 
 const PaymentProgressBar = ({ currentStep }) => {
   const steps = [
@@ -69,16 +50,6 @@ const PaymentProgressBar = ({ currentStep }) => {
   );
 };
 
-const RatingStars = ({ count = 5 }) => {
-  return (
-    <div className="flex gap-1">
-      {[...Array(count)].map((_, i) => (
-        <Star key={i} className="w-5 h-5 text-slate-200 hover:text-amber-400 cursor-pointer transition-colors" />
-      ))}
-    </div>
-  );
-};
-
 const PaymentSuccess = ({
   onSubmitReview,
   onDone,
@@ -109,39 +80,34 @@ const PaymentSuccess = ({
     receipt?.amount ??
     booking?.service_fee ??
     0;
+  const paymentStatus = formatStatusLabel(payment?.status, 'Paid');
   const receiptDate = formatReceiptDate(
     payment?.paid_at ||
     receipt?.date ||
     booking?.created_at
   );
-  const lineItems = Array.isArray(receipt?.items) && receipt.items.length > 0
-    ? receipt.items
-    : [
-        {
-          id: 'summary',
-          name: serviceName,
-          price: totalPaid,
-        },
-      ];
+  const lineItems = getReceiptLineItems(receipt, serviceName, totalPaid);
   const categories = [
     { id: 'quality', label: 'QUALITY' },
     { id: 'speed', label: 'SPEED' },
     { id: 'price', label: 'PRICE' },
     { id: 'behavior', label: 'BEHAVIOR' },
   ];
-  const isReviewComplete =
-    Object.values(ratings).every((value) => value > 0) &&
-    comment.trim().length > 0;
+  const canSubmitReview = comment.trim().length > 0 && !isSubmittingReview;
 
   const handleRating = (category, value) => {
+    setSubmitError('');
     setRatings((prev) => ({
       ...prev,
-      [category]: value,
+      [category]: prev[category] === value ? 0 : value,
     }));
   };
 
   const handleSubmitReview = async () => {
-    if (!isReviewComplete || isSubmittingReview) {
+    if (!canSubmitReview) {
+      if (!comment.trim()) {
+        setSubmitError('Please enter your feedback before submitting.');
+      }
       return;
     }
 
@@ -171,17 +137,6 @@ const PaymentSuccess = ({
 
   const handleDownloadReceipt = () => {
     const fileName = `Receipt_${String(orderId).replace(/[^a-zA-Z0-9-]/g, '') || 'booking'}`;
-    const receiptRows = lineItems
-      .map(
-        (item) => `
-          <tr>
-            <td>${item.name}</td>
-            <td style="text-align:right;">${formatCurrency(item.price)}</td>
-          </tr>
-        `
-      )
-      .join('');
-
     const printWindow = window.open('', '_blank', 'width=900,height=1200');
 
     if (!printWindow) {
@@ -189,119 +144,15 @@ const PaymentSuccess = ({
       return;
     }
 
-    printWindow.document.write(`
-      <!doctype html>
-      <html>
-        <head>
-          <meta charset="utf-8" />
-          <title>${fileName}</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              color: #0f172a;
-              margin: 0;
-              padding: 32px;
-              background: #ffffff;
-            }
-            .sheet {
-              max-width: 760px;
-              margin: 0 auto;
-              border: 1px solid #e2e8f0;
-              border-radius: 24px;
-              padding: 32px;
-            }
-            .label {
-              color: #7c3aed;
-              font-size: 12px;
-              font-weight: 700;
-              letter-spacing: 0.2em;
-              text-transform: uppercase;
-            }
-            h1 {
-              margin: 12px 0 4px;
-              font-size: 36px;
-            }
-            .muted {
-              color: #64748b;
-              font-size: 14px;
-            }
-            .summary {
-              margin-top: 24px;
-              padding: 20px;
-              border-radius: 20px;
-              background: #f8fafc;
-            }
-            .summary-row {
-              display: flex;
-              justify-content: space-between;
-              margin: 10px 0;
-              font-size: 15px;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-top: 24px;
-            }
-            td {
-              padding: 12px 0;
-              border-bottom: 1px solid #e2e8f0;
-              font-size: 15px;
-            }
-            .total {
-              margin-top: 24px;
-              display: flex;
-              justify-content: space-between;
-              font-size: 24px;
-              font-weight: 700;
-              color: #7c3aed;
-            }
-            @media print {
-              body {
-                padding: 0;
-              }
-              .sheet {
-                border: none;
-                border-radius: 0;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="sheet">
-            <div class="label">Official Receipt</div>
-            <h1>Receipt ${orderId}</h1>
-            <div class="muted">${receiptDate}</div>
-
-            <div class="summary">
-              <div class="summary-row">
-                <span>Service</span>
-                <strong>${serviceName}</strong>
-              </div>
-              <div class="summary-row">
-                <span>Fixer</span>
-                <strong>${receipt?.fixer?.name || booking?.fixer_name || 'Assigned Fixer'}</strong>
-              </div>
-              <div class="summary-row">
-                <span>Payment Status</span>
-                <strong>${String(payment?.status || 'success').toUpperCase()}</strong>
-              </div>
-            </div>
-
-            <table>
-              <tbody>
-                ${receiptRows}
-              </tbody>
-            </table>
-
-            <div class="total">
-              <span>Total Paid</span>
-              <span>${formatCurrency(totalPaid)}</span>
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
+    printWindow.document.write(
+      buildPrintableReceiptHtml({
+        receipt,
+        booking,
+        payment,
+      })
+    );
     printWindow.document.close();
+    printWindow.document.title = fileName;
     printWindow.focus();
     printWindow.print();
   };
@@ -335,6 +186,35 @@ const PaymentSuccess = ({
             <div className="flex justify-between items-center">
               <span className="text-slate-500 text-sm">Service</span>
               <span className="font-bold text-slate-800">{serviceName}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500 text-sm">Payment Status</span>
+              <span className="font-bold text-emerald-600">{paymentStatus}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500 text-sm">Receipt Date</span>
+              <span className="font-bold text-slate-800">{receiptDate}</span>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-slate-500 text-sm font-semibold">Receipt Items</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  {lineItems.length} item{lineItems.length > 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {lineItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-4 text-sm"
+                  >
+                    <span className="text-slate-600">{item.name}</span>
+                    <span className="font-bold text-slate-800">
+                      {formatCurrency(item.price)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="pt-4 border-t border-slate-200 flex justify-between items-center">
               <span className="text-slate-800 font-bold">Total Paid</span>
@@ -418,7 +298,7 @@ const PaymentSuccess = ({
           <button 
             type="button"
             onClick={handleSubmitReview}
-            disabled={!isReviewComplete || isSubmittingReview}
+            disabled={!canSubmitReview}
             className="w-full py-4 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-2xl transition-all shadow-lg shadow-violet-100 flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:bg-violet-300"
           >
             {isSubmittingReview ? 'Submitting Review...' : 'Submit Review'}

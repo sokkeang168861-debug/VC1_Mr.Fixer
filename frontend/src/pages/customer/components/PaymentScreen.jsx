@@ -1,5 +1,6 @@
 import React from 'react';
-import { QrCode } from 'lucide-react';
+import { Lock, QrCode, Receipt } from 'lucide-react';
+import { resolveUploadUrl } from '@/lib/assets';
 
 const PaymentProgressBar = ({ currentStep }) => {
   const steps = [
@@ -50,42 +51,70 @@ function formatCurrency(amount) {
   }).format(Number(amount || 0));
 }
 
-const PaymentScreen = ({ payment, refreshing = false }) => {
+const PaymentScreen = ({ payment, booking, refreshing = false }) => {
+  const paymentStatus = String(payment?.status || 'pending').toUpperCase();
+  const qrImageSrc = booking?.fixer_qr_img
+    ? resolveUploadUrl(booking.fixer_qr_img)
+    : '';
+
   return (
     <div className="max-w-5xl mx-auto">
       <PaymentProgressBar currentStep={2} />
       
-      <div className="bg-white rounded-[40px] overflow-hidden border border-slate-100 shadow-2xl shadow-slate-200/50 min-h-[700px] flex flex-col">
-        {/* Purple Header Section */}
-        <div className="bg-violet-600 p-16 text-center text-white flex flex-col items-center">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-8 backdrop-blur-md">
-            <QrCode className="w-8 h-8" />
+      <div className="mx-auto w-full max-w-md rounded-[32px] border border-slate-100 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)] overflow-hidden">
+        <div className="bg-[#FF7A1F] px-8 pb-9 pt-8 text-center text-white">
+          <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
+            <QrCode className="h-6 w-6" />
           </div>
-          <h2 className="text-4xl font-bold mb-6">Express Checkout</h2>
-          <p className="text-violet-100 max-w-md leading-relaxed opacity-90">
+          <h2 className="text-2xl font-bold">Express Checkout</h2>
+          <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-white/85">
             The fastest way to pay. Scan the QR code below using your mobile camera or banking app.
           </p>
         </div>
 
-        {/* QR Code Section */}
-        <div className="flex-1 flex items-center justify-center p-20">
-          <div className="p-8 bg-white rounded-[32px] border-2 border-slate-50 shadow-inner text-center">
-            <img 
-              src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=MRFIXER-PAYMENT-MF88291" 
-              alt="Payment QR Code"
-              className="w-64 h-64 opacity-90"
-            />
-            <p className="mt-6 text-sm font-semibold text-slate-800">
-              Payment Status: {String(payment?.status || 'pending').toUpperCase()}
+        <div className="px-8 pb-8 pt-7">
+          <div className="mx-auto w-fit rounded-[28px] bg-white p-4 shadow-[0_14px_40px_rgba(15,23,42,0.12)] ring-1 ring-slate-100">
+            {qrImageSrc ? (
+              <img
+                src={qrImageSrc}
+                alt="Payment QR Code"
+                className="h-52 w-52 object-contain"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="flex h-52 w-52 items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 text-center text-sm font-medium text-slate-400">
+                No payment QR uploaded yet.
+              </div>
+            )}
+          </div>
+
+          <div className="mx-auto mt-7 max-w-xs rounded-2xl border border-[#FFF1E5] bg-[#FFF8F1] px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#FF7A1F] shadow-sm">
+                  <Receipt className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#FFB27A]">Payment Status</p>
+                  <p className="text-sm font-bold text-slate-800">{paymentStatus}</p>
+                </div>
+              </div>
+              <p className="text-sm font-bold text-slate-900">{formatCurrency(payment?.amount)}</p>
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-2xl bg-slate-50 px-5 py-4 text-center">
+            <p className="text-sm font-semibold text-slate-700">
+              {refreshing ? 'Checking payment status...' : 'Payment will continue automatically after success.'}
             </p>
-            <p className="mt-2 text-xs text-slate-500">
-              {refreshing
-                ? 'Checking payment status...'
-                : 'This screen will continue to the success page when the payment status becomes success.'}
+            <p className="mt-2 text-xs leading-relaxed text-slate-500">
+              Keep this page open while you complete payment in your banking app.
             </p>
-            <p className="mt-3 text-sm text-slate-700">
-              Amount: {formatCurrency(payment?.amount)}
-            </p>
+          </div>
+
+          <div className="mt-6 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-300">
+            <Lock className="h-3.5 w-3.5" />
+            <span>Secure Payment Processing</span>
           </div>
         </div>
       </div>

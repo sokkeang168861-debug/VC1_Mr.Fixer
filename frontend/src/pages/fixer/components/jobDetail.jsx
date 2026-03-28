@@ -72,6 +72,7 @@ const JobDetails = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapError, setMapError] = useState('');
+  const categoryImage = resolveUploadUrl(job?.category_image || job?.categoryImage || '');
 
   const handleReject = async () => {
     if (!rejectReason.trim()) {
@@ -254,8 +255,16 @@ const JobDetails = () => {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-50 flex justify-between items-start">
               <div className="flex gap-4">
-                <div className="p-3 bg-[#FFF5EB] text-[#FF7A00] rounded-xl">
-                  <Wrench size={24} />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[#FFF5EB] text-[#FF7A00]">
+                  {categoryImage ? (
+                    <img
+                      src={categoryImage}
+                      alt={job.category_name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Wrench size={24} />
+                  )}
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-[#1A1A1A]">{job.category_name}</h2>

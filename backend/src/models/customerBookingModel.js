@@ -1,11 +1,23 @@
+const { toImageDataUrl } = require("../utils/imageDataUrl");
+
 class CustomerBooking {
   static mapBookingRow(row, proposalItems = []) {
     if (!row) return null;
 
+    const fixerProfileImg = toImageDataUrl(row.fixer_profile_img);
+    const customerProfileImg = toImageDataUrl(row.customer_profile_img);
+    const fixerQrImg = toImageDataUrl(row.fixer_qr_img);
+
     return {
       id: row.id,
       customer_id: row.customer_id,
+      customer_name: row.customer_name || "",
+      customer_profile_img: customerProfileImg,
       service_id: row.service_id,
+      category_image:
+        row.category_image && Buffer.isBuffer(row.category_image)
+          ? `data:image/jpeg;base64,${row.category_image.toString("base64")}`
+          : row.category_image || "",
       service_address: row.service_address,
       latitude:
         row.latitude !== null && row.latitude !== undefined
@@ -28,7 +40,17 @@ class CustomerBooking {
       fixer_name: row.fixer_name || "",
       fixer_email: row.fixer_email || "",
       fixer_phone: row.fixer_phone || "",
+      fixer_profile_img: fixerProfileImg,
+      fixer_qr_img: fixerQrImg,
       fixer_company_name: row.fixer_company_name || "",
+      fixer_overall_rating:
+        row.fixer_overall_rating !== null && row.fixer_overall_rating !== undefined
+          ? Number(row.fixer_overall_rating)
+          : 0,
+      fixer_total_ratings:
+        row.fixer_total_ratings !== null && row.fixer_total_ratings !== undefined
+          ? Number(row.fixer_total_ratings)
+          : 0,
       provider_location: row.provider_location || "",
       provider_latitude:
         row.provider_latitude !== null && row.provider_latitude !== undefined
@@ -80,6 +102,7 @@ class CustomerBooking {
       bookingId: Number(row.booking_id),
       serviceId: Number(row.service_id),
       service: row.category_name || `Service #${row.service_id}`,
+      serviceAddress: row.service_address || "",
       status: String(row.status || "complete")
         .replace(/^complete$/i, "Completed")
         .replace(/_/g, " ")
@@ -89,6 +112,11 @@ class CustomerBooking {
       amount: amountPaid,
       receiptTotal,
       items: normalizedItems,
+      customer: {
+        name: row.customer_name || "Customer",
+        phone: row.customer_phone || "",
+        email: row.customer_email || "",
+      },
       fixer: {
         name: row.fixer_name || "Assigned Fixer",
         companyName: row.fixer_company_name || "",
@@ -244,9 +272,13 @@ class CustomerBooking {
       `SELECT
         b.id AS booking_id,
         b.service_id,
+        b.service_address,
         b.status,
         b.created_at,
         sc.name AS category_name,
+        customer.full_name AS customer_name,
+        customer.phone AS customer_phone,
+        customer.email AS customer_email,
         fixer.full_name AS fixer_name,
         fixer.profile_img AS fixer_avatar,
         sp.company_name AS fixer_company_name,
@@ -260,6 +292,7 @@ class CustomerBooking {
       FROM bookings b
       INNER JOIN services s ON s.id = b.service_id
       INNER JOIN service_categories sc ON sc.id = s.category_id
+      INNER JOIN users customer ON customer.id = b.customer_id
       INNER JOIN service_providers sp ON sp.id = s.provider_id
       INNER JOIN users fixer ON fixer.id = sp.user_id
       LEFT JOIN (
@@ -694,19 +727,37 @@ class CustomerBooking {
         b.service_fee,
         b.created_at,
         b.scheduled_at,
+        customer.full_name AS customer_name,
+        customer.profile_img AS customer_profile_img,
         sc.name AS category_name,
+        sc.image AS category_image,
         fixer.full_name AS fixer_name,
         fixer.email AS fixer_email,
         fixer.phone AS fixer_phone,
+        fixer.profile_img AS fixer_profile_img,
+        fixer.qr_img AS fixer_qr_img,
         sp.company_name AS fixer_company_name,
+        COALESCE(rating_summary.overall_rating, sp.overall_rating, 0) AS fixer_overall_rating,
+        COALESCE(rating_summary.total_ratings, 0) AS fixer_total_ratings,
         sp.location AS provider_location,
         sp.latitude AS provider_latitude,
         sp.longitude AS provider_longitude
        FROM bookings b
        INNER JOIN services s ON s.id = b.service_id
        INNER JOIN service_categories sc ON sc.id = s.category_id
+       INNER JOIN users customer ON customer.id = b.customer_id
        INNER JOIN service_providers sp ON sp.id = s.provider_id
        INNER JOIN users fixer ON fixer.id = sp.user_id
+       LEFT JOIN (
+         SELECT
+           s.provider_id,
+           ROUND(AVG(r.overall_rating), 1) AS overall_rating,
+           COUNT(r.id) AS total_ratings
+         FROM services s
+         INNER JOIN bookings b ON b.service_id = s.id
+         INNER JOIN reviews r ON r.booking_id = b.id
+         GROUP BY s.provider_id
+       ) AS rating_summary ON rating_summary.provider_id = sp.id
        WHERE b.customer_id = ?
          AND b.status IN (${placeholders})
        ORDER BY b.created_at DESC, b.id DESC
@@ -741,10 +792,14 @@ class CustomerBooking {
         b.created_at,
         b.scheduled_at,
         sc.name AS category_name,
+        sc.image AS category_image,
         fixer.full_name AS fixer_name,
         fixer.email AS fixer_email,
         fixer.phone AS fixer_phone,
+        fixer.profile_img AS fixer_profile_img,
         sp.company_name AS fixer_company_name,
+        COALESCE(rating_summary.overall_rating, sp.overall_rating, 0) AS fixer_overall_rating,
+        COALESCE(rating_summary.total_ratings, 0) AS fixer_total_ratings,
         sp.location AS provider_location,
         sp.latitude AS provider_latitude,
         sp.longitude AS provider_longitude
@@ -753,6 +808,16 @@ class CustomerBooking {
        INNER JOIN service_categories sc ON sc.id = s.category_id
        INNER JOIN service_providers sp ON sp.id = s.provider_id
        INNER JOIN users fixer ON fixer.id = sp.user_id
+       LEFT JOIN (
+         SELECT
+           s.provider_id,
+           ROUND(AVG(r.overall_rating), 1) AS overall_rating,
+           COUNT(r.id) AS total_ratings
+         FROM services s
+         INNER JOIN bookings b ON b.service_id = s.id
+         INNER JOIN reviews r ON r.booking_id = b.id
+         GROUP BY s.provider_id
+       ) AS rating_summary ON rating_summary.provider_id = sp.id
        WHERE b.id = ?
          ${customerFilter}
        LIMIT 1`,

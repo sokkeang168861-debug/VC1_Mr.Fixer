@@ -10,6 +10,7 @@ class FixerBookingModel {
       `SELECT
         b.id AS booking_id,
         COALESCE(sc.name, '') AS category_name,
+        sc.image AS category_image,
         b.issue_description,
         b.service_address,
         b.urgent_level,
@@ -18,6 +19,8 @@ class FixerBookingModel {
         latest_payment.status AS payment_status,
         b.created_at,
         u.full_name AS customer_name,
+        u.profile_img AS customer_profile_img,
+        fixer.profile_img AS fixer_profile_img,
         sp.location AS provider_location,
         MIN(ii.image) AS issue_image
       FROM bookings b
@@ -25,6 +28,7 @@ class FixerBookingModel {
       INNER JOIN services s ON s.id = b.service_id
       INNER JOIN service_categories sc ON sc.id = s.category_id
       INNER JOIN service_providers sp ON sp.id = s.provider_id
+      INNER JOIN users fixer ON fixer.id = sp.user_id
       LEFT JOIN issue_img ii ON ii.booking_id = b.id
       LEFT JOIN (
         SELECT p1.booking_id, p1.status
@@ -62,6 +66,15 @@ class FixerBookingModel {
       if (row.issue_image && Buffer.isBuffer(row.issue_image)) {
         row.issue_image = `data:image/jpeg;base64,${row.issue_image.toString("base64")}`;
       }
+      if (row.category_image && Buffer.isBuffer(row.category_image)) {
+        row.category_image = `data:image/jpeg;base64,${row.category_image.toString("base64")}`;
+      }
+      if (row.customer_profile_img && Buffer.isBuffer(row.customer_profile_img)) {
+        row.customer_profile_img = `data:image/jpeg;base64,${row.customer_profile_img.toString("base64")}`;
+      }
+      if (row.fixer_profile_img && Buffer.isBuffer(row.fixer_profile_img)) {
+        row.fixer_profile_img = `data:image/jpeg;base64,${row.fixer_profile_img.toString("base64")}`;
+      }
       return row;
     });
   }
@@ -71,6 +84,7 @@ class FixerBookingModel {
       `SELECT
         b.id AS booking_id,
         COALESCE(sc.name, '') AS category_name,
+        sc.image AS category_image,
         b.issue_description,
         b.service_address,
         b.latitude,
@@ -87,9 +101,11 @@ class FixerBookingModel {
         b.status,
         b.created_at,
         customer.full_name AS customer_name,
+        customer.profile_img AS customer_profile_img,
         customer.phone AS customer_phone,
         customer.email AS customer_email,
         fixer.full_name AS fixer_name,
+        fixer.profile_img AS fixer_profile_img,
         sp.company_name AS fixer_company_name,
         sp.location AS provider_location,
         sp.latitude AS provider_latitude,
@@ -132,6 +148,15 @@ class FixerBookingModel {
     if (rows.length === 0) return null;
 
     const booking = rows[0];
+    if (booking.category_image && Buffer.isBuffer(booking.category_image)) {
+      booking.category_image = `data:image/jpeg;base64,${booking.category_image.toString("base64")}`;
+    }
+    if (booking.customer_profile_img && Buffer.isBuffer(booking.customer_profile_img)) {
+      booking.customer_profile_img = `data:image/jpeg;base64,${booking.customer_profile_img.toString("base64")}`;
+    }
+    if (booking.fixer_profile_img && Buffer.isBuffer(booking.fixer_profile_img)) {
+      booking.fixer_profile_img = `data:image/jpeg;base64,${booking.fixer_profile_img.toString("base64")}`;
+    }
     const [imageRows] = await db.query(
       "SELECT image FROM issue_img WHERE booking_id = ?",
       [booking_id]

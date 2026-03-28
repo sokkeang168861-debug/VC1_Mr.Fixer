@@ -16,6 +16,8 @@ import {
   Search,
   UserRound,
 } from "lucide-react";
+import defaultProfile from "@/assets/image/default-profile.png";
+import { resolveUploadUrl } from "@/lib/assets";
 
 const containerStyle = {
   width: "100%",
@@ -135,12 +137,45 @@ function createMarkerIcon(color) {
   `)}`;
 }
 
+function getFixerAvatarSource(image) {
+  return image ? resolveUploadUrl(image) : defaultProfile;
+}
+
+function AvatarMarker({ src, alt, active = false }) {
+  return (
+    <div className="pointer-events-none -translate-x-1/2 -translate-y-full">
+      <div
+        className={`overflow-hidden rounded-full border-4 border-white bg-cyan-100 shadow-[0_12px_25px_rgba(6,182,212,0.38)] transition ${
+          active ? "scale-110 ring-4 ring-cyan-200" : ""
+        }`}
+      >
+        <img
+          src={src}
+          alt={alt}
+          className="h-11 w-11 object-cover"
+          onError={(event) => {
+            event.currentTarget.onerror = null;
+            event.currentTarget.src = defaultProfile;
+          }}
+          referrerPolicy="no-referrer"
+        />
+      </div>
+    </div>
+  );
+}
+
 function OsmFallbackMap({
   fixerPoint,
   customerPoint,
   routePath,
   focusedTarget,
   routeAnimationOffset,
+  avatarTarget,
+  avatarPoint,
+  avatarProfileImg,
+  avatarLabel,
+  pinPoint,
+  pinTarget,
 }) {
   const containerRef = useRef(null);
   const [viewport, setViewport] = useState({ width: 900, height: 520 });
@@ -199,14 +234,17 @@ function OsmFallbackMap({
     .map((point) => `${point.x},${point.y}`)
     .join(" ");
 
-  const fixerPosition = {
-    left: fixerPixel.x - startX,
-    top: fixerPixel.y - startY,
+  const avatarSourcePixel = avatarPoint === customerPoint ? customerPixel : fixerPixel;
+  const pinSourcePixel = pinPoint === customerPoint ? customerPixel : fixerPixel;
+  const avatarPosition = {
+    left: avatarSourcePixel.x - startX,
+    top: avatarSourcePixel.y - startY,
   };
-  const customerPosition = {
-    left: customerPixel.x - startX,
-    top: customerPixel.y - startY,
+  const pinPosition = {
+    left: pinSourcePixel.x - startX,
+    top: pinSourcePixel.y - startY,
   };
+  const directConnectorPoints = `${avatarPosition.left},${avatarPosition.top} ${pinPosition.left},${pinPosition.top}`;
 
   const tileColumns = Math.ceil(viewport.width / OSM_TILE_SIZE) + 2;
   const tileRows = Math.ceil(viewport.height / OSM_TILE_SIZE) + 2;
@@ -254,46 +292,60 @@ function OsmFallbackMap({
         <polyline
           points={routePolylinePoints}
           fill="none"
-          stroke="rgba(124, 58, 237, 0.25)"
-          strokeWidth="7"
+          stroke="rgba(255, 255, 255, 0.95)"
+          strokeWidth="12"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <polyline
           points={routePolylinePoints}
           fill="none"
-          stroke="#7C3AED"
-          strokeWidth="5"
-          strokeDasharray="12 10"
+          stroke="#1F2937"
+          strokeWidth="3"
+          strokeDasharray="9 7"
           strokeDashoffset={-routeAnimationOffset}
           strokeLinecap="round"
           strokeLinejoin="round"
-          opacity="0.95"
+          opacity="1"
+        />
+        <polyline
+          points={directConnectorPoints}
+          fill="none"
+          stroke="rgba(255,255,255,0.98)"
+          strokeWidth="16"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <polyline
+          points={directConnectorPoints}
+          fill="none"
+          stroke="#1F2937"
+          strokeWidth="3"
+          strokeDasharray="9 7"
+          strokeDashoffset={-routeAnimationOffset}
+          strokeLinecap="round"
+          strokeLinejoin="round"
         />
       </svg>
 
       <div
         className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full"
-        style={{ left: fixerPosition.left, top: fixerPosition.top }}
+        style={{ left: avatarPosition.left, top: avatarPosition.top }}
       >
-        <div
-          className={`rounded-full p-3 text-white shadow-[0_12px_25px_rgba(6,182,212,0.38)] transition ${
-            focusedTarget === "fixer"
-              ? "scale-110 ring-4 ring-cyan-200 bg-cyan-500"
-              : "bg-cyan-500"
-          }`}
-        >
-          <Bike size={20} />
-        </div>
+        <AvatarMarker
+          src={getFixerAvatarSource(avatarProfileImg)}
+          alt={avatarLabel}
+          active={focusedTarget === avatarTarget}
+        />
       </div>
 
       <div
         className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full"
-        style={{ left: customerPosition.left, top: customerPosition.top }}
+        style={{ left: pinPosition.left, top: pinPosition.top }}
       >
         <div
           className={`rounded-full p-3 text-white shadow-[0_12px_25px_rgba(249,115,22,0.38)] transition ${
-            focusedTarget === "customer"
+            focusedTarget === pinTarget
               ? "scale-110 ring-4 ring-orange-200 bg-orange-500"
               : "bg-orange-500"
           }`}
@@ -355,11 +407,14 @@ export default function LocationTrackingMap({
   customerLongitude,
   showCoordinateCard = true,
   fixerLabel = "Fixer",
+  fixerProfileImg = "",
   fixerLocation = "",
   customerLabel = "Customer",
+  customerProfileImg = "",
   customerLocation = "",
   uiMode = "tracking",
   focusedTarget = "route",
+  profileTarget = "fixer",
 }) {
   const fixerPoint = toPoint(fixerLatitude, fixerLongitude);
   const customerPoint = toPoint(customerLatitude, customerLongitude);
@@ -404,7 +459,7 @@ export default function LocationTrackingMap({
       return 0;
     }
 
-    return Math.max(3, Math.round((distanceKm / 28) * 60));
+    return Math.max(0, Math.round((distanceKm / 28) * 60));
   }, [distanceKm]);
 
   const routeSummary = useMemo(() => {
@@ -429,17 +484,20 @@ export default function LocationTrackingMap({
     () => getPrimaryLocationLabel(customerLocation, customerLabel),
     [customerLabel, customerLocation]
   );
-  const fixerMarkerIcon = useMemo(() => {
-    if (!shouldUseGoogleMaps || !isLoaded || !window.google?.maps) {
-      return undefined;
-    }
-
-    return {
-      url: createMarkerIcon("#06B6D4"),
-      scaledSize: new window.google.maps.Size(44, 60),
-      labelOrigin: new window.google.maps.Point(22, 22),
-    };
-  }, [isLoaded, shouldUseGoogleMaps]);
+  const fixerAvatarSrc = useMemo(
+    () => getFixerAvatarSource(fixerProfileImg),
+    [fixerProfileImg]
+  );
+  const customerAvatarSrc = useMemo(
+    () => getFixerAvatarSource(customerProfileImg),
+    [customerProfileImg]
+  );
+  const avatarTarget = profileTarget === "customer" ? "customer" : "fixer";
+  const avatarPoint = avatarTarget === "customer" ? customerPoint : fixerPoint;
+  const avatarSrc = avatarTarget === "customer" ? customerAvatarSrc : fixerAvatarSrc;
+  const avatarLabel = avatarTarget === "customer" ? customerLabel : fixerLabel;
+  const pinPoint = avatarTarget === "customer" ? fixerPoint : customerPoint;
+  const pinTarget = avatarTarget === "customer" ? "fixer" : "customer";
   const customerMarkerIcon = useMemo(() => {
     if (!shouldUseGoogleMaps || !isLoaded || !window.google?.maps) {
       return undefined;
@@ -536,6 +594,12 @@ export default function LocationTrackingMap({
       routePath={routePath.length >= 2 ? routePath : [fixerPoint, customerPoint]}
       focusedTarget={focusedTarget}
       routeAnimationOffset={routeAnimationOffset}
+      avatarTarget={avatarTarget}
+      avatarPoint={avatarPoint}
+      avatarProfileImg={avatarTarget === "customer" ? customerProfileImg : fixerProfileImg}
+      avatarLabel={avatarLabel}
+      pinPoint={pinPoint}
+      pinTarget={pinTarget}
     />
   ) : !isLoaded ? (
     <div className="flex h-full items-center justify-center bg-slate-50">
@@ -565,20 +629,18 @@ export default function LocationTrackingMap({
         },
       }}
     >
+      <OverlayViewF position={avatarPoint} mapPaneName="overlayMouseTarget">
+        <AvatarMarker
+          src={avatarSrc}
+          alt={avatarLabel}
+          active={focusedTarget === avatarTarget}
+        />
+      </OverlayViewF>
       <MarkerF
-        position={fixerPoint}
-        icon={fixerMarkerIcon}
-        label={{
-          text: "F",
-          color: "#0F172A",
-          fontWeight: "700",
-        }}
-      />
-      <MarkerF
-        position={customerPoint}
+        position={pinPoint}
         icon={customerMarkerIcon}
         label={{
-          text: "C",
+          text: pinTarget === "fixer" ? "F" : "C",
           color: "#0F172A",
           fontWeight: "700",
         }}
@@ -586,26 +648,59 @@ export default function LocationTrackingMap({
       <PolylineF
         path={routePath.length >= 2 ? routePath : [fixerPoint, customerPoint]}
         options={{
-          strokeColor: "#C4B5FD",
-          strokeOpacity: 0.45,
-          strokeWeight: 6,
+          strokeColor: "#FFFFFF",
+          strokeOpacity: 0.95,
+          strokeWeight: 10,
+          zIndex: 90,
         }}
       />
       <PolylineF
         path={routePath.length >= 2 ? routePath : [fixerPoint, customerPoint]}
         options={{
           strokeOpacity: 0,
-          strokeWeight: 5,
+          strokeWeight: 3,
+          zIndex: 91,
           icons: [
             {
               icon: {
                 path: "M 0,-1 0,1",
                 strokeOpacity: 1,
-                strokeColor: "#7C3AED",
-                scale: 4,
+                strokeColor: "#1F2937",
+                scale: 3,
               },
               offset: `${routeAnimationOffset}px`,
-              repeat: "22px",
+              repeat: "16px",
+            },
+          ],
+        }}
+      />
+      <PolylineF
+        path={[avatarPoint, pinPoint]}
+        options={{
+          strokeColor: "#FFFFFF",
+          strokeOpacity: 0.98,
+          strokeWeight: 14,
+          zIndex: 92,
+          geodesic: true,
+        }}
+      />
+      <PolylineF
+        path={[avatarPoint, pinPoint]}
+        options={{
+          strokeOpacity: 0,
+          strokeWeight: 3,
+          zIndex: 93,
+          geodesic: true,
+          icons: [
+            {
+              icon: {
+                path: "M 0,-1 0,1",
+                strokeOpacity: 1,
+                strokeColor: "#1F2937",
+                scale: 3,
+              },
+              offset: `${routeAnimationOffset}px`,
+              repeat: "16px",
             },
           ],
         }}

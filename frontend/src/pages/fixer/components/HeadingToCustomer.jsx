@@ -113,7 +113,7 @@ export default function HeadingToCustomer() {
     }
 
     const distanceKm = calculateDistanceKm(fixerPoint, customerPoint);
-    const etaMinutes = Math.max(3, Math.round((distanceKm / 28) * 60));
+    const etaMinutes = Math.max(0, Math.round((distanceKm / 28) * 60));
 
     return {
       distanceLabel: formatDistance(distanceKm),

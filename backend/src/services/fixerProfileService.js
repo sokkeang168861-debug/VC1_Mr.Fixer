@@ -21,6 +21,25 @@ const normalizeCoordinate = (value, fieldName) => {
   return numericValue;
 };
 
+const validateImageUpload = (file, label) => {
+  if (!file) {
+    return;
+  }
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+  if (!allowedTypes.includes(file.mimetype)) {
+    const error = new Error(`${label} must be JPG or PNG`);
+    error.status = 400;
+    throw error;
+  }
+
+  if (file.size > 5 * 1024 * 1024) {
+    const error = new Error(`${label} must be 5MB or smaller`);
+    error.status = 400;
+    throw error;
+  }
+};
+
 const getFixerProfile = async (db, user) => {
   const fixerId = user?.id;
   const role = String(user?.role || "").toLowerCase();
@@ -61,6 +80,7 @@ const getFixerProfile = async (db, user) => {
         : null,
     role: fixer.role || "fixer",
     profile_img: toImageDataUrl(fixer.profile_img),
+    qr_img: toImageDataUrl(fixer.qr_img),
   };
 };
 
@@ -83,11 +103,13 @@ const validateFixerAccess = (user) => {
   return fixerId;
 };
 
-const updateFixerProfile = async (db, user, data, file) => {
+const updateFixerProfile = async (db, user, data, files = {}) => {
   const fixerId = validateFixerAccess(user);
   const full_name = String(data?.full_name || "").trim();
   const email = String(data?.email || "").trim();
   const phone = String(data?.phone || "").trim();
+  const profileFile = files?.profile_img || null;
+  const qrFile = files?.qr_img || null;
 
   if (!full_name || !email || !phone) {
     const error = new Error("Full name, email, and phone are required");
@@ -120,26 +142,15 @@ const updateFixerProfile = async (db, user, data, file) => {
     throw error;
   }
 
-  if (file) {
-    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
-    if (!allowedTypes.includes(file.mimetype)) {
-      const error = new Error("Profile image must be JPG or PNG");
-      error.status = 400;
-      throw error;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      const error = new Error("Profile image must be 5MB or smaller");
-      error.status = 400;
-      throw error;
-    }
-  }
+  validateImageUpload(profileFile, "Profile image");
+  validateImageUpload(qrFile, "QR image");
 
   await FixerProfileModel.updateFixerById(db, fixerId, {
     full_name,
     email,
     phone,
-    ...(file ? { profile_img: file.buffer } : {}),
+    ...(profileFile ? { profile_img: profileFile.buffer } : {}),
+    ...(qrFile ? { qr_img: qrFile.buffer } : {}),
   });
 
   const updatedFixer = await FixerProfileModel.getFixerById(db, fixerId);
@@ -153,6 +164,7 @@ const updateFixerProfile = async (db, user, data, file) => {
       phone: updatedFixer.phone || "",
       role: updatedFixer.role || "fixer",
       profile_img: toImageDataUrl(updatedFixer.profile_img),
+      qr_img: toImageDataUrl(updatedFixer.qr_img),
     },
   };
 };

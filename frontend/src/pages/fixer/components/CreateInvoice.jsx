@@ -12,10 +12,10 @@ import {
   X,
 } from 'lucide-react';
 import httpClient from '@/api/httpClient';
+import defaultProfile from '@/assets/image/default-profile.png';
+import { resolveUploadUrl } from '@/lib/assets';
 import useActiveFixerBooking from '@/pages/fixer/hooks/useActiveFixerBooking';
 import { getFixerJobOverview } from '@/pages/fixer/lib/jobOverview';
-
-const LINE_ITEM_TYPES = ['Labor', 'Parts', 'Materials'];
 
 function createLineItem(overrides = {}) {
   return {
@@ -23,7 +23,6 @@ function createLineItem(overrides = {}) {
       overrides.id ||
       `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
     description: overrides.description || '',
-    type: overrides.type || 'Labor',
     total: Number(overrides.total || 0),
   };
 }
@@ -43,13 +42,17 @@ function buildInitialItems(job) {
       createLineItem({
         id: String(item.id || index + 1),
         description: item.description || item.name || `Line Item ${index + 1}`,
-        type: item.type || 'Labor',
         total: item.total ?? item.price ?? 0,
       })
     );
   }
 
   return [];
+}
+
+function getInitials(name = '') {
+  const words = String(name).trim().split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase()).join('') || 'CU';
 }
 
 export default function CreateInvoice() {
@@ -98,20 +101,13 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
   const [isCreatingItem, setIsCreatingItem] = useState(false);
   const [lineItemError, setLineItemError] = useState('');
   const [submittingReceipt, setSubmittingReceipt] = useState(false);
+  const customerName = job?.customer_name || 'Customer User';
+  const customerProfileImg = resolveUploadUrl(job?.customer_profile_img || job?.customerProfileImg || '');
 
   const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-  const taxRate = 0.1;
-  const tax = subtotal * taxRate;
-  const totalAmount = subtotal + tax;
-
-  const getTypeStyles = (type) => {
-    switch (type) {
-      case 'Labor': return 'bg-[#FFF5ED] text-[#FF7A1F]';
-      case 'Parts': return 'bg-[#EEF2FF] text-[#4F46E5]';
-      case 'Materials': return 'bg-[#F3F4F6] text-[#6B7280]';
-      default: return 'bg-gray-100 text-gray-600';
-    }
-  };
+  const serviceFeeRate = 0.1;
+  const serviceFee = subtotal * serviceFeeRate;
+  const totalAmount = subtotal + serviceFee;
 
   const startEditingItem = (item) => {
     setEditingItemId(item.id);
@@ -171,7 +167,6 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
           ? {
               ...item,
               description,
-              type: draftItem.type,
               total,
             }
           : item
@@ -214,11 +209,11 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
       price: Number(item.total),
     }));
 
-    const roundedTax = Number(tax.toFixed(2));
-    if (roundedTax > 0) {
+    const roundedServiceFee = Number(serviceFee.toFixed(2));
+    if (roundedServiceFee > 0) {
       receiptItems.push({
-        name: `Tax (${(taxRate * 100).toFixed(1)}%)`,
-        price: roundedTax,
+        name: `Service Fee (${(serviceFeeRate * 100).toFixed(1)}%)`,
+        price: roundedServiceFee,
       });
     }
 
@@ -257,21 +252,28 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
       {/* Job Info Card */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 flex justify-between items-center">
         <div className="flex gap-4">
-          <div className="w-12 h-12 bg-[#FFF5ED] rounded-xl flex items-center justify-center text-[#FF7A1F]">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.83 0l.3.3a2 2 0 0 1 0 2.83l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a2 2 0 0 1 2.83 0l.3.3a2 2 0 0 1 0 2.83l-3.77 3.77a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0" />
-              <path d="m2 22 5-5" />
-              <path d="M9.5 14.5 16 8" />
-              <path d="m17 2 5 5" />
-              <path d="M3.5 14.5a4.95 4.95 0 0 1 7 7L5 16l-1.5-1.5Z" />
-            </svg>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-orange-100 text-sm font-bold text-[#FF7A1F]">
+            {customerProfileImg ? (
+              <img
+                src={customerProfileImg}
+                alt={customerName}
+                className="h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = defaultProfile;
+                }}
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              getInitials(customerName)
+            )}
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-800">
               {jobOverview?.category || 'Service Request'}
             </h2>
             <p className="text-sm text-gray-400 font-medium">
-              Service for <span className="text-gray-600">{job.customer_name || 'Customer User'}</span>
+              Service for <span className="text-gray-600">{customerName}</span>
             </p>
           </div>
         </div>
@@ -302,7 +304,6 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
             <thead>
               <tr className="text-left bg-white border-b border-gray-50">
                 <th className="px-8 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Description</th>
-                <th className="px-8 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Type</th>
                 <th className="px-8 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">Total</th>
                 <th className="px-8 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider text-right">Edit</th>
               </tr>
@@ -310,7 +311,7 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
             <tbody className="divide-y divide-gray-50">
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan="4" className="px-8 py-10 text-center text-sm font-medium text-gray-400">
+                  <td colSpan="3" className="px-8 py-10 text-center text-sm font-medium text-gray-400">
                     No line items yet. Add one to start building the invoice.
                   </td>
                 </tr>
@@ -336,25 +337,6 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
                           </div>
                         ) : (
                           <span className="text-sm font-medium text-gray-600">{item.description}</span>
-                        )}
-                      </td>
-                      <td className="px-8 py-6">
-                        {isEditing ? (
-                          <select
-                            value={draftItem.type}
-                            onChange={(event) => updateDraftItem('type', event.target.value)}
-                            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 outline-none transition-all focus:border-[#FF7A1F] focus:ring-2 focus:ring-orange-100"
-                          >
-                            {LINE_ITEM_TYPES.map((type) => (
-                              <option key={type} value={type}>
-                                {type}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${getTypeStyles(item.type)}`}>
-                            {item.type}
-                          </span>
                         )}
                       </td>
                       <td className="px-8 py-6 text-right">
@@ -451,10 +433,10 @@ function CreateInvoiceEditor({ bookingId, job, jobOverview, initialItems, naviga
           </div>
           <div className="flex justify-between items-center text-gray-500">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Tax ({(taxRate * 100).toFixed(0)}%)</span>
+              <span className="text-sm font-medium">Service Fee ({(serviceFeeRate * 100).toFixed(0)}%)</span>
               <Info size={14} className="text-gray-300" />
             </div>
-            <span className="text-sm font-bold text-gray-800">${tax.toFixed(2)}</span>
+            <span className="text-sm font-bold text-gray-800">${serviceFee.toFixed(2)}</span>
           </div>
           
           <div className="pt-6 border-t border-gray-50 flex justify-between items-center">

@@ -164,6 +164,7 @@ export default function CustomerHistoryPage() {
 
   const [currentView, setCurrentView] = useState("history");
   const [selectedService, setSelectedService] = useState(null);
+  const [loadingReceiptView, setLoadingReceiptView] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -219,9 +220,43 @@ export default function CustomerHistoryPage() {
     setCurrentView("rating");
   };
 
-  const handleViewReceipt = (service) => {
+  const handleViewReceipt = async (service) => {
     setSelectedService(service);
     setCurrentView("receipt");
+
+    if (!service?.bookingId) {
+      return;
+    }
+
+    setLoadingReceiptView(true);
+
+    try {
+      const response = await httpClient.get(
+        `/user/bookings/${service.bookingId}/receipt`
+      );
+      const receiptDetails = response?.data?.data;
+
+      if (!receiptDetails) {
+        return;
+      }
+
+      setSelectedService((prev) =>
+        prev?.bookingId === service.bookingId
+          ? {
+              ...prev,
+              ...receiptDetails,
+              fixer: {
+                ...prev?.fixer,
+                ...receiptDetails.fixer,
+              },
+            }
+          : prev
+      );
+    } catch (error) {
+      console.error("Failed to load receipt details:", error);
+    } finally {
+      setLoadingReceiptView(false);
+    }
   };
 
   const handleViewFixerProfile = (service) => {
@@ -547,12 +582,13 @@ export default function CustomerHistoryPage() {
               />
             )}
 
-            {currentView === "receipt" && selectedService && (
-              <ReceiptView
-                onClose={() => setCurrentView("history")}
-                receipt={selectedService}
-              />
-            )}
+              {currentView === "receipt" && selectedService && (
+                <ReceiptView
+                  onClose={() => setCurrentView("history")}
+                  receipt={selectedService}
+                  loading={loadingReceiptView}
+                />
+              )}
 
             {showDatePicker && (
               <CustomDatePicker

@@ -34,6 +34,7 @@ const RatingForm = ({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const canSubmitReview = comment.trim().length > 0 && !isSubmitting;
 
   useEffect(() => {
     if (!initialReview) {
@@ -58,9 +59,10 @@ const RatingForm = ({
   ];
 
   const handleRating = (category, value) => {
+    setSubmitError('');
     setRatings(prev => ({
       ...prev,
-      [category]: value
+      [category]: prev[category] === value ? 0 : value
     }));
   };
 
@@ -69,10 +71,8 @@ const RatingForm = ({
       return;
     }
 
-    const hasMissingRating = Object.values(ratings).some((value) => value < 1);
-
-    if (hasMissingRating) {
-      setSubmitError('Please rate all categories before submitting.');
+    if (!comment.trim()) {
+      setSubmitError('Please enter your feedback before submitting.');
       return;
     }
 
@@ -274,7 +274,7 @@ const RatingForm = ({
             <button
               type="button"
               onClick={readOnly ? onBack : handleSubmit}
-              disabled={isSubmitting}
+              disabled={!readOnly && !canSubmitReview}
               className="w-full rounded-2xl bg-purple-600 py-4 text-sm font-extrabold tracking-widest text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:bg-purple-300"
             >
               {readOnly ? 'BACK TO HISTORY' : isSubmitting ? 'SUBMITTING...' : 'SUBMIT'}

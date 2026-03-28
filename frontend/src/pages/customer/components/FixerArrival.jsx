@@ -95,6 +95,7 @@ const FixerArrival = ({ booking }) => {
             customerLatitude={displayBooking?.latitude}
             customerLongitude={displayBooking?.longitude}
             fixerLabel={fixerName}
+            fixerProfileImg={displayBooking?.fixer_profile_img || booking?.fixer_profile_img || ""}
             fixerLocation={displayBooking?.provider_location || ""}
             customerLabel="You"
             customerLocation={displayBooking?.service_address || ""}
