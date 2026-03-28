@@ -8,7 +8,7 @@ exports.up = async function(knex) {
     return knex.schema.createTable('issue_img', function(table) {
       table.increments('id').unsigned().primary();
       table.integer('booking_id').unsigned().notNullable().index();
-      table.binary('image').notNullable();
+      table.specificType('image', 'longblob').notNullable();
       table.timestamp('created_at').notNullable().defaultTo(knex.fn.now());
       table
         .foreign('booking_id')

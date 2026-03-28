@@ -6,9 +6,11 @@ import {
   Clock,
   Info,
   MapPin,
+  User,
   ShieldCheck,
   Star,
   Wallet,
+  Wrench,
 } from 'lucide-react';
 
 function formatCurrency(amount) {
@@ -57,6 +59,18 @@ const BookingAgreement = ({ booking, onConfirm, onReject, submitting = false }) 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Service</p>
+                <div className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
+                  {booking?.category_image ? (
+                    <img
+                      src={booking.category_image}
+                      alt={booking?.category_name || 'Service'}
+                      className="h-full w-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <Wrench className="h-7 w-7 text-violet-600" />
+                  )}
+                </div>
                 <h4 className="font-bold text-slate-800">{booking?.category_name || 'Service Request'}</h4>
                 <p className="mt-3 text-sm text-slate-500">{booking?.issue_description || 'No issue description provided.'}</p>
               </div>
@@ -65,6 +79,18 @@ const BookingAgreement = ({ booking, onConfirm, onReject, submitting = false }) 
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fixer Accepted</p>
+                </div>
+                <div className="mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
+                  {booking?.fixer_avatar ? (
+                    <img
+                      src={booking.fixer_avatar}
+                      alt={booking?.fixer_name || 'Assigned Fixer'}
+                      className="h-full w-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <User className="h-7 w-7 text-violet-600" />
+                  )}
                 </div>
                 <h4 className="font-bold text-slate-800">{booking?.fixer_name || 'Assigned Fixer'}</h4>
                 <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
@@ -181,6 +207,5 @@ const BookingAgreement = ({ booking, onConfirm, onReject, submitting = false }) 
 };
 
 export default BookingAgreement;
-
 
 

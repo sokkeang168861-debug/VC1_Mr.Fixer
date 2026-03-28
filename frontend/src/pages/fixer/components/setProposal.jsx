@@ -20,9 +20,8 @@ const ServiceEstimate = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [items, setItems] = useState([
-    { id: '1', name: 'Diagnostic Fee', price: 20.00 }
+    { id: '1', name: 'Diagnostic Fee', price: 0.00 }
   ]);
-  const [message, setMessage] = useState('');
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -68,7 +67,6 @@ const ServiceEstimate = () => {
       const res = await httpClient.post(`/fixer/provider/requests/${id}/accept`, {
         items,
         total,
-        message // message not stored in DB yet but kept for logic
       });
 
       if (res.data.success) {
@@ -82,6 +80,43 @@ const ServiceEstimate = () => {
     } catch (err) {
       console.error('Error submitting proposal', err);
       alert('Failed to submit proposal. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!id || submitting) {
+      return;
+    }
+
+    const reason = window.prompt('Please enter the reason for rejecting this booking:');
+
+    if (reason === null) {
+      return;
+    }
+
+    const trimmedReason = reason.trim();
+
+    if (!trimmedReason) {
+      window.alert('Rejection reason is required.');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      await httpClient.post(`/fixer/provider/requests/${id}/reject`, {
+        reason: trimmedReason,
+      });
+
+      window.alert('Booking rejected successfully.');
+      navigate(ROUTES.dashboardFixerJobs || '/dashboard/fixer/jobs');
+    } catch (err) {
+      console.error('Error rejecting booking', err);
+      window.alert(
+        err?.response?.data?.message || 'Failed to reject booking. Please try again.'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -182,19 +217,8 @@ const ServiceEstimate = () => {
         </div>
       </div>
 
-      {/* Message Section */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
-        <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold mb-4">Message to Client</p>
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Describe the scope of work or add any special instructions..."
-          className="w-full h-32 bg-white border border-gray-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-orange-100 focus:border-[#FF7A00] outline-none transition-all resize-none"
-        />
-      </div>
-
       {/* Submit Button */}
-      <div className="flex justify-start">
+      <div className="flex items-center justify-between">
         <button
           onClick={handleSubmit}
           disabled={submitting}
@@ -202,6 +226,15 @@ const ServiceEstimate = () => {
         >
           {submitting ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
           Submit Proposal
+        </button>
+
+        <button
+          type="button"
+          onClick={handleReject}
+          disabled={submitting}
+          className="font-bold text-red-500 transition-colors hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Reject
         </button>
       </div>
     </Motion.div>

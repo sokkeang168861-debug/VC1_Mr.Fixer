@@ -66,6 +66,13 @@ const BookingForm = ({ onNext, initialData }) => {
   const [locating, setLocating] = useState(false);
   const fileInputRef = useRef(null);
   const photosRef = useRef([]);
+  const shouldUseHorizontalCategoryScroll = categories.length > 3;
+  const isFormComplete =
+    Boolean(selectedCategory) &&
+    Boolean(issueDescription.trim()) &&
+    latitude !== '' &&
+    longitude !== '' &&
+    Boolean(serviceAddress.trim());
 
   useEffect(() => {
     httpClient
@@ -204,6 +211,7 @@ const BookingForm = ({ onNext, initialData }) => {
     onNext?.({
       categoryId: Number(selectedCategory),
       categoryName: categories.find((category) => category.id === selectedCategory)?.name || '',
+      categoryImage: categories.find((category) => category.id === selectedCategory)?.imageUrl || '',
       issueDescription: issueDescription.trim(),
       serviceAddress: serviceAddress.trim(),
       latitude: Number(latitude),
@@ -230,7 +238,13 @@ const BookingForm = ({ onNext, initialData }) => {
         <p className="text-slate-500">Select a category, describe the issue, and add your location before choosing a fixer.</p>
       </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+      <div
+        className={`mb-12 ${
+          shouldUseHorizontalCategoryScroll
+            ? 'flex gap-4 overflow-x-auto pb-2 [scrollbar-width:thin]'
+            : 'grid grid-cols-1 md:grid-cols-3 gap-4'
+        }`}
+      >
         {loadingCategories && (
           <p className="text-sm text-slate-500">Loading categories...</p>
         )}
@@ -243,7 +257,9 @@ const BookingForm = ({ onNext, initialData }) => {
               key={cat.id}
               type="button"
               onClick={() => setSelectedCategory(cat.id)}
-              className={`flex flex-col items-center justify-center p-8 rounded-2xl border-2 transition-all duration-200 group ${
+              className={`flex flex-col items-center justify-center rounded-2xl border-2 p-8 transition-all duration-200 group ${
+                shouldUseHorizontalCategoryScroll ? 'w-[17rem] min-w-[17rem]' : ''
+              } ${
                 selectedCategory === cat.id
                   ? 'border-violet-500 bg-violet-50/30'
                   : 'border-gray-100 hover:border-violet-200'
@@ -401,7 +417,12 @@ const BookingForm = ({ onNext, initialData }) => {
         <button
           type="button"
           onClick={handleSubmit}
-          className="bg-violet-600 hover:bg-violet-700 text-white font-bold py-4 px-12 rounded-2xl flex items-center gap-2 transition-all shadow-lg shadow-violet-200 hover:shadow-violet-300 active:scale-95"
+          disabled={!isFormComplete}
+          className={`flex items-center gap-2 rounded-2xl px-12 py-4 font-bold transition-all ${
+            isFormComplete
+              ? 'bg-violet-600 text-white shadow-lg shadow-violet-200 hover:bg-violet-700 hover:shadow-violet-300 active:scale-95'
+              : 'cursor-not-allowed bg-slate-200 text-slate-400 shadow-none'
+          }`}
         >
           Next: Find an Expert
           <ArrowRight className="w-5 h-5" />

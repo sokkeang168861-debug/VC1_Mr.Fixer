@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ShieldCheck, Info, Loader2 } from 'lucide-react';
+import { Check, ShieldCheck, Info, Loader2, User, Wrench } from 'lucide-react';
 import httpClient from '@/api/httpClient';
 import useActiveFixerBooking from '@/pages/fixer/hooks/useActiveFixerBooking';
 import { getFixerJobOverview } from '@/pages/fixer/lib/jobOverview';
@@ -103,15 +103,43 @@ export default function JobCompleted() {
           <div className="grid grid-cols-2 gap-8">
             <div>
               <p className="text-[10px] uppercase font-bold text-gray-300 tracking-widest mb-2">Customer</p>
-              <p className="text-xl font-bold text-gray-800">
-                {job.customer_name || 'Customer User'}
-              </p>
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
+                  {job.customer_profile_img ? (
+                    <img
+                      src={job.customer_profile_img}
+                      alt={job.customer_name || 'Customer User'}
+                      className="h-full w-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <User className="h-6 w-6 text-slate-500" />
+                  )}
+                </div>
+                <p className="text-xl font-bold text-gray-800">
+                  {job.customer_name || 'Customer User'}
+                </p>
+              </div>
             </div>
             <div>
               <p className="text-[10px] uppercase font-bold text-gray-300 tracking-widest mb-2">Service Type</p>
-              <p className="text-xl font-bold text-gray-800">
-                {jobOverview?.category || 'Service Request'}
-              </p>
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-[#FFF5ED] ring-1 ring-orange-100">
+                  {jobOverview?.category_image ? (
+                    <img
+                      src={jobOverview.category_image}
+                      alt={jobOverview?.category || 'Service Request'}
+                      className="h-full w-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <Wrench className="h-6 w-6 text-[#FF7A1F]" />
+                  )}
+                </div>
+                <p className="text-xl font-bold text-gray-800">
+                  {jobOverview?.category || 'Service Request'}
+                </p>
+              </div>
             </div>
           </div>
 

@@ -15,6 +15,7 @@ export function getFixerJobOverview(job, bookingId) {
       issue_description: job.issue_description || "No issue description available.",
       booking_reference: bookingId ? String(bookingId) : "",
       category: job.category_name || "Service Request",
+      category_image: job.category_image || "",
     }
   );
 }

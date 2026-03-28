@@ -222,7 +222,8 @@ class CustomerBookingController {
       const booking = await customerBookingService.rejectBooking(
         db,
         req.user,
-        req.params.id
+        req.params.id,
+        req.body
       );
 
       // 🔥 notify provider

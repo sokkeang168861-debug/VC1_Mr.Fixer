@@ -73,6 +73,7 @@ class FixerBookingModel {
       `SELECT
         b.id AS booking_id,
         COALESCE(sc.name, '') AS category_name,
+        sc.image AS category_image,
         b.issue_description,
         b.service_address,
         b.latitude,
@@ -89,9 +90,11 @@ class FixerBookingModel {
         b.status,
         b.created_at,
         customer.full_name AS customer_name,
+        customer.profile_img AS customer_profile_img,
         customer.phone AS customer_phone,
         customer.email AS customer_email,
         fixer.full_name AS fixer_name,
+        fixer.profile_img AS fixer_profile_img,
         fixer.phone AS fixer_phone,
         fixer.email AS fixer_email,
         sp.company_name AS fixer_company_name,
@@ -162,6 +165,9 @@ class FixerBookingModel {
       booking.receipt_total !== null && booking.receipt_total !== undefined
         ? Number(booking.receipt_total)
         : 0;
+    booking.category_image = toImageDataUrl(booking.category_image);
+    booking.customer_profile_img = toImageDataUrl(booking.customer_profile_img);
+    booking.fixer_profile_img = toImageDataUrl(booking.fixer_profile_img);
     booking.payment =
       booking.payment_id !== null && booking.payment_id !== undefined
         ? {

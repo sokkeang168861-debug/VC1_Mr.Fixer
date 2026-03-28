@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { LoaderCircle, X } from "lucide-react";
 import { ROUTES } from "@/config/routes";
@@ -10,6 +10,7 @@ import ProgressBar from "../components/ProgressBar";
 
 // Import actual components
 import BookingForm from "../components/BookingForm";
+import FixerRejectNotice from "../components/FixerRejectNotice";
 import FindFixer from "../components/FindFixer";
 import WaitingConfirmation from "../components/WaitingConfirmation";
 import BookingAgreement from "../components/BookingAgreement";
@@ -37,6 +38,8 @@ export default function CustomerBooking() {
     const [paymentDetails, setPaymentDetails] = useState(null);
     const [loadingPayment, setLoadingPayment] = useState(false);
     const [completingPayment, setCompletingPayment] = useState(false);
+    const [fixerRejectMessage, setFixerRejectMessage] = useState("");
+    const activeBookingRef = useRef(null);
 
     const syncStepWithBooking = useCallback((booking) => {
         if (!booking) {
@@ -69,6 +72,25 @@ export default function CustomerBooking() {
         }
     }, []);
 
+    const handleFixerReject = useCallback(() => {
+        setActiveBooking(null);
+        setCurrentStep(11);
+        setBookingError("");
+        setFixerRejectMessage("The fixer did not respond in time, so this booking was automatically rejected. Please go back and choose another fixer.");
+        window.alert("Fixer rejected the booking request.");
+    }, []);
+
+    const handleBackToDescribeIssue = useCallback(() => {
+        setFixerRejectMessage("");
+        setBookingError("");
+        setActiveBooking(null);
+        setCurrentStep(1);
+    }, []);
+
+    useEffect(() => {
+        activeBookingRef.current = activeBooking;
+    }, [activeBooking]);
+
     const loadLatestActiveBooking = useCallback(async ({ silent = false } = {}) => {
         if (silent) {
             setRefreshingBooking(true);
@@ -79,6 +101,21 @@ export default function CustomerBooking() {
         try {
             const { data } = await httpClient.get("/user/bookings/latest-active");
             const nextBooking = data?.booking ?? null;
+            const previousBooking = activeBookingRef.current;
+
+            if (
+                !nextBooking &&
+                String(previousBooking?.status || "").toLowerCase() === "pending"
+            ) {
+                handleFixerReject();
+                return;
+            }
+
+            if (String(nextBooking?.status || "").toLowerCase() === "fixer_reject") {
+                handleFixerReject();
+                return;
+            }
+
             setActiveBooking(nextBooking);
             syncStepWithBooking(nextBooking);
             setBookingError("");
@@ -94,7 +131,7 @@ export default function CustomerBooking() {
                 setLoadingBooking(false);
             }
         }
-    }, [syncStepWithBooking]);
+    }, [handleFixerReject, syncStepWithBooking]);
 
     useEffect(() => {
         loadLatestActiveBooking();
@@ -120,6 +157,11 @@ export default function CustomerBooking() {
         socket.on("booking:updated", (booking) => {
             setActiveBooking(booking);
             syncStepWithBooking(booking);
+            if (String(booking?.status || "").toLowerCase() === "fixer_reject") {
+                handleFixerReject();
+                return;
+            }
+
             setBookingError("");
             setRefreshingBooking(false);
         });
@@ -127,7 +169,7 @@ export default function CustomerBooking() {
         return () => {
             socket.disconnect();
         };
-    }, [syncStepWithBooking]);
+    }, [handleFixerReject, syncStepWithBooking]);
 
     useEffect(() => {
         let isMounted = true;
@@ -253,12 +295,14 @@ export default function CustomerBooking() {
     const handleBookingDraftNext = (draft) => {
         setBookingDraft(draft);
         setBookingError("");
+        setFixerRejectMessage("");
         setCurrentStep(2);
     };
 
     const handleCancelDraftBooking = () => {
         setBookingDraft(null);
         setBookingError("");
+        setFixerRejectMessage("");
         setSubmittingBooking(false);
         setActiveBooking(null);
         setCurrentStep(1);
@@ -276,6 +320,7 @@ export default function CustomerBooking() {
 
         try {
             const formData = new FormData();
+            setFixerRejectMessage("");
             formData.append("service_id", String(fixer.service_id));
             formData.append("issue_description", bookingDraft.issueDescription);
             formData.append("service_address", bookingDraft.serviceAddress || "");
@@ -297,12 +342,19 @@ export default function CustomerBooking() {
                 },
             });
 
+            const apiBooking = data?.data ?? null;
             const nextBooking = {
-                id: data?.bookingId,
-                category_name: bookingDraft.categoryName,
-                issue_description: bookingDraft.issueDescription,
-                service_address: bookingDraft.serviceAddress,
-                status: "pending",
+                ...(apiBooking || {}),
+                id: apiBooking?.id ?? apiBooking?.bookingId ?? null,
+                category_name: apiBooking?.category_name || bookingDraft.categoryName,
+                category_image: apiBooking?.category_image || bookingDraft.categoryImage || "",
+                issue_description: apiBooking?.issue_description || bookingDraft.issueDescription,
+                service_address: apiBooking?.service_address || bookingDraft.serviceAddress,
+                fixer_name: apiBooking?.fixer_name || fixer.name,
+                fixer_avatar: apiBooking?.fixer_avatar || fixer.image,
+                fixer_company_name: apiBooking?.fixer_company_name || fixer.companyName,
+                status: apiBooking?.status || "pending",
+                created_at: apiBooking?.created_at || new Date().toISOString(),
             };
             setActiveBooking(nextBooking);
             syncStepWithBooking(nextBooking);
@@ -340,11 +392,28 @@ export default function CustomerBooking() {
             return;
         }
 
+        const reason = window.prompt("Please enter the reason for rejecting this booking:");
+
+        if (reason === null) {
+            return;
+        }
+
+        const trimmedReason = reason.trim();
+
+        if (!trimmedReason) {
+            window.alert("Rejection reason is required.");
+            return;
+        }
+
         setRejectingBooking(true);
         setBookingError("");
 
         try {
-            await httpClient.post(`/user/bookings/${activeBooking.id}/reject`);
+            await httpClient.post(`/user/bookings/${activeBooking.id}/reject`, {
+                reason: trimmedReason,
+                service_id: activeBooking.service_id,
+            });
+            window.alert("Booking rejected successfully.");
             setActiveBooking(null);
             setBookingDraft(null);
             setCurrentStep(1);
@@ -534,6 +603,7 @@ export default function CustomerBooking() {
                                     booking={activeBooking}
                                     refreshing={refreshingBooking}
                                     onRefresh={() => loadLatestActiveBooking({ silent: true })}
+                                    onTimeout={() => loadLatestActiveBooking({ silent: true })}
                                 />
                             ) : activeBooking?.status === "fixer_accept" ? (
                                 <BookingAgreement
@@ -541,6 +611,11 @@ export default function CustomerBooking() {
                                     submitting={confirmingBooking || rejectingBooking}
                                     onConfirm={handleConfirmBooking}
                                     onReject={handleRejectBooking}
+                                />
+                            ) : currentStep === 11 ? (
+                                <FixerRejectNotice
+                                    message={fixerRejectMessage}
+                                    onGoBack={handleBackToDescribeIssue}
                                 />
                             ) : currentStep === 1 && (
                                 <BookingForm

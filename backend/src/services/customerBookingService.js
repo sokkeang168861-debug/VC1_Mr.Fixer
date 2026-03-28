@@ -334,6 +334,8 @@ class BookingService {
       throw { status: 403, message: "Only customers can access bookings" };
     }
 
+    await BookingModel.expireStalePendingBookingsByCustomerId(db, customerId, 240);
+
     return await BookingModel.getLatestActiveBookingByCustomerId(
       db,
       customerId
@@ -372,9 +374,10 @@ class BookingService {
     );
   }
 
-  static async rejectBooking(db, user, bookingId) {
+  static async rejectBooking(db, user, bookingId, body = {}) {
     const customerId = user?.id;
     const role = String(user?.role || "").toLowerCase();
+    const reason = String(body?.reason || "").trim();
 
     if (!customerId) {
       throw { status: 401, message: "Unauthorized" };
@@ -384,10 +387,15 @@ class BookingService {
       throw { status: 403, message: "Only customers can reject bookings" };
     }
 
+    if (!reason) {
+      throw { status: 400, message: "Rejection reason is required" };
+    }
+
     const result = await BookingModel.rejectBookingByCustomer(
       db,
       Number(bookingId),
-      customerId
+      customerId,
+      reason
     );
 
     if (!result?.affectedRows) {
@@ -397,7 +405,7 @@ class BookingService {
       };
     }
 
-    return { id: Number(bookingId), status: "customer_reject" };
+    return { id: Number(bookingId), status: "customer_reject", reason };
   }
 
   static async updateBookingLocation(db, user, bookingId, body) {

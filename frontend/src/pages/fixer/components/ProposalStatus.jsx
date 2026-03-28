@@ -14,6 +14,7 @@ export default function ProposalStatus() {
   const [bookingStatus, setBookingStatus] = useState('');
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [missingBooking, setMissingBooking] = useState(false);
+  const alertShownRef = React.useRef('');
 
   useEffect(() => {
     if (!bookingId) {
@@ -82,6 +83,23 @@ export default function ProposalStatus() {
   const normalizedStatus = String(bookingStatus || '').toLowerCase();
   const isRejected = ['customer_reject', 'fixer_reject'].includes(normalizedStatus);
   const isAccepted = ['customer_accept', 'arrived'].includes(normalizedStatus);
+
+  useEffect(() => {
+    if (!normalizedStatus || alertShownRef.current === normalizedStatus) {
+      return;
+    }
+
+    if (normalizedStatus === 'customer_reject') {
+      window.alert('Customer rejected the booking.');
+      alertShownRef.current = normalizedStatus;
+      return;
+    }
+
+    if (normalizedStatus === 'fixer_reject') {
+      window.alert('Fixer rejected the booking request.');
+      alertShownRef.current = normalizedStatus;
+    }
+  }, [normalizedStatus]);
 
   useEffect(() => {
     if (!missingBooking) {

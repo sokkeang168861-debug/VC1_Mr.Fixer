@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { AlertTriangle, Phone, MapPin, Bike } from "lucide-react";
+import { AlertTriangle, Phone, MapPin, Bike, User, Wrench } from "lucide-react";
 import httpClient from "@/api/httpClient";
 import LocationTrackingMap from "@/components/LocationTrackingMap";
 import useLiveLocationSync from "@/hooks/useLiveLocationSync";
@@ -32,12 +32,14 @@ const FixerArrival = ({ booking }) => {
     };
   }, [booking, currentPosition]);
   const categoryName = booking?.category_name || "Assigned Service";
+  const categoryImage = booking?.category_image || "";
   const bookingId = booking?.id || "N/A";
   const fixerName =
     displayBooking?.fixer_name ||
     displayBooking?.fixer_company_name ||
     "Assigned Fixer";
   const fixerPhone = displayBooking?.fixer_phone || "No phone available";
+  const fixerAvatar = displayBooking?.fixer_avatar || "";
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -49,8 +51,17 @@ const FixerArrival = ({ booking }) => {
       <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm p-8">
         <div className="flex items-start justify-between mb-8">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center text-violet-600">
-              <Bike className="w-8 h-8" />
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center overflow-hidden bg-violet-100 text-violet-600 ring-1 ring-slate-200">
+              {categoryImage ? (
+                <img
+                  src={categoryImage}
+                  alt={categoryName}
+                  className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <Wrench className="w-8 h-8" />
+              )}
             </div>
             <div>
               <h2 className="text-2xl font-bold text-slate-800">{categoryName}</h2>
@@ -66,8 +77,17 @@ const FixerArrival = ({ booking }) => {
 
         <div className="bg-slate-50/50 rounded-2xl p-4 border border-slate-100 mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-orange-200 flex items-center justify-center overflow-hidden">
-              <div className="w-8 h-8 bg-orange-400 rounded-sm" />
+            <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center overflow-hidden ring-1 ring-orange-200">
+              {fixerAvatar ? (
+                <img
+                  src={fixerAvatar}
+                  alt={fixerName}
+                  className="h-full w-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <User className="h-6 w-6 text-orange-500" />
+              )}
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">

@@ -27,9 +27,11 @@ class CustomerBooking {
           ? Number(row.service_fee)
           : null,
       category_name: row.category_name || "",
+      category_image: toImageDataUrl(row.category_image),
       fixer_name: row.fixer_name || "",
       fixer_email: row.fixer_email || "",
       fixer_phone: row.fixer_phone || "",
+      fixer_avatar: toImageDataUrl(row.fixer_avatar),
       fixer_company_name: row.fixer_company_name || "",
       fixer_qr: toImageDataUrl(row.fixer_qr),
       provider_location: row.provider_location || "",
@@ -686,6 +688,25 @@ class CustomerBooking {
     return this.getLatestActiveBookingByCustomerId(db, customerId, ["pending"]);
   }
 
+  static async expireStalePendingBookingsByCustomerId(
+    db,
+    customerId,
+    timeoutSeconds = 240
+  ) {
+    const normalizedTimeoutSeconds = Number(timeoutSeconds);
+
+    const [result] = await db.query(
+      `UPDATE bookings
+       SET status = 'fixer_reject'
+       WHERE customer_id = ?
+         AND status = 'pending'
+         AND created_at <= DATE_SUB(NOW(), INTERVAL ? SECOND)`,
+      [customerId, normalizedTimeoutSeconds]
+    );
+
+    return result;
+  }
+
   static async getLatestActiveBookingByCustomerId(
     db,
     customerId,
@@ -708,9 +729,11 @@ class CustomerBooking {
         b.created_at,
         b.scheduled_at,
         sc.name AS category_name,
+        sc.image AS category_image,
         fixer.full_name AS fixer_name,
         fixer.email AS fixer_email,
         fixer.phone AS fixer_phone,
+        fixer.profile_img AS fixer_avatar,
         sp.company_name AS fixer_company_name,
         sp.qr AS fixer_qr,
         sp.location AS provider_location,
@@ -755,9 +778,11 @@ class CustomerBooking {
         b.created_at,
         b.scheduled_at,
         sc.name AS category_name,
+        sc.image AS category_image,
         fixer.full_name AS fixer_name,
         fixer.email AS fixer_email,
         fixer.phone AS fixer_phone,
+        fixer.profile_img AS fixer_avatar,
         sp.company_name AS fixer_company_name,
         sp.qr AS fixer_qr,
         sp.location AS provider_location,
@@ -813,14 +838,15 @@ class CustomerBooking {
     return result;
   }
 
-  static async rejectBookingByCustomer(db, bookingId, customerId) {
+  static async rejectBookingByCustomer(db, bookingId, customerId, reason) {
     const [result] = await db.query(
       `UPDATE bookings
-       SET status = 'customer_reject'
+       SET status = 'customer_reject',
+           cancellation_reason = ?
        WHERE id = ?
          AND customer_id = ?
          AND status = 'fixer_accept'`,
-      [bookingId, customerId]
+      [reason, bookingId, customerId]
     );
 
     return result;
