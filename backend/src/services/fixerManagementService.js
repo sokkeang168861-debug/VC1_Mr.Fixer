@@ -466,11 +466,21 @@ class FixerManagementService {
 
     const categoryIds = this.parseCategoryIds(payload.categoryIds);
     const nextPassword = this.toOptionalString(payload.password);
+    const experienceRaw = this.toOptionalString(payload.experience);
+    const experience =
+      experienceRaw === null ? null : Number.parseInt(experienceRaw, 10);
     const profileImageFile = file?.profile_img || null;
     const qrFile = file?.qr || null;
 
     if (nextPassword && nextPassword.length < 6) {
       throw new Error("Password must be at least 6 characters");
+    }
+
+    if (
+      experienceRaw !== null &&
+      (!Number.isFinite(experience) || Number.isNaN(experience) || experience < 0)
+    ) {
+      throw new Error("Experience must be a valid non-negative number");
     }
 
     if (profileImageFile) {
@@ -576,7 +586,7 @@ class FixerManagementService {
         location: resolvedLocation,
         latitude,
         longitude,
-        experience: payload.experience,
+        experience,
         bio: payload.bio,
         qr: qrFile?.buffer || null,
         categoryIds,

@@ -1,5 +1,4 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Wrench } from 'lucide-react';
 
 export default function Navbar() {
   const location = useLocation();
@@ -15,9 +14,11 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="bg-primary p-2 rounded-lg text-white group-hover:scale-110 transition-transform">
-              <Wrench size={24} />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Mr. Fixer"
+              className="rounded-lg h-12 w-auto object-contain transition-transform group-hover:scale-[1.02]"
+            />
             <span className="text-2xl font-display font-bold text-primary">Mr. Fixer</span>
           </Link>
 
@@ -51,4 +52,3 @@ export default function Navbar() {
     </nav>
   );
 }
-

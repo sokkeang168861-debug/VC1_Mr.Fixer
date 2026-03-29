@@ -12,6 +12,7 @@ class FixerBookingModel {
       `SELECT
         b.id AS booking_id,
         COALESCE(sc.name, '') AS category_name,
+        sc.image AS category_image,
         b.issue_description,
         b.service_address,
         b.urgent_level,
@@ -64,6 +65,7 @@ class FixerBookingModel {
       if (row.issue_image && Buffer.isBuffer(row.issue_image)) {
         row.issue_image = `data:image/jpeg;base64,${row.issue_image.toString("base64")}`;
       }
+      row.category_image = toImageDataUrl(row.category_image);
       return row;
     });
   }

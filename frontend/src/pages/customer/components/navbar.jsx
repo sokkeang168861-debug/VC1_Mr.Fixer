@@ -121,9 +121,11 @@ export const Header = () => {
   return (
     <header className="fixed left-0 right-0 top-0 z-30 h-16 border-b border-slate-200 bg-white px-8 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-          <Wrench size={24} />
-        </div>
+        <img
+          src="/logo.png"
+          alt="Mr. Fixer"
+          className="rounded-lg h-11 w-auto object-contain"
+        />
         <span className="text-xl font-bold tracking-tight text-primary">Mr. Fixer</span>
       </div>
       <div className="flex-1" />

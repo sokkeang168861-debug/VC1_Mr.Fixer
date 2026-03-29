@@ -254,8 +254,16 @@ const JobDetails = () => {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-50 flex justify-between items-start">
               <div className="flex gap-4">
-                <div className="p-3 bg-[#FFF5EB] text-[#FF7A00] rounded-xl">
-                  <Wrench size={24} />
+                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-[#FFF5EB] text-[#FF7A00]">
+                  {job.category_image ? (
+                    <img
+                      src={resolveUploadUrl(job.category_image)}
+                      alt={job.category_name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Wrench size={24} />
+                  )}
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-[#1A1A1A]">{job.category_name}</h2>

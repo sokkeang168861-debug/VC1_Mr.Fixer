@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Wrench } from "lucide-react";
 import httpClient from "../../../api/httpClient";
 import { resolveUploadUrl } from "@/lib/assets";
 import defaultProfile from "@/assets/image/default-profile.png";
@@ -104,10 +103,12 @@ export const Header = ({ className = "" }) => {
       className={`fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex justify-between z-50 ${className}`}
     >
       <div className="p-6 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-orange-500 flex items-center justify-center">
-          <Wrench className="w-5 h-5 text-white" />
-        </div>
-        <h1 className="text-3xl font-bold text-orange-500">Mr.FIXER</h1>
+        <img
+          src="/fixer-logo.png"
+          alt="Mr. Fixer"
+          className="rounded-lg h-11 w-auto object-contain"
+        />
+        <h1 className="text-3xl font-bold text-orange-600">Mr. Fixer</h1>
       </div>
 
       <div className="flex items-center justify-end px-7 py-4">

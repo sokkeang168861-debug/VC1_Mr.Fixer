@@ -74,8 +74,16 @@ const JobCard = ({ job }) => {
         <div className="flex-1 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex items-start gap-3">
-              <div className="rounded-lg bg-gray-50 p-2 text-gray-400">
-                <Wrench size={18} />
+              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gray-50 p-2 text-gray-400">
+                {job.category_image ? (
+                  <img
+                    src={resolveUploadUrl(job.category_image)}
+                    alt={job.category_name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Wrench size={18} />
+                )}
               </div>
               <div>
                 <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-400">
