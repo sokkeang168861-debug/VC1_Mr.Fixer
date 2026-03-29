@@ -15,16 +15,13 @@ async function upsertByWhere(knex, tableName, whereClause, data) {
  */
 exports.seed = async function seed(knex) {
   const now = knex.fn.now();
-  const fixerEmail = (process.env.SEED_FIXER_EMAIL || "fixer@mrfixer.com").trim().toLowerCase();
-  const fixerUser = await knex("users").select("id").where({ email: fixerEmail }).first();
+  const fixerProviders = await knex("service_providers as sp")
+    .join("users as u", "u.id", "sp.user_id")
+    .select("sp.id")
+    .where("u.role", "fixer");
 
-  if (!fixerUser) {
-    throw new Error("Default fixer user is missing. Run the 01_users.js seed before loading fixer services.");
-  }
-
-  const provider = await knex("service_providers").select("id").where({ user_id: fixerUser.id }).first();
-  if (!provider) {
-    throw new Error("Default fixer provider is missing. Run the 01_users.js seed before loading fixer services.");
+  if (fixerProviders.length === 0) {
+    throw new Error("No fixer providers found. Run the 01_users.js seed before loading fixer services.");
   }
 
   const services = [
@@ -36,6 +33,14 @@ exports.seed = async function seed(knex) {
       name: "Plumbing",
       description: "Handle leaks, drainage problems, pipe repairs, and fixture installs.",
     },
+    {
+      name: "Air Conditioner Repair",
+      description: "Service air conditioners, clean units, fix cooling issues, and replace parts.",
+    },
+    {
+      name: "Home Painting",
+      description: "Handle interior and exterior painting, touch-ups, and wall preparation work.",
+    },
   ];
 
   for (const service of services) {
@@ -46,15 +51,17 @@ exports.seed = async function seed(knex) {
       created_at: now,
     });
 
-    await upsertByWhere(knex, "services", {
-      provider_id: provider.id,
-      category_id: categoryId,
-    }, {
-      provider_id: provider.id,
-      category_id: categoryId,
-      is_active: 1,
-      created_at: now,
-      updated_at: now,
-    });
+    for (const provider of fixerProviders) {
+      await upsertByWhere(knex, "services", {
+        provider_id: provider.id,
+        category_id: categoryId,
+      }, {
+        provider_id: provider.id,
+        category_id: categoryId,
+        is_active: 1,
+        created_at: now,
+        updated_at: now,
+      });
+    }
   }
 };
