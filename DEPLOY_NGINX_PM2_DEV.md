@@ -59,6 +59,7 @@ Open in browser:
 
 - `http://your-ec2-public-ip/`
 - `http://your-ec2-public-ip/api/...`
+- `http://your-ec2-public-ip/api/health`
 
 ## 6. Enable PM2 auto start
 
@@ -82,6 +83,7 @@ Add these GitHub Actions secrets:
 - `DEPLOY_PATH` = `/var/www/mrfixer`
 
 After that, every push to `dev` will auto deploy.
+If you are working on another branch such as `Test-Deploy`, merge it into `dev` first or change the workflow trigger branch before expecting GitHub Actions to deploy it.
 
 ## Basic security (keep it simple)
 
@@ -107,7 +109,7 @@ sudo systemctl enable --now fail2ban
 ```bash
 pm2 logs mrfixer-backend --lines 50
 curl -I http://your-ec2-public-ip/
-curl -I http://your-ec2-public-ip/api/auth/login
+curl http://your-ec2-public-ip/api/health
 ```
 
 ## Note about HTTPS

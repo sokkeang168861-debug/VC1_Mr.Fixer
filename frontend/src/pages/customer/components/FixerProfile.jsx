@@ -106,9 +106,15 @@ export default function FixerProfile({
     }
 
     let isMounted = true;
+    const resetStateTimer = window.setTimeout(() => {
+      if (!isMounted) {
+        return;
+      }
 
-    setLoading(true);
-    setError('');
+      setProfile(null);
+      setLoading(true);
+      setError('');
+    }, 0);
 
     httpClient
       .get(`/user/bookings/${bookingId}/fixer-profile`)
@@ -138,6 +144,7 @@ export default function FixerProfile({
 
     return () => {
       isMounted = false;
+      window.clearTimeout(resetStateTimer);
     };
   }, [bookingId]);
 

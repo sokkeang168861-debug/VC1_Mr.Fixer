@@ -6,6 +6,10 @@ on:
       - dev
   workflow_dispatch:
 
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -20,4 +24,4 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
-            bash deploy/scripts/deploy-dev.sh
+            APP_DIR="${{ secrets.DEPLOY_PATH }}" BRANCH="dev" bash deploy/scripts/deploy-dev.sh

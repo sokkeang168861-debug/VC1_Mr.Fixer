@@ -485,7 +485,7 @@ const Settings = () => {
       .join('');
   }, [profileData.fullName]);
 
-  const handleAddressDelete = (id) => {
+  const _handleAddressDelete = (id) => {
     setAddresses(prev => prev.filter(addr => addr.id !== id));
     setLocationInput('');
     setLocationCoordinates(null);
@@ -670,7 +670,7 @@ const Settings = () => {
     }
   };
 
-  const handleDiscardAllChanges = () => {
+  const _handleDiscardAllChanges = () => {
     setSaveMessage('');
     setProfileError('');
 
@@ -691,7 +691,7 @@ const Settings = () => {
     }
   };
 
-  const handleSaveAllChanges = async () => {
+  const _handleSaveAllChanges = async () => {
     setSaveMessage('');
     setProfileError('');
 

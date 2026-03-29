@@ -30,6 +30,14 @@ app.use((req, res, next) => {
 });
 app.set("db", db);
 
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    environment: process.env.NODE_ENV || "development",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);

@@ -200,7 +200,7 @@ class CustomerBookingController {
         );
 
       if (providerUserId) {
-        io.to(`user_${providerUserId}`).emit("booking_confirmed", booking);
+        io.to(`user:${providerUserId}`).emit("booking_confirmed", booking);
       }
 
       res.json({
@@ -230,11 +230,11 @@ class CustomerBookingController {
       const providerUserId =
         await CustomerBookingModel.getProviderUserIdByServiceId(
           db,
-          req.body.service_id // ⚠️ may need adjustment if not passed
+          booking.service_id
         );
 
       if (providerUserId) {
-        io.to(`user_${providerUserId}`).emit("booking_rejected", booking);
+        io.to(`user:${providerUserId}`).emit("booking_rejected", booking);
       }
 
       res.json({

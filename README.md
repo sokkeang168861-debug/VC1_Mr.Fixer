@@ -21,6 +21,7 @@ If you want to host frontend and backend on the same server with Nginx and PM2,
 and auto-deploy from the `dev` branch, follow:
 
 - `DEPLOY_NGINX_PM2_DEV.md`
+- Deployment health check: `/api/health`
 
 ---
 
@@ -32,7 +33,7 @@ and auto-deploy from the `dev` branch, follow:
 cd backend
 cp .env.example .env   # fill in your DB credentials and JWT secret
 npm install
-npm run mig            # run database migrations
+npm run migrate        # run database migrations
 npm run dev            # starts on http://localhost:5001
 ```
 

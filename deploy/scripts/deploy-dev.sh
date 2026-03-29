@@ -32,4 +32,8 @@ cd ..
 pm2 startOrReload deploy/pm2/ecosystem.config.cjs --env production --update-env
 pm2 save
 
+echo "[deploy] waiting for health check"
+sleep 3
+curl --fail --silent --show-error http://127.0.0.1:5000/api/health >/dev/null
+
 echo "[deploy] complete"

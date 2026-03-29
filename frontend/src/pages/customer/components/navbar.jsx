@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Wrench, History, Settings, LogOut } from "lucide-react";
+import { Calendar, Wrench, History, Settings } from "lucide-react";
 import httpClient from "@/api/httpClient";
 import { resolveUploadUrl } from "@/lib/assets";
 import defaultProfile from "@/assets/image/default-profile.png";
@@ -9,7 +9,6 @@ const PROFILE_UPDATED_EVENT = "user-profile-updated";
 export const Sidebar = ({
   activeTab,
   onChange,
-  onLogout,
   sticky = true,
   scrollNav = false,
   fixed = false,
