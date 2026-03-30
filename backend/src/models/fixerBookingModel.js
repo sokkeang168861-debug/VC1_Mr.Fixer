@@ -22,13 +22,17 @@ class FixerBookingModel {
         b.created_at,
         u.full_name AS customer_name,
         sp.location AS provider_location,
-        MIN(ii.image) AS issue_image
+        ii.issue_image
       FROM bookings b
       INNER JOIN users u ON u.id = b.customer_id
       INNER JOIN services s ON s.id = b.service_id
       INNER JOIN service_categories sc ON sc.id = s.category_id
       INNER JOIN service_providers sp ON sp.id = s.provider_id
-      LEFT JOIN issue_img ii ON ii.booking_id = b.id
+      LEFT JOIN (
+        SELECT booking_id, MIN(image) AS issue_image
+        FROM issue_img
+        GROUP BY booking_id
+      ) ii ON ii.booking_id = b.id
       LEFT JOIN (
         SELECT p1.booking_id, p1.status
         FROM payments p1
@@ -46,7 +50,6 @@ class FixerBookingModel {
           )
         )
         AND sp.user_id = ?
-      GROUP BY b.id
       ORDER BY
         CASE
           WHEN b.status = 'complete' THEN 0
