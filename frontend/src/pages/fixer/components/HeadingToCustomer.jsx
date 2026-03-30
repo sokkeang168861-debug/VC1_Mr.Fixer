@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  AlertTriangle,
   Loader2,
   MapPin,
   Navigation,
@@ -12,7 +11,6 @@ import httpClient from "@/api/httpClient";
 import RouteMapPanel from "@/pages/fixer/components/RouteMapPanel";
 import useActiveFixerBooking from "@/pages/fixer/hooks/useActiveFixerBooking";
 import { getFixerJobOverview } from "@/pages/fixer/lib/jobOverview";
-import useLiveLocationSync from "@/hooks/useLiveLocationSync";
 
 function isValidCoordinate(value) {
   return Number.isFinite(Number(value));
@@ -55,32 +53,7 @@ export default function HeadingToCustomer() {
   const normalizedStatus = String(job?.status || "").toLowerCase();
   const canOpenHeadingPage =
     normalizedStatus === "customer_accept" || normalizedStatus === "arrived";
-  const { currentPosition, locationError } = useLiveLocationSync({
-    enabled: Boolean(bookingId),
-    onLocationChange: async (nextPoint) => {
-      if (!bookingId) {
-        return;
-      }
-
-      await httpClient.put("/fixer/settings/location", {
-        location: job?.provider_location || job?.fixer_company_name || "Fixer live location",
-        latitude: nextPoint.latitude,
-        longitude: nextPoint.longitude,
-      });
-    },
-  });
-
-  const displayJob = useMemo(() => {
-    if (!job || !currentPosition) {
-      return job;
-    }
-
-    return {
-      ...job,
-      provider_latitude: currentPosition.latitude,
-      provider_longitude: currentPosition.longitude,
-    };
-  }, [currentPosition, job]);
+  const displayJob = job;
 
   const jobOverview = useMemo(() => {
     return getFixerJobOverview(displayJob, bookingId);
@@ -197,9 +170,6 @@ export default function HeadingToCustomer() {
                 Keep tracking the live route, focus either marker, and stay in contact until you arrive.
               </p>
             </div>
-            <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-orange-600 shadow-sm">
-              Live
-            </span>
           </div>
 
           <div className="mt-5 overflow-hidden rounded-[1.35rem] border border-slate-200 bg-white shadow-sm">
@@ -239,9 +209,9 @@ export default function HeadingToCustomer() {
               <div>
                 <p className="text-[12px] font-semibold text-slate-900">Fixer Live GPS</p>
                 <p className="mt-1 text-[12px] text-slate-500">
-                  {currentPosition
-                    ? "Sharing your current location in real time."
-                    : "Waiting for your device location."}
+                  {displayJob?.provider_location
+                    ? "Showing the saved fixer location."
+                    : "Saved fixer location unavailable."}
                 </p>
               </div>
             </button>
@@ -314,12 +284,6 @@ export default function HeadingToCustomer() {
             </div>
           </div>
 
-          {locationError ? (
-            <div className="mt-4 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-              <span>{locationError}</span>
-            </div>
-          ) : null}
       </div>
 
       <div>

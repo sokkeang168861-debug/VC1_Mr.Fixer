@@ -1,36 +1,10 @@
 import React, { useMemo, useState } from "react";
-import { AlertTriangle, Phone, MapPin, Bike, User, Wrench } from "lucide-react";
-import httpClient from "@/api/httpClient";
+import { Phone, MapPin, Bike, User, Wrench } from "lucide-react";
 import LocationTrackingMap from "@/components/LocationTrackingMap";
-import useLiveLocationSync from "@/hooks/useLiveLocationSync";
 
 const FixerArrival = ({ booking }) => {
   const [focusedTarget, setFocusedTarget] = useState("route");
-  const { currentPosition, locationError } = useLiveLocationSync({
-    enabled: Boolean(booking?.id),
-    onLocationChange: async (nextPoint) => {
-      if (!booking?.id) {
-        return;
-      }
-
-      await httpClient.put(`/user/bookings/${booking.id}/location`, {
-        latitude: nextPoint.latitude,
-        longitude: nextPoint.longitude,
-      });
-    },
-  });
-
-  const displayBooking = useMemo(() => {
-    if (!booking || !currentPosition) {
-      return booking;
-    }
-
-    return {
-      ...booking,
-      latitude: currentPosition.latitude,
-      longitude: currentPosition.longitude,
-    };
-  }, [booking, currentPosition]);
+  const displayBooking = useMemo(() => booking, [booking]);
   const categoryName = booking?.category_name || "Assigned Service";
   const categoryImage = booking?.category_image || "";
   const bookingId = booking?.id || "N/A";
@@ -136,19 +110,17 @@ const FixerArrival = ({ booking }) => {
             <div className="flex items-start gap-3">
               <MapPin className="mt-0.5 text-violet-600" size={18} />
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                  Customer Live Location
-                </p>
-                <p className="mt-1 text-sm font-semibold text-slate-900">
-                  {displayBooking?.service_address || "No address available"}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {currentPosition
-                    ? "Sharing your current device location."
-                    : "Waiting for your device GPS."}
-                </p>
-              </div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                Booking Address
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">
+                {displayBooking?.service_address || "No address available"}
+              </p>
+              <p className="text-xs text-slate-500">
+                Displaying the booked service address on the map.
+              </p>
             </div>
+          </div>
           </button>
 
           <button
@@ -180,12 +152,6 @@ const FixerArrival = ({ booking }) => {
           </button>
         </div>
 
-        {locationError ? (
-          <div className="mt-4 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-            <span>{locationError}</span>
-          </div>
-        ) : null}
       </div>
 
     </div>
