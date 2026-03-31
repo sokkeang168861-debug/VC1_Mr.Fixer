@@ -20,14 +20,14 @@ class ServiceCategoryModel {
         sc.id,
         sc.name,
         sc.description,
-        sc.image,
+        ANY_VALUE(sc.image) AS image,
         COUNT(DISTINCT sp.id) AS pros_count
       FROM service_categories sc
       INNER JOIN services s ON s.category_id = sc.id
       INNER JOIN service_providers sp ON sp.id = s.provider_id
       INNER JOIN users u ON u.id = sp.user_id
       WHERE LOWER(u.role) = 'fixer'
-      GROUP BY sc.id, sc.name, sc.description, sc.image
+      GROUP BY sc.id, sc.name, sc.description
       ORDER BY sc.id DESC`
     );
     return rows;
