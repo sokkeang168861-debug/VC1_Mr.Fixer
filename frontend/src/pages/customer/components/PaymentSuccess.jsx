@@ -9,6 +9,8 @@ function formatCurrency(amount) {
   }).format(Number(amount || 0));
 }
 
+const COMMISSION_RATE = 0.1;
+
 const PaymentProgressBar = ({ currentStep }) => {
   const steps = [
     { id: 1, label: 'CONFIRMED' },
@@ -92,6 +94,14 @@ const PaymentSuccess = ({
     receipt?.amount ??
     booking?.service_fee ??
     0;
+  const receiptItems = Array.isArray(receipt?.items) ? receipt.items : [];
+  const subtotal =
+    receipt?.receiptTotal ??
+    receiptItems.reduce((sum, item) => sum + Number(item?.price || 0), 0);
+  const commissionAmount = Number((subtotal * COMMISSION_RATE).toFixed(2));
+  const commissionLabel = `Commission (${(
+    COMMISSION_RATE * 100
+  ).toFixed(0)}%)`;
   const categories = [
     { id: 'quality', label: 'QUALITY' },
     { id: 'speed', label: 'SPEED' },
@@ -168,6 +178,18 @@ const PaymentSuccess = ({
             <div className="flex justify-between items-center">
               <span className="text-slate-500 text-sm">Service</span>
               <span className="font-bold text-slate-800">{serviceName}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500 text-sm">Subtotal (before commission)</span>
+              <span className="font-bold text-slate-800">
+                {formatCurrency(subtotal)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-slate-500 text-sm">{commissionLabel}</span>
+              <span className="font-bold text-slate-800">
+                {formatCurrency(commissionAmount)}
+              </span>
             </div>
             <div className="pt-4 border-t border-slate-200 flex justify-between items-center">
               <span className="text-slate-800 font-bold">Total Paid</span>

@@ -5,6 +5,8 @@ import httpClient from '@/api/httpClient';
 import useActiveFixerBooking from '@/pages/fixer/hooks/useActiveFixerBooking';
 import { getFixerJobOverview } from '@/pages/fixer/lib/jobOverview';
 
+const COMMISSION_RATE = 0.1;
+
 export default function ExpressCheckout() {
   const navigate = useNavigate();
   const { bookingId, job, loading, error } = useActiveFixerBooking();
@@ -89,6 +91,10 @@ export default function ExpressCheckout() {
     );
   }
 
+  const baseAmount = Number(jobOverview?.total_estimated_price || 0);
+  const commissionAmount = Number((baseAmount * COMMISSION_RATE).toFixed(2));
+  const totalWithCommission = Number((baseAmount + commissionAmount).toFixed(2));
+
   return (
     <div className="p-8 max-w-4xl mx-auto flex items-center justify-center min-h-[calc(100vh-100px)]">
       <div className="w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden border border-gray-50">
@@ -139,9 +145,17 @@ export default function ExpressCheckout() {
                 Order ID: <span className="text-gray-400">#{jobOverview?.booking_reference || bookingId}</span>
               </p>
             </div>
-            <p className="text-lg font-bold text-gray-800">
-              ${Number(jobOverview?.total_estimated_price || 0).toFixed(2)}
-            </p>
+            <div className="text-right">
+              <p className="text-xs font-semibold text-gray-500">
+                Base price ${baseAmount.toFixed(2)}
+              </p>
+              <p className="text-lg font-bold text-gray-800">
+                ${totalWithCommission.toFixed(2)}
+              </p>
+              <p className="text-[11px] font-semibold text-gray-500">
+                Includes {Math.round(COMMISSION_RATE * 100)}% commission (${commissionAmount.toFixed(2)})
+              </p>
+            </div>
           </div>
 
           <p className="text-sm text-center text-gray-500">

@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { motion as Motion } from "motion/react";
 
+const COMMISSION_RATE = 0.1;
+
 function formatCurrency(amount) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -74,6 +76,10 @@ const ReceiptView = ({ onClose, receipt, loading = false }) => {
     0
   );
   const totalPaid = receipt?.amount ?? receipt?.receiptTotal ?? subtotal;
+  const commissionAmount = Number((subtotal * COMMISSION_RATE).toFixed(2));
+  const commissionLabel = `Commission (${(
+    COMMISSION_RATE * 100
+  ).toFixed(0)}%)`;
   const fileName = `Receipt_${orderId.replace(/[^a-zA-Z0-9-]/g, "") || "booking"}.pdf`;
 
   const handleDownload = () => {
@@ -292,6 +298,8 @@ const ReceiptView = ({ onClose, receipt, loading = false }) => {
                   <div class="section-label">Payment Summary</div>
                   <div class="summary-row"><span>Status</span><strong>${paymentStatus}</strong></div>
                   <div class="summary-row"><span>Items</span><strong>${lineItems.length}</strong></div>
+                  <div class="summary-row"><span>Subtotal</span><strong>${formatCurrency(subtotal)}</strong></div>
+                  <div class="summary-row"><span>${commissionLabel}</span><strong>${formatCurrency(commissionAmount)}</strong></div>
                   <div class="summary-row" style="padding-top:10px;border-top:1px solid #e9d5ff;"><span>Total Paid</span><strong>${formatCurrency(totalPaid)}</strong></div>
                 </div>
               </div>
@@ -329,8 +337,12 @@ const ReceiptView = ({ onClose, receipt, loading = false }) => {
 
               <div class="totals">
                 <div class="total-row">
-                  <span>Subtotal</span>
+                  <span>Subtotal (before commission)</span>
                   <span>${formatCurrency(subtotal)}</span>
+                </div>
+                <div class="total-row">
+                  <span>${commissionLabel}</span>
+                  <span>${formatCurrency(commissionAmount)}</span>
                 </div>
                 <div class="total-row final">
                   <span>Total Paid</span>
@@ -481,6 +493,18 @@ const ReceiptView = ({ onClose, receipt, loading = false }) => {
                         {lineItems.length}
                       </span>
                     </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">Subtotal (before commission)</span>
+                      <span className="font-semibold text-slate-900">
+                        {formatCurrency(subtotal)}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-slate-500">{commissionLabel}</span>
+                      <span className="font-semibold text-slate-900">
+                        {formatCurrency(commissionAmount)}
+                      </span>
+                    </div>
                     <div className="flex items-center justify-between gap-4 border-t border-purple-100 pt-3">
                       <span className="text-slate-500">Total Paid</span>
                       <span className="text-xl font-black text-slate-900">
@@ -596,10 +620,14 @@ const ReceiptView = ({ onClose, receipt, loading = false }) => {
                 </div>
               </div>
 
-              <div className="flex flex-col items-end space-y-3 border-t border-slate-200 pt-6">
+              <div className="flex flex-col items-end space-y-2 border-t border-slate-200 pt-6">
                 <div className="flex w-full max-w-xs justify-between text-sm text-slate-500">
-                  <span>Subtotal</span>
+                  <span>Subtotal (before commission)</span>
                   <span>{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="flex w-full max-w-xs justify-between text-sm text-slate-500">
+                  <span>{commissionLabel}</span>
+                  <span>{formatCurrency(commissionAmount)}</span>
                 </div>
                 <div className="flex w-full max-w-xs justify-between text-lg font-bold text-purple-600">
                   <span>Total Paid</span>
