@@ -66,6 +66,11 @@ class ServiceCategoryService {
     return await ServiceCategoryModel.allProvidersByCategory(db, categoryId);
   }
 
+  static async getAllProvidersByCategory(db, categoryId) {
+    const providers = await ServiceCategoryModel.allProvidersByCategory(db, categoryId);
+    return await this.enrichProviders(db, providers);
+  }
+
   static async createCategory(db, data, file) {
     if (!data) {
       throw new Error("Name and description are required");

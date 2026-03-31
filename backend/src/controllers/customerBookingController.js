@@ -79,6 +79,27 @@ class CustomerBookingController {
     }
   }
 
+  async getProviderProfile(req, res) {
+    const db = req.app.get("db");
+
+    try {
+      const profile = await customerBookingService.getProviderProfile(
+        db,
+        req.user,
+        req.params.providerId
+      );
+
+      res.status(200).json({
+        message: "Provider profile fetched successfully",
+        data: profile,
+      });
+    } catch (err) {
+      res.status(err.status || 500).json({
+        message: err.message || "Failed to fetch provider profile",
+      });
+    }
+  }
+
   async getReceiptDetails(req, res) {
     const db = req.app.get("db");
 

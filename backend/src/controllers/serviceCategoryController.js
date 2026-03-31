@@ -174,6 +174,19 @@ class ServiceCategoryController {
       res.status(500).json({ message: "Failed to fetch providers", error: err.message });
     }
   }
+
+  static async getAllProvidersByCategory(req, res) {
+    const db = req.app.get("db");
+    const { categoryId } = req.params;
+
+    try {
+      const providers = await ServiceCategoryService.getAllProvidersByCategory(db, categoryId);
+      res.status(200).json(providers);
+    } catch (err) {
+      console.error("Fetch Providers Error:", err);
+      res.status(500).json({ message: "Failed to fetch providers", error: err.message });
+    }
+  }
 }
 
 module.exports = ServiceCategoryController;

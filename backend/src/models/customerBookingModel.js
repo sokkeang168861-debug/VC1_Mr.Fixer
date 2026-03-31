@@ -910,6 +910,37 @@ class CustomerBooking {
     return rows[0] || null;
   }
 
+  static async getFixerProfileBaseByProviderId(db, providerId) {
+    const [rows] = await db.query(
+      `SELECT
+        sp.id AS provider_id,
+        u.id AS fixer_user_id,
+        u.full_name,
+        u.email,
+        u.phone,
+        u.profile_img,
+        sp.company_name,
+        sp.bio,
+        sp.location,
+        sp.latitude,
+        sp.longitude,
+        sp.experience,
+        sp.is_verified,
+        sp.speed_rating,
+        sp.quality_rating,
+        sp.price_fairness_rating,
+        sp.behavior_rating,
+        sp.overall_rating
+       FROM service_providers sp
+       INNER JOIN users u ON u.id = sp.user_id
+       WHERE sp.id = ?
+       LIMIT 1`,
+      [providerId]
+    );
+
+    return rows[0] || null;
+  }
+
   static async getFixerCategoriesByProviderId(db, providerId) {
     const [rows] = await db.query(
       `SELECT DISTINCT sc.name

@@ -88,20 +88,28 @@ function getInitials(name) {
 
 export default function FixerProfile({
   bookingId,
+  providerId = null,
   onBack,
   onBookAgain,
   name: fallbackName = 'Fixer User',
   avatar: fallbackAvatar = '',
   primaryCategory = 'Service',
 }) {
+  const hasIdentifier = Boolean(bookingId || providerId);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(() => Boolean(bookingId));
+  const [loading, setLoading] = useState(hasIdentifier);
   const [error, setError] = useState(() =>
-    bookingId ? '' : 'Missing booking information.'
+    hasIdentifier ? '' : 'Missing booking or provider information.'
   );
 
   useEffect(() => {
-    if (!bookingId) {
+    const hasBooking = Boolean(bookingId);
+    const hasProvider = Boolean(providerId);
+
+    if (!hasBooking && !hasProvider) {
+      setProfile(null);
+      setLoading(false);
+      setError('Missing booking or provider information.');
       return undefined;
     }
 
@@ -116,8 +124,12 @@ export default function FixerProfile({
       setError('');
     }, 0);
 
+    const endpoint = hasBooking
+      ? `/user/bookings/${bookingId}/fixer-profile`
+      : `/user/providers/${providerId}/profile`;
+
     httpClient
-      .get(`/user/bookings/${bookingId}/fixer-profile`)
+      .get(endpoint)
       .then((response) => {
         if (!isMounted) {
           return;
@@ -146,7 +158,7 @@ export default function FixerProfile({
       isMounted = false;
       window.clearTimeout(resetStateTimer);
     };
-  }, [bookingId]);
+  }, [bookingId, providerId]);
 
   const displayName = profile?.full_name || fallbackName || 'Fixer User';
   const avatar = profile?.profile_img || fallbackAvatar || defaultProfile;
@@ -277,7 +289,7 @@ export default function FixerProfile({
                 }}
                 className="bg-[#7C3AED] text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-[#6D28D9]"
               >
-                {onBookAgain ? 'Book Service' : 'Back to History'}
+                {onBookAgain ? 'Book Service' : 'Go Back'}
               </button>
             </div>
           </div>

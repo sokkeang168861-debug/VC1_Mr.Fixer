@@ -9,29 +9,8 @@ import { motion as Motion, AnimatePresence } from "motion/react";
 
 import ServiceCard from "../components/ServiceCard";
 import SpecialistCard from "../components/SpecialistCard";
+import FixerProfile from "../components/FixerProfile";
 import CustomerSettings from "./setting";
-
-function getCurrentCoordinates() {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("Geolocation is not supported in this browser."));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        });
-      },
-      () => {
-        reject(new Error("Location access is required to find nearby providers."));
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  });
-}
 
 export default function CustomerDashboard({ initialPage = "services" }) {
   const navigate = useNavigate();
@@ -47,7 +26,7 @@ export default function CustomerDashboard({ initialPage = "services" }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [providersError, setProvidersError] = useState("");
-  const [providersNotice, setProvidersNotice] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -84,24 +63,10 @@ export default function CustomerDashboard({ initialPage = "services" }) {
   const getProvidersByCategory = async (categoryId) => {
     try {
       setProvidersError("");
-      setProvidersNotice("");
-
-      let requestConfig = {};
-
-      try {
-        const { latitude, longitude } = await getCurrentCoordinates();
-        requestConfig = {
-          params: { latitude, longitude },
-        };
-      } catch {
-        setProvidersNotice(
-          "Location access is unavailable. Showing all providers in this category instead."
-        );
-      }
+      setSelectedProvider(null);
 
       const res = await httpClient.get(
-        `/user/providersEachCategory/${categoryId}`,
-        requestConfig
+        `/user/providersEachCategory/${categoryId}/all`
       );
 
       const list = res?.data?.data ?? res?.data ?? [];
@@ -110,13 +75,17 @@ export default function CustomerDashboard({ initialPage = "services" }) {
     } catch (err) {
       console.error("Failed to load providers", err);
       setProviders([]);
-      setProvidersNotice("");
       setProvidersError(
         err?.response?.data?.message ||
           err?.message ||
-          "Failed to load nearby providers."
+          "Failed to load providers."
       );
     }
+  };
+
+  const handleViewProviderProfile = (provider) => {
+    setSelectedProvider(provider);
+    setCurrentPage("profile");
   };
 
   const handleLogout = async () => {
@@ -124,6 +93,20 @@ export default function CustomerDashboard({ initialPage = "services" }) {
   };
 
   const renderPage = () => {
+    if (currentPage === "profile" && selectedProvider) {
+      return (
+        <FixerProfile
+          providerId={selectedProvider.provider_id}
+          onBack={() => {
+            setCurrentPage("specialists");
+            setSelectedProvider(null);
+          }}
+          name={selectedProvider.full_name}
+          avatar={selectedProvider.profile_img}
+        />
+      );
+    }
+
     if (currentPage === "specialists") {
       return (
         <MotionDiv
@@ -153,11 +136,6 @@ export default function CustomerDashboard({ initialPage = "services" }) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {providersNotice ? (
-              <div className="col-span-full rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-center text-sm text-amber-700">
-                {providersNotice}
-              </div>
-            ) : null}
 
             {providersError ? (
               <div className="col-span-full text-center text-rose-600">
@@ -167,14 +145,23 @@ export default function CustomerDashboard({ initialPage = "services" }) {
               <div className="col-span-full text-center text-slate-500">
                 No providers found.
               </div>
-            ) : (
-              providers.map((provider, index) => (
-                <SpecialistCard key={index} specialist={provider} />
-              ))
-            )}
-          </div>
-        </MotionDiv>
-      );
+              ) : (
+                providers.map((provider, index) => (
+                  <SpecialistCard
+                    key={
+                      provider.provider_id ??
+                      provider.service_id ??
+                      provider.email ??
+                      index
+                    }
+                    specialist={provider}
+                    onViewProfile={() => handleViewProviderProfile(provider)}
+                  />
+                ))
+              )}
+            </div>
+          </MotionDiv>
+        );
     }
 
     if (currentPage === "settings") {
@@ -241,7 +228,10 @@ export default function CustomerDashboard({ initialPage = "services" }) {
     );
   };
 
-  const sidebarTab = currentPage === "specialists" ? "services" : currentPage;
+  const sidebarTab =
+    currentPage === "specialists" || currentPage === "profile"
+      ? "services"
+      : currentPage;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-50">
@@ -253,6 +243,7 @@ export default function CustomerDashboard({ initialPage = "services" }) {
           onChange={(tab) => {
             if (tab === "services") {
               setCurrentPage("services");
+              setSelectedProvider(null);
               return;
             }
             if (tab === "booking") {

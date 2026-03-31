@@ -25,6 +25,15 @@ router.put("/location", protect, updateCustomerLocation);
 router.get("/allCategories", ServiceCategoryController.getAvailableCategories);
 router.get("/providersEachCategory/:categoryId", ServiceCategoryController.getProvidersByCategory);
 router.get(
+  "/providersEachCategory/:categoryId/all",
+  ServiceCategoryController.getAllProvidersByCategory
+);
+router.get(
+  "/providers/:providerId/profile",
+  protect,
+  (req, res) => CustomerBookingController.getProviderProfile(req, res)
+);
+router.get(
   "/bookings/history",
   protect,
   (req, res) => CustomerBookingController.getCompletedHistory(req, res)

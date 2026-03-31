@@ -507,6 +507,96 @@ class BookingService {
       comment: comment || null,
     });
   }
+
+  static async getProviderProfile(db, user, providerId) {
+    const customerId = user?.id;
+    const role = String(user?.role || "").toLowerCase();
+
+    if (!customerId) {
+      throw { status: 401, message: "Unauthorized" };
+    }
+
+    if (role !== "customer") {
+      throw { status: 403, message: "Only customers can access fixer profiles" };
+    }
+
+    const normalizedProviderId = Number(providerId);
+
+    if (!Number.isInteger(normalizedProviderId) || normalizedProviderId <= 0) {
+      throw { status: 400, message: "Invalid provider id" };
+    }
+
+    const fixer = await BookingModel.getFixerProfileBaseByProviderId(
+      db,
+      normalizedProviderId
+    );
+
+    if (!fixer) {
+      throw { status: 404, message: "Fixer profile not found" };
+    }
+
+    const [categories, stats, ratingSummary, recentReviews] = await Promise.all([
+      BookingModel.getFixerCategoriesByProviderId(db, fixer.provider_id),
+      BookingModel.getFixerBookingStatsByProviderId(db, fixer.provider_id),
+      FixerDashboardModel.getRatingSummary(db, fixer.provider_id),
+      BookingModel.getFixerReviewsByProviderId(db, fixer.provider_id, 6),
+    ]);
+
+    const totalBookings = Number(stats?.total_bookings || 0);
+    const acceptedBookings = Number(stats?.accepted_bookings || 0);
+    const completedJobs = Number(stats?.completed_jobs || 0);
+    const acceptanceRate =
+      totalBookings > 0
+        ? Math.round((acceptedBookings / totalBookings) * 100)
+        : 0;
+
+    return {
+      booking_id: null,
+      fixer_user_id: Number(fixer.fixer_user_id),
+      provider_id: Number(fixer.provider_id),
+      full_name: fixer.full_name || "",
+      email: fixer.email || "",
+      phone: fixer.phone || "",
+      profile_img: toImageDataUrl(fixer.profile_img),
+      company_name: fixer.company_name || "",
+      bio: fixer.bio || "",
+      location: fixer.location || "",
+      latitude:
+        fixer.latitude !== null && fixer.latitude !== undefined
+          ? Number(fixer.latitude)
+          : null,
+      longitude:
+        fixer.longitude !== null && fixer.longitude !== undefined
+          ? Number(fixer.longitude)
+          : null,
+      is_verified: Boolean(fixer.is_verified),
+      categories,
+      stats: {
+        experience_years:
+          fixer.experience !== null && fixer.experience !== undefined
+            ? Number(fixer.experience)
+            : 0,
+        acceptance_rate: acceptanceRate,
+        completed_jobs: completedJobs,
+        total_bookings: totalBookings,
+      },
+      ratings: {
+        quality_rating: Number(fixer.quality_rating || 0),
+        speed_rating: Number(fixer.speed_rating || 0),
+        price_fairness_rating: Number(fixer.price_fairness_rating || 0),
+        behavior_rating: Number(fixer.behavior_rating || 0),
+        overall_rating: Number(fixer.overall_rating || 0),
+        total_ratings: Number(ratingSummary?.total_ratings || 0),
+      },
+      recent_reviews: recentReviews.map((review) => ({
+        id: Number(review.id),
+        customer_name: review.customer_name || "Customer",
+        overall_rating: Number(review.overall_rating || 0),
+        comment: review.comment || "",
+        created_at: review.created_at || null,
+      })),
+    };
+  }
 }
 
 module.exports = BookingService;

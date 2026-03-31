@@ -2,7 +2,7 @@ import { Star, MapPin, Phone, Mail } from "lucide-react";
 import { motion as Motion } from "motion/react";
 import defaultProfile from "../../../assets/image/default-profile.png";
 
-export default function SpecialistCard({ specialist }) {
+export default function SpecialistCard({ specialist, onViewProfile }) {
   return (
     <Motion.div
       layout
@@ -58,6 +58,16 @@ export default function SpecialistCard({ specialist }) {
               {specialist.email}
             </span>
           </div>
+        </div>
+        <div className="mt-6 flex flex-col gap-2">
+          <button
+            type="button"
+            disabled={!onViewProfile}
+            onClick={onViewProfile}
+            className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-600 transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            View Profile
+          </button>
         </div>
       </div>
     </Motion.div>
